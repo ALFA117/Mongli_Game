@@ -1,13 +1,14 @@
 "use client";
 
-const particles = Array.from({ length: 20 }, (_, i) => ({
+const particles = Array.from({ length: 30 }, (_, i) => ({
   left: `${Math.random() * 100}%`,
   top: `${Math.random() * 100}%`,
-  size: 1 + Math.random() * 2,
+  size: 2 + Math.random() * 2,
   dur: `${15 + Math.random() * 15}s`,
   delay: `${Math.random() * 10}s`,
   dx: -30 + Math.random() * 60,
   dy: -40 + Math.random() * 20,
+  color: i < 8 ? "rgba(139,0,0,0.5)" : "rgba(232,213,176,0.5)",
 }));
 
 export default function FloatingDust() {
@@ -21,19 +22,16 @@ export default function FloatingDust() {
             left: p.left, top: p.top,
             width: p.size, height: p.size,
             borderRadius: "50%",
-            background: "rgba(232,213,176,0.25)",
-            animation: `dust-float ${p.dur} ease-in-out infinite alternate`,
+            background: p.color,
+            animation: `dust-float-${i % 3} ${p.dur} ease-in-out infinite alternate`,
             animationDelay: p.delay,
-            ["--dx" as string]: `${p.dx}px`,
-            ["--dy" as string]: `${p.dy}px`,
           }}
         />
       ))}
       <style jsx>{`
-        @keyframes dust-float {
-          from { transform: translate(0, 0); opacity: 0.15; }
-          to { transform: translate(var(--dx), var(--dy)); opacity: 0.35; }
-        }
+        @keyframes dust-float-0 { from{transform:translate(0,0);opacity:0.3} to{transform:translate(40px,-30px);opacity:0.7} }
+        @keyframes dust-float-1 { from{transform:translate(0,0);opacity:0.4} to{transform:translate(-35px,-25px);opacity:0.6} }
+        @keyframes dust-float-2 { from{transform:translate(0,0);opacity:0.25} to{transform:translate(25px,-40px);opacity:0.65} }
       `}</style>
     </div>
   );
