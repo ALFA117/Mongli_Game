@@ -1,167 +1,80 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAccount } from 'wagmi'
 import dynamic from 'next/dynamic'
-import WalletButton from '@/components/WalletButton'
-import { audioEngine } from '@/lib/audioEngine'
 
-const Cursor = dynamic(() => import('@/components/Cursor'), { ssr: false })
 const Skull3D = dynamic(() => import('@/components/Skull3D'), {
   ssr: false,
-  loading: () => <div style={{ width: 420, height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a0000', fontSize: 12, letterSpacing: 3 }}>CARGANDO...</div>,
+  loading: () => <div style={{ width: 380, height: 380, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a0000', fontSize: 11, letterSpacing: 4 }}>CARGANDO...</div>,
 })
-
-const TR = {
-  es: {
-    title: 'MONGLI', sub: 'Alguien tomó tus recuerdos. Recupéralos antes de que sea tarde.',
-    wake: 'TOCA PARA DESPERTAR', where: '¿ Dónde despertar ?', ver: 'MONGLI v0.8 // Claude AI + 0G Chain',
-    scenes: [
-      { id: 'alley', t: 'El callejón', d: 'Despiertas en un callejón oscuro. La lluvia golpea el asfalto.' },
-      { id: 'office', t: 'La oficina', d: 'Un escritorio viejo. Una lámpara parpadea. Hay una foto boca abajo.' },
-      { id: 'train', t: 'El tren', d: 'El vagón está vacío. Afuera es de noche. No recuerdas el boleto.' },
-    ],
-  },
-  en: {
-    title: 'MONGLI', sub: 'Someone took your memories. Take them back before it\'s too late.',
-    wake: 'TAP TO AWAKEN', where: 'Where to awaken?', ver: 'MONGLI v0.8 // Claude AI + 0G Chain',
-    scenes: [
-      { id: 'alley', t: 'The alley', d: 'You wake in a dark alley. Rain hits the pavement.' },
-      { id: 'office', t: 'The office', d: 'An old desk. A lamp flickers. A photo face-down.' },
-      { id: 'train', t: 'The train', d: 'Empty car. Night outside. You don\'t remember the ticket.' },
-    ],
-  },
-}
-
-const FOG = Array.from({ length: 8 }, (_, i) => ({ left: `${10 + (i * 12) % 80}%`, top: `${15 + (i * 17) % 65}%`, w: 200 + (i * 37) % 200, dur: 8 + i * 1.3, delay: i * 0.8 }))
-const RAIN = Array.from({ length: 30 }, (_, i) => ({ left: `${(i * 3.4) % 100}%`, h: 15 + (i * 7) % 25, dur: 0.6 + i * 0.03, delay: (i * 0.15) % 2 }))
-const DUST = Array.from({ length: 20 }, (_, i) => ({ left: `${(i * 5.1) % 100}%`, top: `${(i * 7.3) % 100}%`, size: 2 + (i % 3), dur: 6 + i * 0.8, delay: i * 0.4, color: i % 5 === 0 ? 'rgba(139,0,0,0.3)' : 'rgba(196,146,58,0.15)' }))
-
-function useIsMobile() {
-  const [mobile, setMobile] = useState(false)
-  useEffect(() => { const c = () => setMobile(window.innerWidth < 768); c(); window.addEventListener('resize', c); return () => window.removeEventListener('resize', c) }, [])
-  return mobile
-}
+const Cursor = dynamic(() => import('@/components/Cursor'), { ssr: false })
 
 export default function Home() {
-  const { isConnected } = useAccount()
   const router = useRouter()
-  const mobile = useIsMobile()
   const [lang, setLang] = useState<'es' | 'en'>('es')
-  const [audioOn, setAudioOn] = useState(false)
-  const [volume, setVolume] = useState(0.4)
-  const [awake, setAwake] = useState(false)
-  const [subText, setSubText] = useState('')
-  const [subDone, setSubDone] = useState(false)
-  const t = TR[lang]
+  const [subtitle, setSubtitle] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
 
-  useEffect(() => { const s = localStorage.getItem('mongli-lang') as 'es' | 'en' | null; if (s === 'en' || s === 'es') setLang(s) }, [])
-
-  const wake = useCallback(() => { audioEngine.start(); setAudioOn(true); setAwake(true) }, [])
-
-  useEffect(() => {
-    if (!awake) return
-    const full = t.sub; let i = 0; setSubText(''); setSubDone(false)
-    const iv = setInterval(() => { if (i < full.length) { setSubText(full.slice(0, i + 1)); i++ } else { clearInterval(iv); setSubDone(true) } }, 35)
-    return () => clearInterval(iv)
-  }, [awake, t.sub])
-
-  const toggleLang = () => { const nl = lang === 'es' ? 'en' : 'es'; setLang(nl); localStorage.setItem('mongli-lang', nl) }
-
-  if (!awake) {
-    return (
-      <div onClick={wake} style={{ position: 'fixed', inset: 0, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Cursor />
-        <p style={{ fontFamily: "var(--font-display, 'Special Elite'), serif", fontSize: 'clamp(18px, 4vw, 28px)', color: '#8B0000', animation: 'pulse-text 2s ease-in-out infinite', letterSpacing: 4 }}>{t.wake}</p>
-      </div>
-    )
+  const T = {
+    es: { sub: 'Alguien tomó tus recuerdos. Recupéralos antes de que sea tarde.', btn: 'RECUPERA TU IDENTIDAD', hint: 'Haz clic para comenzar' },
+    en: { sub: 'Someone took your memories. Take them back before it\'s too late.', btn: 'RECLAIM YOUR IDENTITY', hint: 'Click to begin' },
   }
 
-  const skullSize = mobile ? 280 : 420
+  useEffect(() => { setIsMobile(window.innerWidth < 768) }, [])
+
+  useEffect(() => {
+    const text = T[lang].sub; setSubtitle(''); let i = 0
+    const iv = setInterval(() => { if (i < text.length) setSubtitle(text.slice(0, ++i)); else clearInterval(iv) }, 35)
+    return () => clearInterval(iv)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang])
+
+  const [rainDrops] = useState(() => Array.from({ length: 25 }, (_, i) => ({ id: i, left: Math.random() * 100, height: 40 + Math.random() * 60, duration: 1 + Math.random() * 2, delay: Math.random() * 4 })))
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#000', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', gap: 0 }}>
       <Cursor />
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, #1a0000 0%, #000 55%)', zIndex: 0 }} />
 
-      {FOG.map((f, i) => <div key={`f${i}`} style={{ position: 'absolute', left: f.left, top: f.top, width: f.w, height: f.w * 0.6, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(139,0,0,0.08), transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 1, animation: `fog-drift ${f.dur}s ease-in-out ${f.delay}s infinite alternate` }} />)}
+      {rainDrops.map(d => <div key={d.id} style={{ position: 'absolute', left: `${d.left}%`, top: 0, width: 1, height: d.height, background: 'rgba(139,0,0,0.25)', animation: `rain ${d.duration}s linear infinite`, animationDelay: `${d.delay}s`, pointerEvents: 'none' }} />)}
 
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 2 }}>
-        {RAIN.map((r, i) => <div key={`r${i}`} style={{ position: 'absolute', left: r.left, top: -30, width: 1, height: r.h, background: 'linear-gradient(to bottom, transparent, rgba(150,160,180,0.25))', animation: `rain-fall ${r.dur}s linear ${r.delay}s infinite`, transform: 'rotate(8deg)' }} />)}
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.85) 100%)', pointerEvents: 'none', zIndex: 1 }} />
+
+      {[0, 1, 2, 3].map(i => <div key={`fog${i}`} style={{ position: 'absolute', width: 300 + i * 100, height: 300 + i * 80, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,0,0,0.07) 0%, transparent 70%)', left: `${15 + i * 20}%`, top: `${10 + i * 20}%`, transform: 'translate(-50%,-50%)', animation: `fog ${5 + i * 2}s ease-in-out infinite`, animationDelay: `${i * 1.2}s`, pointerEvents: 'none', zIndex: 0 }} />)}
+
+      <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
+        <button onClick={() => setLang(l => l === 'es' ? 'en' : 'es')}
+          style={{ background: 'transparent', border: '1px solid #2a0000', color: '#555', padding: '6px 14px', fontFamily: 'monospace', fontSize: 12, cursor: 'none', letterSpacing: 2, transition: 'all 0.2s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#8B0000'; e.currentTarget.style.color = '#8B0000' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a0000'; e.currentTarget.style.color = '#555' }}>
+          {lang === 'es' ? 'EN' : 'ES'}
+        </button>
       </div>
 
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 3, overflow: 'hidden' }}>
-        <div style={{ width: '100%', height: 2, background: 'rgba(139,0,0,0.06)', animation: 'scanline-move 4s linear infinite' }} />
-      </div>
+      <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+        <div style={{ marginBottom: -20 }}><Skull3D size={isMobile ? 260 : 380} /></div>
 
-      <div className="static-noise" style={{ position: 'absolute', inset: 0, zIndex: 3 }} />
-      <div style={{ position: 'absolute', inset: 0, zIndex: 4, pointerEvents: 'none', boxShadow: 'inset 0 0 200px #000, inset 0 0 100px rgba(0,0,0,0.8)' }} />
-
-      {DUST.map((d, i) => <div key={`d${i}`} style={{ position: 'absolute', left: d.left, top: d.top, width: d.size, height: d.size, borderRadius: '50%', background: d.color, pointerEvents: 'none', zIndex: 5, animation: `dust-float ${d.dur}s ease-in-out ${d.delay}s infinite alternate` }} />)}
-
-      {/* HUD */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', zIndex: 50 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => { const on = audioEngine.toggle(); setAudioOn(on) }} style={{ background: 'none', border: 'none', padding: 4, color: '#8B0000', fontSize: 14 }}>{audioOn ? '🔊' : '🔇'}</button>
-          {audioOn && <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => { const v = +e.target.value; setVolume(v); audioEngine.setVolume(v) }} className="volume-slider" />}
-        </div>
-        <button onClick={toggleLang} style={{ background: 'transparent', border: '1px solid #1a0000', color: '#555', fontSize: 10, padding: '3px 8px', fontFamily: 'monospace' }}>{lang.toUpperCase()}</button>
-      </div>
-
-      {/* Content */}
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: mobile ? '0 12px' : '0 16px', gap: 4 }}>
-
-        <div style={{ filter: 'drop-shadow(0 0 40px rgba(139,0,0,0.7)) drop-shadow(0 0 80px rgba(139,0,0,0.4))', willChange: 'transform' }}>
-          <Skull3D size={skullSize} />
+        <div style={{ position: 'relative', marginBottom: 16 }}>
+          <h1 style={{ fontSize: isMobile ? 64 : 96, fontFamily: "'VT323', monospace", color: '#fff', letterSpacing: 12, margin: 0, lineHeight: 1, textShadow: '0 0 20px rgba(139,0,0,0.8)' }}>MONGLI</h1>
+          <h1 aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, fontSize: isMobile ? 64 : 96, fontFamily: "'VT323', monospace", color: '#ff0000', letterSpacing: 12, margin: 0, lineHeight: 1, animation: 'glitch-1 4s infinite', animationDelay: '0.5s', opacity: 0.7 }}>MONGLI</h1>
+          <h1 aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, fontSize: isMobile ? 64 : 96, fontFamily: "'VT323', monospace", color: '#00ffff', letterSpacing: 12, margin: 0, lineHeight: 1, animation: 'glitch-2 4s infinite', animationDelay: '1s', opacity: 0.5 }}>MONGLI</h1>
         </div>
 
-        <h1 className="glitch-title" data-text={t.title} style={{ fontFamily: "var(--font-horror, 'Creepster'), var(--font-display, 'Special Elite'), cursive", marginBottom: 4, lineHeight: 1, fontSize: mobile ? 'clamp(50px, 12vw, 100px)' : undefined }}>
-          {t.title}
-        </h1>
+        <div style={{ width: isMobile ? 200 : 320, height: 1, background: 'linear-gradient(to right, transparent, #8B0000, transparent)', marginBottom: 16 }} />
 
-        <div style={{ width: mobile ? '90%' : 380, marginBottom: 12 }}>
-          <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(139,0,0,0.3), transparent)', marginBottom: 10 }} />
-          <p style={{ fontFamily: 'monospace', fontSize: mobile ? 11 : 12, color: 'rgba(232,213,176,0.4)', textAlign: 'center', lineHeight: 1.6 }}>
-            {subText}{!subDone && <span style={{ color: '#8B0000', animation: 'blink 0.6s infinite' }}>▌</span>}
-          </p>
-        </div>
-
-        <p style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(0,255,65,0.25)', marginBottom: 10 }}>
-          <span style={{ color: 'rgba(0,255,65,0.4)' }}>●</span> 0G Galileo Testnet
+        <p style={{ fontSize: isMobile ? 13 : 15, color: '#888', textAlign: 'center', maxWidth: isMobile ? 280 : 420, lineHeight: 1.6, marginBottom: 32, minHeight: 48, letterSpacing: 1 }}>
+          {subtitle}<span style={{ animation: 'blink 0.8s infinite', color: '#8B0000' }}>▌</span>
         </p>
 
-        <WalletButton />
+        <button onClick={() => router.push('/map')}
+          style={{ background: 'transparent', border: '1px solid #8B0000', color: '#e8d5b0', padding: isMobile ? '14px 32px' : '16px 48px', fontFamily: "'Special Elite', serif", fontSize: isMobile ? 13 : 15, letterSpacing: 4, cursor: 'none', animation: 'pulse-red 2s infinite', transition: 'all 0.3s' }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#8B0000'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.03)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e8d5b0'; e.currentTarget.style.transform = 'scale(1)' }}>
+          {T[lang].btn}
+        </button>
 
-        {isConnected && (
-          <div style={{ width: '100%', maxWidth: 640, marginTop: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-              <div style={{ flex: 1, height: 1, background: 'rgba(139,0,0,0.1)' }} />
-              <span style={{ fontSize: 10, color: 'rgba(139,0,0,0.25)', fontFamily: 'monospace', letterSpacing: 3 }}>{t.where}</span>
-              <div style={{ flex: 1, height: 1, background: 'rgba(139,0,0,0.1)' }} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
-              {t.scenes.map(sc => (
-                <button key={sc.id} onClick={() => router.push(`/map?lang=${lang}`)} className="scene-card glass-panel" style={{ padding: mobile ? 12 : 14, textAlign: 'left', cursor: 'pointer' }}>
-                  <div style={{ fontFamily: "var(--font-display), serif", fontSize: 14, color: 'rgba(232,213,176,0.5)', marginBottom: 4 }}>{sc.t}</div>
-                  <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'rgba(232,213,176,0.15)', lineHeight: 1.5 }}>{sc.d}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        <p style={{ marginTop: 16, fontSize: 10, color: '#333', letterSpacing: 3, animation: 'blink 2s infinite' }}>{T[lang].hint}</p>
       </div>
-
-      <p style={{ position: 'absolute', bottom: 8, left: 12, fontSize: 9, color: 'rgba(139,0,0,0.12)', fontFamily: 'monospace', zIndex: 10 }}>{t.ver}</p>
-
-      <style>{`
-        @keyframes fog-drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(30px,-20px) scale(1.15)}}
-        @keyframes rain-fall{from{transform:translateY(-30px) rotate(8deg)}to{transform:translateY(100vh) rotate(8deg)}}
-        @keyframes scanline-move{from{transform:translateY(-2px)}to{transform:translateY(100vh)}}
-        @keyframes dust-float{0%{transform:translate(0,0);opacity:.3}50%{opacity:.6}100%{transform:translate(15px,-20px);opacity:.2}}
-        @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-        @keyframes pulse-text{0%,100%{opacity:.4}50%{opacity:1}}
-      `}</style>
     </div>
   )
 }
