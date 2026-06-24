@@ -1,10 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Fragment } from "./types";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
-
 const SYSTEM_PROMPT = `Eres el narrador de Mongli Game, un juego noir de amnesia psicológica.
 Escribe en primera persona del personaje (sin nombre).
 Tono: oscuro, poético, perturbador. Frases cortas. Años 40 digitales.
@@ -40,7 +36,7 @@ function buildContext(history: Fragment[], currentFragmentId: number): string {
     context += "No hay historial previo. Este es el primer fragmento.";
   } else {
     context += "Historial reciente:\n";
-    recent.forEach((f, i) => {
+    recent.forEach((f) => {
       context += `--- Fragmento #${f.id} ---\n`;
       context += `Texto: ${f.text}\n`;
       context += `Decisión tomada: ${f.choice_made}\n`;
@@ -69,6 +65,12 @@ export async function generateFragment(
   traces: string[];
   choices: { id: string; text: string; tone: "dark" | "light" }[];
 }> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error("ANTHROPIC_API_KEY is not set");
+  }
+
+  const anthropic = new Anthropic({ apiKey });
   const context = buildContext(history, fragmentId);
 
   const message = await anthropic.messages.create({

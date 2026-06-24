@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateFragment } from "@/lib/claude";
 import { uploadFragment } from "@/lib/og-storage";
-import { Fragment, GenerateRequest } from "@/lib/types";
+import { Fragment } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -12,8 +12,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body: GenerateRequest = await request.json();
-    const { scene, choice, history, fragment_id } = body;
+    const body = await request.json();
+    const scene = body.scene || "Una habitación oscura";
+    const choice = body.choice || "";
+    const history: Fragment[] = body.history || [];
+    const fragment_id = body.fragment_id || history.length + 1;
 
     const aiResult = await generateFragment(scene, choice, history, fragment_id);
 
