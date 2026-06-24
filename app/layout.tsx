@@ -1,40 +1,22 @@
 import type { Metadata } from "next";
-import { Special_Elite, IBM_Plex_Mono, Creepster } from "next/font/google";
+import { Special_Elite, IBM_Plex_Mono, Creepster, VT323 } from "next/font/google";
 import Providers from "@/components/Providers";
 import "./globals.css";
 
-const specialElite = Special_Elite({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-display",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  weight: ["400", "500", "700"],
-  subsets: ["latin"],
-  variable: "--font-mono",
-});
-
-const creepster = Creepster({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-horror",
-});
+const specialElite = Special_Elite({ weight: "400", subsets: ["latin"], variable: "--font-display" });
+const ibmPlexMono = IBM_Plex_Mono({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-mono" });
+const creepster = Creepster({ weight: "400", subsets: ["latin"], variable: "--font-horror" });
+const vt323 = VT323({ weight: "400", subsets: ["latin"], variable: "--font-terminal" });
 
 export const metadata: Metadata = {
   title: "MONGLI — Tus recuerdos, on-chain",
-  description:
-    "Juego narrativo de amnesia psicológica. La IA escribe tu historia, la blockchain la guarda para siempre.",
+  description: "Juego narrativo de amnesia psicológica. La IA escribe tu historia, la blockchain la guarda para siempre.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${specialElite.variable} ${ibmPlexMono.variable} ${creepster.variable}`}>
-      <body className="font-mono bg-black text-[#e8d5b0] min-h-screen antialiased">
+    <html lang="es" className={`${specialElite.variable} ${ibmPlexMono.variable} ${creepster.variable} ${vt323.variable}`}>
+      <body className="font-mono bg-black text-[#e8d5b0] min-h-screen antialiased" style={{ cursor: 'none' }}>
         <Providers>{children}</Providers>
       </body>
     </html>

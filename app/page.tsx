@@ -1,205 +1,240 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
-import dynamic from "next/dynamic";
-import WalletButton from "@/components/WalletButton";
-import CSSRain from "@/components/CSSRain";
-import FogLayer from "@/components/FogLayer";
-import FloatingDust from "@/components/FloatingDust";
-import GlitchFlash from "@/components/GlitchFlash";
-import BloodCursor from "@/components/BloodCursor";
-import PixelSprite from "@/components/PixelSprite";
-import { audioEngine } from "@/lib/ambientAudio";
-import { t, Lang } from "@/lib/i18n";
-import { INITIAL_SCENES } from "@/lib/types";
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAccount } from 'wagmi'
+import WalletButton from '@/components/WalletButton'
+import SkullHero from '@/components/SkullHero'
+import Cursor from '@/components/Cursor'
+import { audioEngine } from '@/lib/audioEngine'
 
-const Skull3D = dynamic(() => import("@/components/Skull3D"), { ssr: false });
+const TR = {
+  es: {
+    title: 'MONGLI',
+    sub: 'Alguien tomó tus recuerdos. Recupéralos antes de que sea tarde.',
+    btn: 'RECUPERA TU IDENTIDAD',
+    wake: 'TOCA PARA DESPERTAR',
+    where: '¿ Dónde despertar ?',
+    ver: 'MONGLI v0.7 // Claude AI + 0G Chain',
+    scenes: [
+      { id: 'alley', t: 'El callejón', d: 'Despiertas en un callejón oscuro. La lluvia golpea el asfalto.' },
+      { id: 'office', t: 'La oficina', d: 'Un escritorio viejo. Una lámpara parpadea. Hay una foto boca abajo.' },
+      { id: 'train', t: 'El tren', d: 'El vagón está vacío. Afuera es de noche. No recuerdas el boleto.' },
+    ],
+  },
+  en: {
+    title: 'MONGLI',
+    sub: 'Someone took your memories. Take them back before it\'s too late.',
+    btn: 'RECLAIM YOUR IDENTITY',
+    wake: 'TAP TO AWAKEN',
+    where: 'Where to awaken?',
+    ver: 'MONGLI v0.7 // Claude AI + 0G Chain',
+    scenes: [
+      { id: 'alley', t: 'The alley', d: 'You wake in a dark alley. Rain hits the pavement.' },
+      { id: 'office', t: 'The office', d: 'An old desk. A lamp flickers. A photo face-down.' },
+      { id: 'train', t: 'The train', d: 'Empty car. Night outside. You don\'t remember the ticket.' },
+    ],
+  },
+}
+
+const FOG_BLOBS = Array.from({ length: 8 }, (_, i) => ({
+  left: `${10 + (i * 12) % 80}%`,
+  top: `${15 + (i * 17) % 65}%`,
+  w: 200 + (i * 37) % 200,
+  dur: 8 + (i * 1.3),
+  delay: i * 0.8,
+}))
+
+const RAIN_DROPS = Array.from({ length: 30 }, (_, i) => ({
+  left: `${(i * 3.4) % 100}%`,
+  h: 15 + (i * 7) % 25,
+  dur: 0.6 + (i * 0.03),
+  delay: (i * 0.15) % 2,
+}))
+
+const DUST = Array.from({ length: 20 }, (_, i) => ({
+  left: `${(i * 5.1) % 100}%`,
+  top: `${(i * 7.3) % 100}%`,
+  size: 2 + (i % 3),
+  dur: 6 + (i * 0.8),
+  delay: i * 0.4,
+  color: i % 5 === 0 ? 'rgba(139,0,0,0.3)' : 'rgba(196,146,58,0.15)',
+}))
 
 export default function Home() {
-  const { isConnected } = useAccount();
-  const router = useRouter();
-  const [audioOn, setAudioOn] = useState(false);
-  const [volume, setVolume] = useState(0.4);
-  const [needsClick, setNeedsClick] = useState(true);
-  const [lang, setLang] = useState<Lang>("es");
+  const { isConnected } = useAccount()
+  const router = useRouter()
+  const [lang, setLang] = useState<'es' | 'en'>('es')
+  const [audioOn, setAudioOn] = useState(false)
+  const [volume, setVolume] = useState(0.4)
+  const [awake, setAwake] = useState(false)
+  const [subText, setSubText] = useState('')
+  const [subDone, setSubDone] = useState(false)
+
+  const t = TR[lang]
 
   useEffect(() => {
-    const saved = localStorage.getItem("mongli-lang") as Lang | null;
-    if (saved === "en" || saved === "es") setLang(saved);
-  }, []);
+    const s = localStorage.getItem('mongli-lang') as 'es' | 'en' | null
+    if (s === 'en' || s === 'es') setLang(s)
+  }, [])
+
+  const wake = useCallback(() => {
+    audioEngine.start()
+    setAudioOn(true)
+    setAwake(true)
+  }, [])
 
   useEffect(() => {
-    try {
-      audioEngine.start();
-      if (audioEngine.isRunning()) {
-        setAudioOn(true);
-        setNeedsClick(false);
-      } else {
-        setNeedsClick(true);
-      }
-    } catch {
-      setNeedsClick(true);
-    }
-  }, []);
+    if (!awake) return
+    const full = t.sub
+    let i = 0
+    setSubText('')
+    setSubDone(false)
+    const iv = setInterval(() => {
+      if (i < full.length) { setSubText(full.slice(0, i + 1)); i++ }
+      else { clearInterval(iv); setSubDone(true) }
+    }, 35)
+    return () => clearInterval(iv)
+  }, [awake, t.sub])
 
-  const handleWake = () => {
-    audioEngine.start();
-    setAudioOn(true);
-    setNeedsClick(false);
-  };
+  const toggleLang = () => {
+    const nl = lang === 'es' ? 'en' : 'es'
+    setLang(nl)
+    localStorage.setItem('mongli-lang', nl)
+  }
 
-  const handleLang = (l: Lang) => {
-    setLang(l);
-    localStorage.setItem("mongli-lang", l);
-  };
-
-  const L = t[lang];
-
-  if (needsClick) {
+  if (!awake) {
     return (
-      <div onClick={handleWake} style={{ width: "100vw", height: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <BloodCursor />
-        <p style={{ fontFamily: "'Special Elite', serif", fontSize: "clamp(18px, 4vw, 28px)", color: "#8B0000", animation: "pulse-text 2s ease-in-out infinite", letterSpacing: 4, textAlign: "center" }}>
-          {L.tapToWake}
-        </p>
+      <div onClick={wake} style={{ position: 'fixed', inset: 0, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Cursor />
+        <p style={{ fontFamily: "'Special Elite', serif", fontSize: 'clamp(18px, 4vw, 28px)', color: '#8B0000', animation: 'pulse-text 2s ease-in-out infinite', letterSpacing: 4 }}>{t.wake}</p>
+        <style>{`@keyframes pulse-text{0%,100%{opacity:.4}50%{opacity:1}}`}</style>
       </div>
-    );
+    )
   }
 
   return (
-    <div style={{ width: "100vw", height: "100vh", overflow: "hidden", position: "relative", background: "#000" }}>
-      <BloodCursor />
+    <div style={{ position: 'fixed', inset: 0, background: '#000', overflow: 'hidden' }}>
+      <Cursor />
 
-      {/* Background layers */}
-      <div className="absolute inset-0" style={{ zIndex: 0, background: "radial-gradient(ellipse at center, #1a0000 0%, #000 55%)" }} />
-      <FogLayer />
-      <CSSRain />
-      <div className="static-noise absolute inset-0" style={{ zIndex: 2 }} />
-      <div className="scanlines absolute inset-0" style={{ zIndex: 3 }} />
-      <div className="absolute inset-0" style={{ zIndex: 4, pointerEvents: "none", boxShadow: "inset 0 0 200px #000, inset 0 0 100px rgba(0,0,0,0.8)" }} />
-      <FloatingDust />
-      <GlitchFlash />
+      {/* Radial background */}
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, #1a0000 0%, #000 55%)', zIndex: 0 }} />
 
-      {/* 3D Skull background */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 1, opacity: 0.35 }}>
-        <div style={{ width: "60vmin", height: "60vmin" }}>
-          <Skull3D />
-        </div>
+      {/* Fog blobs */}
+      {FOG_BLOBS.map((f, i) => (
+        <div key={`fog${i}`} style={{
+          position: 'absolute', left: f.left, top: f.top, width: f.w, height: f.w * 0.6,
+          borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(139,0,0,0.08), transparent 70%)',
+          filter: 'blur(60px)', pointerEvents: 'none', zIndex: 1,
+          animation: `fog-drift ${f.dur}s ease-in-out ${f.delay}s infinite alternate`,
+        }} />
+      ))}
+
+      {/* Rain */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 2 }}>
+        {RAIN_DROPS.map((r, i) => (
+          <div key={`rain${i}`} style={{
+            position: 'absolute', left: r.left, top: -30, width: 1, height: r.h,
+            background: 'linear-gradient(to bottom, transparent, rgba(150,160,180,0.25))',
+            animation: `rain-fall ${r.dur}s linear ${r.delay}s infinite`,
+            transform: 'rotate(8deg)',
+          }} />
+        ))}
       </div>
 
-      {/* HUD top bar */}
-      <div className="fixed top-0 left-0 right-0 flex items-center justify-between px-4 py-2" style={{ zIndex: 50 }}>
-        {/* Volume */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => { const on = audioEngine.toggle(); setAudioOn(on); }}
-            className="font-mono text-[10px] text-red-400/40 hover:text-red-400"
-            style={{ background: "none", border: "none", padding: "4px" }}
-            aria-label={audioOn ? L.audioOn : L.audioOff}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {audioOn ? (
-                <><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></>
-              ) : (
-                <><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></>
-              )}
-            </svg>
-          </button>
-          {audioOn && (
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={(e) => { const v = parseFloat(e.target.value); setVolume(v); audioEngine.setVolume(v); }}
-              className="volume-slider"
-              aria-label="Volume"
-            />
-          )}
-        </div>
+      {/* Scanline */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 3, overflow: 'hidden' }}>
+        <div style={{ width: '100%', height: 2, background: 'rgba(139,0,0,0.06)', animation: 'scanline-move 4s linear infinite' }} />
+      </div>
 
-        {/* Language toggle */}
-        <div className="lang-toggle">
-          <button className={lang === "es" ? "active" : ""} onClick={() => handleLang("es")}>ES</button>
-          <button className={lang === "en" ? "active" : ""} onClick={() => handleLang("en")}>EN</button>
+      {/* Static noise */}
+      <div className="static-noise" style={{ position: 'absolute', inset: 0, zIndex: 3 }} />
+
+      {/* Vignette */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 4, pointerEvents: 'none', boxShadow: 'inset 0 0 200px #000, inset 0 0 100px rgba(0,0,0,0.8)' }} />
+
+      {/* Dust particles */}
+      {DUST.map((d, i) => (
+        <div key={`dust${i}`} style={{
+          position: 'absolute', left: d.left, top: d.top, width: d.size, height: d.size,
+          borderRadius: '50%', background: d.color, pointerEvents: 'none', zIndex: 5,
+          animation: `dust-float ${d.dur}s ease-in-out ${d.delay}s infinite alternate`,
+        }} />
+      ))}
+
+      {/* HUD */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', zIndex: 50 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={() => { const on = audioEngine.toggle(); setAudioOn(on) }} style={{ background: 'none', border: 'none', padding: 4, color: '#8B0000', fontSize: 12, opacity: 0.6 }}>
+            {audioOn ? '🔊' : '🔇'}
+          </button>
+          {audioOn && <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => { const v = +e.target.value; setVolume(v); audioEngine.setVolume(v) }} className="volume-slider" />}
         </div>
+        <button onClick={toggleLang} style={{ background: 'transparent', border: '1px solid #1a0000', color: '#444', fontSize: 10, padding: '3px 8px', fontFamily: 'monospace' }}>{lang.toUpperCase()}</button>
       </div>
 
       {/* Main content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-4" style={{ zIndex: 10 }}>
-        <motion.h1
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 2 }}
-          className="glitch-title font-[family-name:var(--font-display)] hover-shake mb-3 select-none"
-          data-text={L.title}
-        >
-          {L.title}
-        </motion.h1>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: '0 16px' }}>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="text-center mb-3">
-          <div className="w-40 h-[1px] bg-gradient-to-r from-transparent via-red-800/30 to-transparent mx-auto mb-4" />
-          <p className="font-mono text-sm text-red-200/35 max-w-md mx-auto">
-            {L.subtitle}
+        {/* Skull */}
+        <div style={{ marginBottom: 8, opacity: 0.85, animation: 'float 4s ease-in-out infinite' }}>
+          <SkullHero size={320} />
+        </div>
+
+        {/* Title */}
+        <h1 className="glitch-title" data-text={t.title} style={{ fontFamily: "var(--font-display, 'Special Elite'), serif", marginBottom: 8, lineHeight: 1 }}>
+          {t.title}
+        </h1>
+
+        {/* Subtitle typewriter */}
+        <div style={{ width: 340, height: 40, marginBottom: 12 }}>
+          <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(139,0,0,0.3), transparent)', marginBottom: 12 }} />
+          <p style={{ fontFamily: 'monospace', fontSize: 12, color: 'rgba(232,213,176,0.35)', textAlign: 'center', lineHeight: 1.6 }}>
+            {subText}{!subDone && <span style={{ color: '#8B0000', animation: 'blink 0.6s infinite' }}>▌</span>}
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }} className="flex items-end gap-6 my-4">
-          {(["detective", "witness", "shadow"] as const).map((type, i) => (
-            <div key={type} className="flex flex-col items-center">
-              <div style={{ animation: `sprite-idle ${1.5 + i * 0.3}s ease-in-out infinite` }}>
-                <PixelSprite type={type} size={80} />
-              </div>
-              <div className="char-shadow mt-1" />
-            </div>
-          ))}
-        </motion.div>
+        {/* 0G indicator */}
+        <p style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(0,255,65,0.2)', marginBottom: 12 }}>
+          <span style={{ color: 'rgba(0,255,65,0.35)' }}>●</span> 0G Galileo Testnet
+        </p>
 
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3 }} className="text-[10px] font-mono text-green-500/25 mb-3">
-          <span className="text-green-400/40">●</span> 0G Galileo Testnet
-        </motion.p>
+        {/* Wallet / CTA */}
+        <WalletButton />
 
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.5 }} className="hover-shake">
-          <WalletButton />
-        </motion.div>
-
+        {/* Scene selection */}
         {isConnected && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="w-full max-w-2xl mt-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-1 h-[1px] bg-red-900/15" />
-              <p className="text-[10px] text-red-500/25 font-mono uppercase tracking-[0.3em]">{L.whereToWake}</p>
-              <div className="flex-1 h-[1px] bg-red-900/15" />
+          <div style={{ width: '100%', maxWidth: 640, marginTop: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(139,0,0,0.1)' }} />
+              <span style={{ fontSize: 10, color: 'rgba(139,0,0,0.2)', fontFamily: 'monospace', letterSpacing: 3 }}>{t.where}</span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(139,0,0,0.1)' }} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {INITIAL_SCENES.map((sc, i) => {
-                const sceneKey = sc.id as keyof typeof L.scenes;
-                const sceneT = L.scenes[sceneKey];
-                return (
-                  <motion.button
-                    key={sc.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 + i * 0.15 }}
-                    onClick={() => router.push(`/game?scene=${sc.id}&lang=${lang}`)}
-                    className="scene-card glass-panel p-4 text-left hover-shake"
-                  >
-                    <h3 className="relative font-[family-name:var(--font-display)] text-base text-red-200/50 mb-1 z-10 transition-colors">{sceneT?.title || sc.title}</h3>
-                    <p className="relative font-mono text-[10px] text-red-200/12 leading-relaxed z-10 transition-colors">{sceneT?.desc || sc.description}</p>
-                  </motion.button>
-                );
-              })}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              {t.scenes.map((sc) => (
+                <button key={sc.id} onClick={() => router.push(`/game?scene=${sc.id}&lang=${lang}`)}
+                  className="scene-card glass-panel" style={{ padding: 14, textAlign: 'left', cursor: 'pointer' }}>
+                  <div style={{ fontFamily: "var(--font-display), serif", fontSize: 14, color: 'rgba(232,213,176,0.45)', marginBottom: 4 }}>{sc.t}</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'rgba(232,213,176,0.12)', lineHeight: 1.5 }}>{sc.d}</div>
+                </button>
+              ))}
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
 
-      <p className="absolute bottom-3 left-3 text-[9px] text-red-900/15 font-mono tracking-wider" style={{ zIndex: 10 }}>
-        {L.version}
-      </p>
+      {/* Version */}
+      <p style={{ position: 'absolute', bottom: 8, left: 12, fontSize: 9, color: 'rgba(139,0,0,0.12)', fontFamily: 'monospace', zIndex: 10 }}>{t.ver}</p>
+
+      <style>{`
+        @keyframes fog-drift { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(30px,-20px) scale(1.15)} }
+        @keyframes rain-fall { from{transform:translateY(-30px) rotate(8deg)} to{transform:translateY(100vh) rotate(8deg)} }
+        @keyframes scanline-move { from{transform:translateY(-2px)} to{transform:translateY(100vh)} }
+        @keyframes dust-float { 0%{transform:translate(0,0);opacity:.3} 50%{opacity:.6} 100%{transform:translate(${Math.random()>0.5?'':'-'}15px, -20px);opacity:.2} }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes pulse-text { 0%,100%{opacity:.4} 50%{opacity:1} }
+      `}</style>
     </div>
-  );
+  )
 }
