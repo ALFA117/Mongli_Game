@@ -2,41 +2,40 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Cursor from '@/components/Cursor'
+import dynamic from 'next/dynamic'
 import { audioEngine } from '@/lib/audioEngine'
+
+const Cursor = dynamic(() => import('@/components/Cursor'), { ssr: false })
 
 const NODES = 10
 const SPEED = 8
-
-const COLORS = { bg: '#000', red: '#8B0000', redB: '#cc0000', amber: '#C4923A', text: '#e8d5b0', muted: '#444', green: '#00ff41', border: '#1a0000' }
+const C = { bg: '#000', red: '#8B0000', redB: '#cc0000', amber: '#C4923A', text: '#f0e0c0', muted: '#666', green: '#00ff41', border: '#2a0000' }
 
 const TR = {
   es: {
     fragment: 'FRAGMENTO', acts: ['ACTO I — LA AMNESIA', 'ACTO II — EL DESDOBLAMIENTO', 'ACTO III — LA REVELACIÓN'],
     access: '▶ ACCEDER AL RECUERDO', choose: '— ELIGE TU DESTINO —', stored: '✓ GUARDADO EN 0G',
     loading: ['CONECTANDO A 0G...', 'IA PROCESANDO...', 'RECUPERANDO MEMORIA...'],
-    cA: 'Recordar con culpa', cB: 'Olvidar y seguir',
-    move: 'WASD o flechas', interact: 'E interactuar', complete: '— FIN DE LA HISTORIA —', waiting: 'UN RECUERDO ESPERA EN ESTE LUGAR',
+    cA: 'Recordar con culpa', cB: 'Olvidar y seguir', map: 'MAPA DE RECUERDOS',
+    move: 'WASD para moverte · E para interactuar', complete: '— FIN DE LA HISTORIA —', waiting: 'UN RECUERDO ESPERA EN ESTE LUGAR',
   },
   en: {
     fragment: 'FRAGMENT', acts: ['ACT I — THE AMNESIA', 'ACT II — THE SPLIT', 'ACT III — THE REVELATION'],
     access: '▶ ACCESS MEMORY', choose: '— CHOOSE YOUR FATE —', stored: '✓ SAVED ON 0G',
     loading: ['CONNECTING TO 0G...', 'AI PROCESSING...', 'RECOVERING MEMORY...'],
-    cA: 'Remember with guilt', cB: 'Forget and move on',
-    move: 'WASD or arrows', interact: 'E interact', complete: '— END OF STORY —', waiting: 'A MEMORY AWAITS',
+    cA: 'Remember with guilt', cB: 'Forget and move on', map: 'MEMORY MAP',
+    move: 'WASD to move · E to interact', complete: '— END OF STORY —', waiting: 'A MEMORY AWAITS',
   },
 }
 
 const NP = [
-  { x: 60, y: 40 }, { x: 170, y: 80 }, { x: 80, y: 135 }, { x: 185, y: 180 }, { x: 65, y: 235 },
-  { x: 175, y: 280 }, { x: 75, y: 335 }, { x: 185, y: 380 }, { x: 80, y: 430 }, { x: 180, y: 475 },
+  { x: 60, y: 30 }, { x: 160, y: 70 }, { x: 60, y: 120 }, { x: 160, y: 160 }, { x: 60, y: 210 },
+  { x: 160, y: 250 }, { x: 60, y: 300 }, { x: 160, y: 340 }, { x: 60, y: 390 }, { x: 160, y: 430 },
 ]
 
 function GameContent() {
   const sp = useSearchParams()
-  const il = (sp.get('lang') || 'es') as 'es' | 'en'
-
-  const [lang, setLang] = useState<'es' | 'en'>(il)
+  const [lang, setLang] = useState<'es' | 'en'>((sp.get('lang') || 'es') as 'es' | 'en')
   const [pp, setPp] = useState(0)
   const [shP, setShP] = useState(9)
   const [display, setDisplay] = useState('')
@@ -62,8 +61,7 @@ function GameContent() {
   const t = TR[lang]
   const act = pp < 5 ? 0 : pp < 8 ? 1 : 2
 
-  const startA = useCallback(() => { audioEngine.start(); }, [])
-
+  const startA = useCallback(() => { audioEngine.start() }, [])
   useEffect(() => { if (audioEngine.isRunning()) audioEngine.setVolume(vol) }, [vol])
 
   const tw = useCallback((text: string) => {
@@ -122,77 +120,96 @@ function GameContent() {
 
   useEffect(() => { const iv = setInterval(() => { setShP(p => Math.max(p - 1, pp + 1)) }, 8000); return () => clearInterval(iv) }, [pp])
 
-  const pick = (o: 'A' | 'B') => {
-    const c = o === 'A' ? cA : cB
-    setDisplay(''); setShowC(false); setHasFrag(false)
-    if (pp < NODES - 1) setPp(p => p + 1)
-    gen(c)
-  }
-
+  const pick = (o: 'A' | 'B') => { const c = o === 'A' ? cA : cB; setDisplay(''); setShowC(false); setHasFrag(false); if (pp < NODES - 1) setPp(p => p + 1); gen(c) }
   const onTS = (e: React.TouchEvent) => { setTouchY(e.touches[0].clientY) }
-  const onTM = (e: React.TouchEvent) => {
-    if (touchY === null) return
-    const dy = e.touches[0].clientY - touchY
-    if (Math.abs(dy) > 30) { setPp(p => dy < 0 ? Math.min(NODES - 1, p + 1) : Math.max(0, p - 1)); setTouchY(e.touches[0].clientY) }
-  }
-  const onTE = () => { setTouchY(null) }
+  const onTM = (e: React.TouchEvent) => { if (touchY === null) return; const dy = e.touches[0].clientY - touchY; if (Math.abs(dy) > 30) { setPp(p => dy < 0 ? Math.min(NODES - 1, p + 1) : Math.max(0, p - 1)); setTouchY(e.touches[0].clientY) } }
 
   return (
-    <div onClick={startA} onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}
-      style={{ position: 'fixed', inset: 0, background: COLORS.bg, display: 'flex', flexDirection: 'column', fontFamily: '"Special Elite", Georgia, serif', color: COLORS.text, overflow: 'hidden', userSelect: 'none' }}>
+    <div onClick={startA} onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={() => setTouchY(null)}
+      style={{ position: 'fixed', inset: 0, background: C.bg, display: 'flex', flexDirection: 'column', fontFamily: '"Special Elite", Georgia, serif', color: C.text, overflow: 'hidden', userSelect: 'none' }}>
       <Cursor />
 
-      {/* TOP */}
-      <div style={{ flexShrink: 0, height: 48, background: '#050000', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', gap: 8 }}>
+      {/* TOPBAR */}
+      <div style={{ flexShrink: 0, height: 48, background: '#0a0000', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={COLORS.muted} strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-          <input type="range" min="0" max="1" step="0.01" value={vol} onChange={e => setVol(+e.target.value)} style={{ width: 60, accentColor: COLORS.red }} />
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          <input type="range" min="0" max="1" step="0.01" value={vol} onChange={e => setVol(+e.target.value)} style={{ width: 60, accentColor: C.red }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ color: COLORS.red, fontSize: 15, letterSpacing: 4, fontWeight: 'bold' }}>MONGLI</span>
-          <span style={{ color: COLORS.muted, fontSize: 10, fontFamily: 'monospace' }}>{t.fragment} {String(pp + 1).padStart(2, '0')}/{NODES}</span>
-          <span style={{ color: '#2a0000', fontSize: 9 }}>{t.acts[act]}</span>
+          <span style={{ fontFamily: "var(--font-horror, 'Creepster'), cursive", color: C.redB, fontSize: 20, letterSpacing: 4, textShadow: '0 0 10px #ff0000, 0 0 20px #8B0000' }}>MONGLI</span>
+          <span style={{ color: C.amber, fontSize: 11, fontFamily: 'monospace' }}>{t.fragment} {String(pp + 1).padStart(2, '0')}/{NODES}</span>
+          <span style={{ color: C.amber, fontSize: 10, textShadow: '0 0 6px rgba(196,146,58,0.4)' }}>{t.acts[act]}</span>
         </div>
-        <button onClick={e => { e.stopPropagation(); setLang(l => l === 'es' ? 'en' : 'es') }} style={{ background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.muted, fontSize: 10, padding: '3px 8px', cursor: 'pointer', fontFamily: 'monospace' }}>{lang.toUpperCase()}</button>
+        <button onClick={e => { e.stopPropagation(); setLang(l => l === 'es' ? 'en' : 'es') }} style={{ background: 'transparent', border: `1px solid ${C.border}`, color: C.muted, fontSize: 10, padding: '3px 8px', cursor: 'pointer', fontFamily: 'monospace' }}>{lang.toUpperCase()}</button>
       </div>
 
       {/* PROGRESS */}
       <div style={{ height: 2, background: '#0a0a0a', flexShrink: 0 }}>
-        <div style={{ height: '100%', background: `linear-gradient(to right, ${COLORS.red}, ${COLORS.amber})`, width: `${((pp + 1) / NODES) * 100}%`, transition: 'width 0.6s' }} />
+        <div style={{ height: '100%', background: `linear-gradient(to right, ${C.red}, ${C.amber})`, width: `${((pp + 1) / NODES) * 100}%`, transition: 'width 0.6s' }} />
       </div>
 
       {/* MAIN */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
 
-        {/* MAP */}
-        <div style={{ flexShrink: 0, width: 280, background: '#020000', borderRight: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden', paddingTop: 10 }}>
-          <div style={{ fontSize: 8, letterSpacing: 3, color: '#2a0000', marginBottom: 3 }}>{t.move}</div>
-          <div style={{ fontSize: 7, letterSpacing: 2, color: '#1a0000', marginBottom: 6 }}>{t.interact}</div>
-          <svg width="260" height="520" style={{ overflow: 'visible' }}>
-            {NP.map((n, i) => {
-              if (i === 0) return null
-              const p = NP[i - 1]
-              return <line key={`l${i}`} x1={p.x} y1={p.y} x2={n.x} y2={n.y} stroke={i <= pp ? COLORS.red : '#111'} strokeWidth={i <= pp ? 1.5 : 1} strokeDasharray={i <= pp ? '' : '4 4'} />
-            })}
-            {NP.map((n, i) => {
-              const isA = i === pp, isD = i < pp, isS = i === shP
-              const r = 15
-              const pts = Array.from({ length: 6 }, (_, k) => { const a = (Math.PI / 180) * (60 * k - 30); return `${n.x + r * Math.cos(a)},${n.y + r * Math.sin(a)}` }).join(' ')
+        {/* MAP — div-based, not SVG */}
+        <div style={{ flexShrink: 0, width: 280, background: '#050000', borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden', padding: '10px 0' }}>
+          <div style={{ fontSize: 10, letterSpacing: 3, color: C.red, marginBottom: 4, textShadow: '0 0 8px #8B0000' }}>{t.map}</div>
+          <div style={{ fontSize: 9, letterSpacing: 1, color: '#555', marginBottom: 8, animation: 'pulse-text 3s ease-in-out infinite' }}>{t.move}</div>
+
+          <div style={{ position: 'relative', width: 240, height: 480, background: 'linear-gradient(180deg, #0a0000 0%, #050000 100%)', border: '1px solid #2a0000', borderRadius: 4, flexShrink: 0, overflow: 'hidden' }}>
+            {/* Connection lines */}
+            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+              {NP.map((n, i) => i > 0 && (
+                <line key={`ln${i}`} x1={NP[i - 1].x + 14} y1={NP[i - 1].y + 14} x2={n.x + 14} y2={n.y + 14}
+                  stroke={i <= pp ? '#8B0000' : '#1a1a1a'} strokeWidth={i <= pp ? 2 : 1} strokeDasharray={i > pp ? '4,4' : ''} />
+              ))}
+            </svg>
+
+            {/* Nodes */}
+            {NP.map((pos, i) => {
+              const isA = i === pp, isD = i < pp
               return (
-                <g key={i}>
-                  {isA && <circle cx={n.x} cy={n.y} r={24} fill="none" stroke={COLORS.red} strokeWidth={1} opacity={0.3}><animate attributeName="r" values="18;26;18" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite"/></circle>}
-                  <polygon points={pts} fill={isA ? COLORS.red : isD ? '#1a0800' : '#0a0a0a'} stroke={isA ? '#ff2200' : isD ? COLORS.red : '#222'} strokeWidth={isA ? 2 : 1}/>
-                  <text x={n.x} y={n.y + 4} textAnchor="middle" fill={isD ? COLORS.amber : isA ? '#fff' : '#333'} fontSize="9" fontFamily="monospace">{isD ? '✓' : isA ? '◆' : i + 1}</text>
-                  {/* Detective */}
-                  {isA && <text x={n.x} y={n.y - 22} textAnchor="middle" fontSize="20" style={{ filter: 'drop-shadow(0 0 6px #8B0000)' }}>🕵️</text>}
-                  {/* Witness */}
-                  {i === 3 && !isD && <g><text x={n.x} y={n.y - 20} textAnchor="middle" fontSize="16">🧥</text><text x={n.x} y={n.y - 34} textAnchor="middle" fontSize="10" fill={COLORS.amber} fontFamily="monospace" fontWeight="bold">!</text></g>}
-                  {/* Shadow */}
-                  {isS && <g><circle cx={n.x} cy={n.y - 18} r={14} fill="rgba(139,0,0,0.07)"><animate attributeName="r" values="12;19;12" dur="1.5s" repeatCount="indefinite"/></circle><text x={n.x} y={n.y - 12} textAnchor="middle" fontSize="16">👤</text></g>}
-                </g>
+                <div key={`nd${i}`} style={{
+                  position: 'absolute', left: pos.x, top: pos.y, width: 28, height: 28, borderRadius: 4,
+                  background: isA ? '#8B0000' : isD ? '#2a0800' : '#111',
+                  border: `1px solid ${isA ? '#ff2200' : isD ? '#8B0000' : '#333'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, color: isD ? C.amber : isA ? '#fff' : '#444', fontFamily: 'monospace',
+                  boxShadow: isA ? '0 0 12px #ff0000, 0 0 24px #8B0000' : 'none',
+                  animation: isA ? 'pulse-red 1.5s infinite' : 'none', zIndex: 2,
+                }}>
+                  {isD ? '✓' : isA ? '◆' : i + 1}
+                </div>
               )
             })}
-          </svg>
+
+            {/* DETECTIVE */}
+            <div style={{
+              position: 'absolute', left: NP[pp].x - 4, top: NP[pp].y - 36,
+              fontSize: 28, lineHeight: 1, zIndex: 5,
+              animation: 'float 1.5s ease-in-out infinite',
+              transition: 'left 0.4s ease, top 0.4s ease',
+              filter: 'drop-shadow(0 0 8px #8B0000)',
+            }}>🕵️</div>
+
+            {/* WITNESS */}
+            {pp < 3 && (
+              <div style={{ position: 'absolute', left: NP[3].x - 4, top: NP[3].y - 38, fontSize: 22, zIndex: 4, animation: 'float 2s ease-in-out infinite' }}>
+                <div style={{ fontSize: 10, color: C.amber, textAlign: 'center', fontWeight: 'bold' }}>!</div>
+                🧥
+              </div>
+            )}
+
+            {/* SHADOW */}
+            <div style={{
+              position: 'absolute', left: NP[Math.min(shP, 9)].x - 4, top: NP[Math.min(shP, 9)].y - 38,
+              fontSize: 22, zIndex: 4, filter: 'drop-shadow(0 0 12px #ff0000)', animation: 'float 1s ease-in-out infinite',
+              transition: 'left 1s ease, top 1s ease',
+            }}>
+              <div style={{ position: 'absolute', width: 50, height: 50, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,0,0,0.3) 0%, transparent 70%)', top: -10, left: -10, animation: 'pulse-red 1s infinite' }} />
+              👤
+            </div>
+          </div>
         </div>
 
         {/* FRAGMENT PANEL */}
@@ -200,45 +217,45 @@ function GameContent() {
           <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
             {!hasFrag && !loading && !display && (
               <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                <div style={{ fontSize: 11, color: '#2a0000', letterSpacing: 4, textAlign: 'center' }}>{t.waiting}</div>
+                <div style={{ fontSize: 12, color: '#3a0000', letterSpacing: 4, textAlign: 'center' }}>{t.waiting}</div>
                 <button onClick={e => { e.stopPropagation(); gen() }}
-                  style={{ background: 'transparent', border: `1px solid ${COLORS.red}`, color: COLORS.red, padding: '12px 32px', fontFamily: '"Special Elite", serif', fontSize: 13, cursor: 'pointer', letterSpacing: 3, transition: 'all 0.3s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = COLORS.red; e.currentTarget.style.color = '#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = COLORS.red }}>
+                  style={{ background: 'transparent', border: `1px solid ${C.red}`, color: C.red, padding: '14px 36px', fontFamily: '"Special Elite", serif', fontSize: 14, cursor: 'pointer', letterSpacing: 3, transition: 'all 0.3s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = C.red; e.currentTarget.style.color = '#fff' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.red }}>
                   {t.access}
                 </button>
-                <div style={{ fontSize: 9, color: '#1a0000', letterSpacing: 2 }}>{t.move} · {t.interact}</div>
+                <div style={{ fontSize: 10, color: '#555', letterSpacing: 1, animation: 'pulse-text 3s ease-in-out infinite' }}>{t.move}</div>
               </div>
             )}
             {loading && (
               <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                {t.loading.map((msg, i) => <div key={i} style={{ fontSize: 11, letterSpacing: 2, color: i === lm ? COLORS.red : '#1a0000', transition: 'color 0.5s', fontFamily: 'monospace' }}>{i <= lm ? '▶' : '·'} {msg}</div>)}
+                {t.loading.map((msg, i) => <div key={i} style={{ fontSize: 11, letterSpacing: 2, color: i === lm ? C.red : '#1a0000', transition: 'color 0.5s', fontFamily: 'monospace' }}>{i <= lm ? '▶' : '·'} {msg}</div>)}
               </div>
             )}
             {display && (
-              <div style={{ background: '#04000a', border: `1px solid ${COLORS.border}`, borderLeft: `3px solid ${COLORS.red}`, padding: '18px 22px', borderRadius: 2 }}>
-                <div style={{ fontSize: 9, color: '#2a0000', letterSpacing: 4, marginBottom: 12, fontFamily: 'monospace' }}>[{t.fragment} {String(pp + 1).padStart(2, '0')} / {NODES}]</div>
-                <p style={{ fontSize: 15, lineHeight: 1.9, color: COLORS.text, margin: 0, whiteSpace: 'pre-wrap' }}>
-                  {display}{typing && <span style={{ color: COLORS.red, animation: 'blink 0.6s infinite' }}>▌</span>}
+              <div style={{ background: '#080005', border: `1px solid ${C.border}`, borderLeft: `3px solid ${C.red}`, padding: '20px 24px', borderRadius: 2 }}>
+                <div style={{ fontSize: 11, color: C.red, letterSpacing: 4, marginBottom: 14, fontFamily: 'monospace' }}>[{t.fragment} {String(pp + 1).padStart(2, '0')} / {NODES}]</div>
+                <p style={{ fontSize: 16, lineHeight: 2.0, color: C.text, margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {display}{typing && <span style={{ color: C.red, animation: 'blink 0.6s infinite' }}>▌</span>}
                 </p>
-                {!typing && sHash && <div style={{ marginTop: 14, paddingTop: 10, borderTop: `1px solid ${COLORS.border}`, fontSize: 10, color: COLORS.green, fontFamily: 'monospace', opacity: 0.7 }}>{t.stored} · {sHash.slice(0, 20)}...</div>}
+                {!typing && sHash && <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.border}`, fontSize: 11, color: C.green, fontFamily: 'monospace', textShadow: '0 0 8px #00ff41' }}>{t.stored} · {sHash.slice(0, 20)}...</div>}
               </div>
             )}
-            {done && !typing && <div style={{ marginTop: 18, textAlign: 'center', fontSize: 12, color: COLORS.red, letterSpacing: 4 }}>{t.complete}</div>}
+            {done && !typing && <div style={{ marginTop: 18, textAlign: 'center', fontSize: 13, color: C.red, letterSpacing: 4 }}>{t.complete}</div>}
           </div>
         </div>
       </div>
 
       {/* CHOICES */}
-      <div style={{ flexShrink: 0, height: showC && !done ? 108 : 0, overflow: 'hidden', transition: 'height 0.5s cubic-bezier(0.4,0,0.2,1)', background: '#030000', borderTop: showC ? `1px solid ${COLORS.border}` : 'none' }}>
+      <div style={{ flexShrink: 0, height: showC && !done ? 108 : 0, overflow: 'hidden', transition: 'height 0.5s cubic-bezier(0.4,0,0.2,1)', background: '#030000', borderTop: showC ? `1px solid ${C.border}` : 'none' }}>
         <div style={{ height: 108, padding: '10px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
-          <div style={{ textAlign: 'center', fontSize: 9, color: '#2a0000', letterSpacing: 4 }}>{t.choose}</div>
+          <div style={{ textAlign: 'center', fontSize: 9, color: '#3a0000', letterSpacing: 4 }}>{t.choose}</div>
           <div style={{ display: 'flex', gap: 10 }}>
-            {([{ o: 'A' as const, l: cA, bc: COLORS.red, hb: COLORS.red }, { o: 'B' as const, l: cB, bc: '#222', hb: '#1a0000' }]).map(({ o, l, bc, hb }) => (
+            {([{ o: 'A' as const, l: cA, bc: C.red }, { o: 'B' as const, l: cB, bc: '#333' }]).map(({ o, l, bc }) => (
               <button key={o} onClick={e => { e.stopPropagation(); pick(o) }}
-                style={{ flex: 1, height: 44, background: 'transparent', border: `1px solid ${bc}`, color: COLORS.text, fontFamily: '"Special Elite", serif', fontSize: 12, cursor: 'pointer', transition: 'all 0.25s', letterSpacing: 1 }}
-                onMouseEnter={e => { e.currentTarget.style.background = hb; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = COLORS.redB }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = COLORS.text; e.currentTarget.style.borderColor = bc }}>
+                style={{ flex: 1, height: 48, background: 'transparent', border: `1px solid ${bc}`, color: C.text, fontFamily: '"Special Elite", serif', fontSize: 13, cursor: 'pointer', transition: 'all 0.25s', letterSpacing: 1, padding: '12px 20px' }}
+                onMouseEnter={e => { e.currentTarget.style.background = o === 'A' ? C.red : '#1a0000'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = C.redB }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.text; e.currentTarget.style.borderColor = bc }}>
                 {l}
               </button>
             ))}
@@ -247,20 +264,21 @@ function GameContent() {
       </div>
 
       {/* Mobile joystick */}
-      <div style={{ position: 'fixed', bottom: 120, left: 16, zIndex: 40, display: 'none' }} className="mobile-joy">
-        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(139,0,0,0.1)', border: '1px solid rgba(139,0,0,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-          <button onClick={() => setPp(p => Math.max(0, p - 1))} style={{ background: 'none', border: 'none', color: '#8B0000', fontSize: 16 }}>▲</button>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <button onClick={() => gen()} style={{ background: 'none', border: 'none', color: '#C4923A', fontSize: 10, fontFamily: 'monospace' }}>E</button>
-          </div>
-          <button onClick={() => setPp(p => Math.min(NODES - 1, p + 1))} style={{ background: 'none', border: 'none', color: '#8B0000', fontSize: 16 }}>▼</button>
+      <div style={{ position: 'fixed', bottom: 120, left: 16, zIndex: 40 }} className="mobile-joy">
+        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(139,0,0,0.08)', border: '1px solid rgba(139,0,0,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+          <button onClick={() => setPp(p => Math.max(0, p - 1))} style={{ background: 'none', border: 'none', color: '#8B0000', fontSize: 18, lineHeight: 1 }}>▲</button>
+          <button onClick={() => gen()} style={{ background: 'none', border: 'none', color: C.amber, fontSize: 10, fontFamily: 'monospace' }}>E</button>
+          <button onClick={() => setPp(p => Math.min(NODES - 1, p + 1))} style={{ background: 'none', border: 'none', color: '#8B0000', fontSize: 18, lineHeight: 1 }}>▼</button>
         </div>
       </div>
 
       <style>{`
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+        @keyframes pulse-red{0%,100%{box-shadow:0 0 8px #ff0000,0 0 16px #8B0000}50%{box-shadow:0 0 16px #ff0000,0 0 32px #8B0000}}
+        @keyframes pulse-text{0%,100%{opacity:.5}50%{opacity:1}}
         ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:#000}::-webkit-scrollbar-thumb{background:#2a0000}
-        @media(max-width:768px){.mobile-joy{display:block!important}}
+        @media(min-width:769px){.mobile-joy{display:none!important}}
       `}</style>
     </div>
   )
