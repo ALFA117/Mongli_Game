@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     galileo: {
       type: "http",
       url: process.env.NEXT_PUBLIC_OG_CHAIN_RPC || "https://evmrpc-testnet.0g.ai",
-      chainId: 16600,
+      chainId: 16602,
       accounts: hasValidKey ? [pk] : [],
     },
   },

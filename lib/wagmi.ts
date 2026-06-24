@@ -2,7 +2,7 @@ import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { defineChain } from "viem";
 
 export const og_galileo = defineChain({
-  id: 16600,
+  id: 16602,
   name: "0G Galileo Testnet",
   nativeCurrency: {
     name: "A0GI",
