@@ -135,7 +135,7 @@ export default function Home() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
               {t.scenes.map(sc => (
-                <button key={sc.id} onClick={() => router.push(`/game?scene=${sc.id}&lang=${lang}`)} className="scene-card glass-panel" style={{ padding: 14, textAlign: 'left', cursor: 'pointer' }}>
+                <button key={sc.id} onClick={() => router.push(`/map?lang=${lang}`)} className="scene-card glass-panel" style={{ padding: 14, textAlign: 'left', cursor: 'pointer' }}>
                   <div style={{ fontFamily: "var(--font-display), serif", fontSize: 14, color: 'rgba(232,213,176,0.5)', marginBottom: 4 }}>{sc.t}</div>
                   <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'rgba(232,213,176,0.15)', lineHeight: 1.5 }}>{sc.d}</div>
                 </button>
