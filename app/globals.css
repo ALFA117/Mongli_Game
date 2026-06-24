@@ -4,7 +4,8 @@
   --background: #000000;
   --foreground: #e8d5b0;
   --accent: #c4923a;
-  --border: #2a2a2a;
+  --blood: #8b0000;
+  --border: #1a1a1a;
 }
 
 @theme inline {
@@ -20,23 +21,41 @@ body {
   color: var(--foreground);
 }
 
+/* Custom crosshair cursor */
+.cursor-crosshair {
+  cursor: crosshair;
+}
+
 ::selection {
   background: #8b000040;
   color: #e8d5b0;
 }
 
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: #000;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #1a0000;
 }
 
+/* Scanlines overlay */
+.scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+  opacity: 0.5;
+}
+
+/* Hover micro-shake */
 .hover-shake {
   transition: transform 0.1s;
 }
@@ -52,6 +71,7 @@ body {
   75% { transform: translate(-1px, -1px) rotate(-0.3deg); }
 }
 
+/* Wallet button glow */
 .wallet-btn {
   animation: wallet-glow 3s ease-in-out infinite;
 }
@@ -61,10 +81,26 @@ body {
     box-shadow: 0 0 10px rgba(139, 0, 0, 0.1), inset 0 0 10px rgba(139, 0, 0, 0.05);
   }
   50% {
-    box-shadow: 0 0 25px rgba(139, 0, 0, 0.3), inset 0 0 15px rgba(139, 0, 0, 0.1);
+    box-shadow: 0 0 30px rgba(139, 0, 0, 0.3), inset 0 0 20px rgba(139, 0, 0, 0.1);
   }
 }
 
-.bg-gradient-radial {
-  background: radial-gradient(circle at center, var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to));
+/* Polaroid card */
+.polaroid-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 40px rgba(139, 0, 0, 0.05);
+}
+
+/* Choice button fill */
+.choice-btn::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  transition: height 0.5s ease;
+}
+
+.choice-btn:hover::before {
+  height: 100%;
 }

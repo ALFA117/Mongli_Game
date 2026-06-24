@@ -12,33 +12,50 @@ interface Props {
 export default function ChoicePanel({ choices, onChoose, disabled }: Props) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.5 }}
-      className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto mt-8"
+      transition={{ delay: 0.6 }}
+      className="mt-8 w-full"
     >
-      {choices.map((choice, i) => (
-        <motion.button
-          key={choice.id}
-          whileHover={disabled ? {} : { scale: 1.02, borderColor: "#c4923a" }}
-          whileTap={disabled ? {} : { scale: 0.98 }}
-          onClick={() => !disabled && onChoose(choice)}
-          disabled={disabled}
-          className={`flex-1 p-4 border text-left transition-all font-mono text-sm
-            ${
-              choice.tone === "dark"
-                ? "border-red-900/40 hover:border-red-700/60 text-red-200/80"
-                : "border-amber-900/40 hover:border-amber-600/60 text-amber-200/80"
-            }
-            ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
-            bg-[#0a0a0a] hover:bg-[#111111]`}
-        >
-          <span className="text-[10px] text-[#c4923a]/40 uppercase block mb-2">
-            Opción {i === 0 ? "A" : "B"}
-          </span>
-          {choice.text}
-        </motion.button>
-      ))}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent to-red-900/30" />
+        <span className="text-[10px] font-mono text-red-500/40 uppercase tracking-[0.3em]">
+          Elige tu destino
+        </span>
+        <div className="flex-1 h-[1px] bg-gradient-to-l from-transparent to-red-900/30" />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {choices.map((choice, i) => (
+          <motion.button
+            key={choice.id}
+            whileHover={disabled ? {} : { scale: 1.01 }}
+            whileTap={disabled ? {} : { scale: 0.99 }}
+            onClick={() => !disabled && onChoose(choice)}
+            disabled={disabled}
+            className={`choice-btn relative w-full p-5 border text-left font-mono text-sm overflow-hidden
+              transition-all duration-300 group
+              ${choice.tone === "dark"
+                ? "border-red-900/30 text-red-200/70 hover:border-red-700/60"
+                : "border-[#c4923a]/30 text-[#e8d5b0]/70 hover:border-[#c4923a]/60"
+              }
+              ${disabled ? "opacity-30 cursor-not-allowed" : "cursor-pointer"}
+              bg-black`}
+          >
+            {/* Fill animation on hover */}
+            <div className={`absolute bottom-0 left-0 w-full h-0 group-hover:h-full transition-all duration-500 ease-out
+              ${choice.tone === "dark" ? "bg-red-950/30" : "bg-[#c4923a]/10"}`}
+            />
+            <span className="relative z-10 flex items-center gap-3">
+              <span className={`text-[10px] uppercase tracking-widest
+                ${choice.tone === "dark" ? "text-red-700/50" : "text-[#c4923a]/50"}`}>
+                {i === 0 ? "A" : "B"}
+              </span>
+              <span className="hover-shake">{choice.text}</span>
+            </span>
+          </motion.button>
+        ))}
+      </div>
     </motion.div>
   );
 }
