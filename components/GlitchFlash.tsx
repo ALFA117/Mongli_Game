@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { playGlitchSound } from "@/lib/ambientAudio";
+import { audioEngine } from "@/lib/ambientAudio";
 
 export default function GlitchFlash() {
   const [flash, setFlash] = useState(false);
@@ -9,7 +9,7 @@ export default function GlitchFlash() {
   useEffect(() => {
     function trigger() {
       setFlash(true);
-      playGlitchSound();
+      audioEngine.playGlitch();
       setTimeout(() => setFlash(false), 60);
       setTimeout(trigger, 8000 + Math.random() * 12000);
     }

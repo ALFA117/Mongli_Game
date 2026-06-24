@@ -3,15 +3,16 @@ import { Fragment } from "./types";
 
 const SYSTEM_PROMPT = `Eres el narrador de Mongli Game, un juego noir de amnesia psicológica.
 Escribe en primera persona del personaje (sin nombre).
-Tono: oscuro, poético, perturbador. Frases cortas. Años 40 digitales.
+Tono: oscuro, poético, perturbador. Frases cortas y punzantes. Años 40 digitales.
 El personaje no sabe quién es. Cada fragmento revela una pieza.
 Mantén coherencia con el historial recibido.
-Longitud: exactamente 80-120 palabras.
+Escribe exactamente 80-100 palabras en español noir.
+Máximo 100 palabras total incluyendo las opciones.
 
 REGLAS NARRATIVAS:
 - Acto I (fragmentos 1-5): Identidad desconocida, fragmentos ambiguos, desorientación
-- Acto II (fragmentos 6-12): Dos identidades posibles emergen (¿héroe o villano?)
-- Acto III (fragmentos 13-15): Síntesis final, revelación única basada en todas las decisiones
+- Acto II (fragmentos 6-8): Dos identidades posibles emergen (¿héroe o villano?)
+- Acto III (fragmentos 9-10): Síntesis final, revelación única basada en todas las decisiones
 
 Responde SOLO en JSON válido con esta estructura exacta:
 {
@@ -28,9 +29,9 @@ Responde SOLO en JSON válido con esta estructura exacta:
 function buildContext(history: Fragment[], currentFragmentId: number): string {
   const recent = history.slice(-3);
   const act =
-    currentFragmentId <= 5 ? "I" : currentFragmentId <= 12 ? "II" : "III";
+    currentFragmentId <= 5 ? "I" : currentFragmentId <= 8 ? "II" : "III";
 
-  let context = `Acto actual: ${act} (fragmento #${currentFragmentId} de 15)\n`;
+  let context = `Acto actual: ${act} (fragmento #${currentFragmentId} de 10)\n`;
 
   if (recent.length === 0) {
     context += "No hay historial previo. Este es el primer fragmento.";

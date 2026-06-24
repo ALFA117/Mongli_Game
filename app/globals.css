@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; cursor: none !important; }
 html, body { width: 100%; height: 100%; overflow: hidden; }
 
 :root {
@@ -8,6 +8,10 @@ html, body { width: 100%; height: 100%; overflow: hidden; }
   --foreground: #e8d5b0;
   --accent: #c4923a;
   --blood: #8b0000;
+  --blood-dark: #660000;
+  --bone: #e8d5b0;
+  --dark: #0a0a0a;
+  --dark-2: #1a1a1a;
 }
 
 @theme inline {
@@ -19,26 +23,25 @@ html, body { width: 100%; height: 100%; overflow: hidden; }
 }
 
 body { background: #000; color: var(--foreground); }
-.cursor-crosshair { cursor: crosshair; }
 ::selection { background: #8b000040; color: #e8d5b0; }
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: #000; }
-::-webkit-scrollbar-thumb { background: #1a0000; }
+::-webkit-scrollbar-thumb { background: #8B0000; border-radius: 2px; }
 
-/* Scanlines — pure CSS */
+/* ═══ Scanlines ═══ */
 .scanlines {
   background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px);
   pointer-events: none;
 }
 
-/* Static noise — CSS only, no canvas */
+/* ═══ Static noise ═══ */
 .static-noise {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   opacity: 0.03;
   pointer-events: none;
 }
 
-/* Rain — CSS only, 20 drops */
+/* ═══ Rain ═══ */
 .rain-container { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .raindrop {
   position: absolute;
@@ -48,7 +51,7 @@ body { background: #000; color: var(--foreground); }
 }
 @keyframes rain-fall { from { transform: translateY(-20px); } to { transform: translateY(100vh); } }
 
-/* Hover shake */
+/* ═══ Hover shake ═══ */
 .hover-shake:hover { animation: micro-shake 0.3s ease-in-out; }
 @keyframes micro-shake {
   0%,100% { transform: translate(0) rotate(0); }
@@ -57,14 +60,14 @@ body { background: #000; color: var(--foreground); }
   75% { transform: translate(-1px,-1px) rotate(-0.3deg); }
 }
 
-/* Wallet glow */
+/* ═══ Wallet glow ═══ */
 .wallet-btn { animation: wallet-glow 3s ease-in-out infinite; }
 @keyframes wallet-glow {
   0%,100% { box-shadow: 0 0 10px rgba(139,0,0,0.1); }
   50% { box-shadow: 0 0 30px rgba(139,0,0,0.3), inset 0 0 15px rgba(139,0,0,0.1); }
 }
 
-/* Blood stains */
+/* ═══ Blood stains ═══ */
 .blood-stain {
   position: absolute;
   border-radius: 40% 60% 55% 45% / 50% 40% 60% 50%;
@@ -73,7 +76,7 @@ body { background: #000; color: var(--foreground); }
   pointer-events: none;
 }
 
-/* Character shadow */
+/* ═══ Character shadow ═══ */
 .char-shadow {
   width: 60px; height: 16px;
   background: rgba(0,0,0,0.5);
@@ -81,13 +84,14 @@ body { background: #000; color: var(--foreground); }
   filter: blur(6px);
 }
 
-/* Glitch title */
+/* ═══ Glitch title ═══ */
 .glitch-title {
   position: relative;
   font-size: clamp(60px, 15vw, 140px);
   letter-spacing: 0.15em;
   color: #e8d5b0;
   animation: glitch-shift 4s ease-in-out infinite alternate;
+  text-shadow: 0 0 40px rgba(139,0,0,0.3), 0 0 80px rgba(139,0,0,0.15);
 }
 .glitch-title::before, .glitch-title::after {
   content: attr(data-text);
@@ -117,7 +121,116 @@ body { background: #000; color: var(--foreground); }
   98%{transform:translate(5px,-2px) skewX(-1deg)}
 }
 
-/* Joystick */
+/* ═══ Blood cursor ═══ */
+@keyframes cursor-pulse {
+  0%,100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.5); opacity: 0.3; }
+}
+@keyframes blood-drop {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  70% { transform: translateY(50px) scale(0.8); opacity: 0.6; }
+  100% { transform: translateY(70px) scale(0.5); opacity: 0; }
+}
+
+/* ═══ Shadow pulse (for pixel sprites) ═══ */
+@keyframes shadow-pulse {
+  0%,100% { transform: scale(1); opacity: 0.15; }
+  50% { transform: scale(1.3); opacity: 0.25; }
+}
+
+/* ═══ Float animation ═══ */
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* ═══ Sprite idle ═══ */
+@keyframes sprite-idle {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* ═══ Blink ═══ */
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* ═══ Spin ═══ */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══ Pulse text ═══ */
+@keyframes pulse-text { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+/* ═══ Glassmorphism panel ═══ */
+.glass-panel {
+  background: rgba(10, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(139, 0, 0, 0.05);
+}
+
+.glass-panel-light {
+  background: rgba(10, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(139, 0, 0, 0.1);
+}
+
+/* ═══ Volume slider ═══ */
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 3px;
+  background: #1a0000;
+  border-radius: 2px;
+  outline: none;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #8B0000;
+  box-shadow: 0 0 6px rgba(139,0,0,0.5);
+  cursor: none !important;
+}
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #8B0000;
+  border: none;
+  box-shadow: 0 0 6px rgba(139,0,0,0.5);
+  cursor: none !important;
+}
+
+/* ═══ Scene card hover ═══ */
+.scene-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s ease;
+}
+.scene-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background: linear-gradient(to top, rgba(139,0,0,0.15), transparent);
+  transition: height 0.7s ease;
+  z-index: 0;
+}
+.scene-card:hover::before {
+  height: 100%;
+}
+.scene-card:hover {
+  border-color: rgba(139,0,0,0.4) !important;
+  box-shadow: 0 0 30px rgba(139,0,0,0.15), inset 0 0 20px rgba(139,0,0,0.05);
+}
+
+/* ═══ Joystick ═══ */
 .joystick-base {
   width: 100px; height: 100px; border-radius: 50%;
   background: rgba(30,30,30,0.7); border: 1px solid rgba(196,146,58,0.2);
@@ -129,4 +242,61 @@ body { background: #000; color: var(--foreground); }
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%,-50%);
   transition: transform 0.05s;
+}
+
+/* ═══ Hexagon node ═══ */
+.hex-node {
+  transition: all 0.3s ease;
+}
+.hex-node:hover {
+  filter: drop-shadow(0 0 8px rgba(139,0,0,0.4));
+}
+
+/* ═══ Choice button ═══ */
+.choice-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.choice-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(139,0,0,0.2), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.choice-btn:hover::after {
+  opacity: 1;
+}
+
+/* ═══ Lang toggle ═══ */
+.lang-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid rgba(139,0,0,0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.lang-toggle button {
+  padding: 2px 8px;
+  font-size: 10px;
+  font-family: monospace;
+  background: transparent;
+  border: none;
+  color: #555;
+  transition: all 0.2s;
+}
+.lang-toggle button.active {
+  background: rgba(139,0,0,0.3);
+  color: #e8d5b0;
+}
+
+/* ═══ Reduced motion ═══ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
