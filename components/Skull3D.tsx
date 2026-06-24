@@ -1,111 +1,161 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import type { MeshPhongMaterial, Mesh } from 'three'
+import type { MeshBasicMaterial } from 'three'
 
 export default function Skull3D({ size = 400 }: { size?: number }) {
-  const mountRef = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!mountRef.current) return
+    if (!ref.current) return
     let raf: number
-    let mouseX = 0, mouseY = 0
-    let cleanup: (() => void) | undefined
+    let mx = 0, my = 0, targetMx = 0, targetMy = 0
+    let destroyed = false
 
     import('three').then(THREE => {
-      if (!mountRef.current) return
-      const W = mountRef.current.clientWidth || size
-      const H = mountRef.current.clientHeight || size
+      if (destroyed || !ref.current) return
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-      renderer.setSize(W, H)
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' })
+      renderer.setSize(size, size)
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.setClearColor(0x000000, 0)
-      mountRef.current.appendChild(renderer.domElement)
+
+      ref.current.appendChild(renderer.domElement)
 
       const scene = new THREE.Scene()
-      const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100)
-      camera.position.z = 5
+      const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50)
+      camera.position.z = 5.5
+
       const group = new THREE.Group()
 
-      const mat = new THREE.MeshPhongMaterial({ color: 0x120a08, emissive: 0x0a0000, shininess: 25, specular: 0x1a0000 })
-      const cranium = new THREE.Mesh(new THREE.SphereGeometry(1.2, 48, 48), mat)
-      cranium.scale.set(1, 1.12, 0.9)
+      const boneMat = new THREE.MeshPhongMaterial({
+        color: new THREE.Color(0.12, 0.09, 0.07),
+        emissive: new THREE.Color(0.04, 0.0, 0.0),
+        specular: new THREE.Color(0.3, 0.1, 0.1),
+        shininess: 60,
+      })
+
+      const cranium = new THREE.Mesh(new THREE.SphereGeometry(1.15, 64, 64), boneMat)
+      cranium.scale.set(1, 1.08, 0.88)
       group.add(cranium)
 
-      const jaw = new THREE.Mesh(new THREE.SphereGeometry(0.88, 32, 32), mat)
-      jaw.position.set(0, -1.05, 0.1); jaw.scale.set(0.92, 0.52, 0.8)
+      const jaw = new THREE.Mesh(new THREE.SphereGeometry(0.82, 48, 48), boneMat)
+      jaw.position.set(0, -0.98, 0.12)
+      jaw.scale.set(0.9, 0.5, 0.78)
       group.add(jaw)
 
-      const eyeMatDark = new THREE.MeshPhongMaterial({ color: 0x000000 })
-      const eyeMatGlow = new THREE.MeshPhongMaterial({ color: 0x8B0000, emissive: 0x8B0000, emissiveIntensity: 1.2 })
-      const eyes: Mesh[] = []
-      const addEye = (x: number) => {
-        const socket = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 20), eyeMatDark)
-        socket.position.set(x, 0.2, 0.96); group.add(socket)
-        const glow = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 16), eyeMatGlow.clone())
-        glow.position.set(x, 0.2, 1.04); group.add(glow); eyes.push(glow)
-      }
-      addEye(-0.43); addEye(0.43)
+      const socketMat = new THREE.MeshBasicMaterial({ color: 0x000000 })
+      const lSocket = new THREE.Mesh(new THREE.SphereGeometry(0.27, 32, 32), socketMat)
+      lSocket.position.set(-0.41, 0.19, 0.95)
+      group.add(lSocket)
+      const rSocket = new THREE.Mesh(new THREE.SphereGeometry(0.27, 32, 32), socketMat)
+      rSocket.position.set(0.41, 0.19, 0.95)
+      group.add(rSocket)
 
-      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.2, 3), new THREE.MeshPhongMaterial({ color: 0x000000 }))
-      nose.position.set(0, -0.14, 1.1); nose.rotation.x = Math.PI; group.add(nose)
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff1100 })
+      const lEye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 16), eyeMat)
+      lEye.position.set(-0.41, 0.19, 1.06)
+      group.add(lEye)
+      const rEyeMat = new THREE.MeshBasicMaterial({ color: 0xff1100 })
+      const rEye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 16), rEyeMat)
+      rEye.position.set(0.41, 0.19, 1.06)
+      group.add(rEye)
 
-      const toothMat = new THREE.MeshPhongMaterial({ color: 0xd0c090 })
-      for (let i = 0; i < 8; i++) {
-        const t = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.18, 0.07), toothMat)
-        t.position.set(-0.39 + i * 0.11, -0.85, 0.8); group.add(t)
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.18, 3), new THREE.MeshBasicMaterial({ color: 0x000000 }))
+      nose.position.set(0, -0.12, 1.08)
+      nose.rotation.x = Math.PI
+      group.add(nose)
+
+      const toothMat = new THREE.MeshPhongMaterial({ color: 0xc8b87a, emissive: 0x110f00, shininess: 30 })
+      for (let i = 0; i < 6; i++) {
+        const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.07), toothMat)
+        tooth.position.set(-0.3 + i * 0.12, -0.82, 0.82)
+        group.add(tooth)
       }
 
       const crackMat = new THREE.LineBasicMaterial({ color: 0x8B0000 })
       ;[
-        [new THREE.Vector3(0.1, 0.9, 1.0), new THREE.Vector3(0.4, 0.4, 0.85), new THREE.Vector3(0.55, 0.6, 0.7)],
-        [new THREE.Vector3(-0.2, 0.75, 1.0), new THREE.Vector3(-0.5, 0.3, 0.82)],
-        [new THREE.Vector3(0.0, 0.3, 1.1), new THREE.Vector3(0.05, -0.05, 1.0)],
+        [new THREE.Vector3(0.08, 0.88, 1.0), new THREE.Vector3(0.35, 0.42, 0.88)],
+        [new THREE.Vector3(-0.18, 0.72, 1.0), new THREE.Vector3(-0.44, 0.28, 0.84)],
+        [new THREE.Vector3(0.02, 0.28, 1.08), new THREE.Vector3(0.06, -0.04, 1.02)],
       ].forEach(pts => { group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), crackMat)) })
 
-      const bloodMat = new THREE.MeshPhongMaterial({ color: 0xaa0000, emissive: 0x440000 })
-      for (let i = 0; i < 8; i++) {
-        const d = new THREE.Mesh(new THREE.SphereGeometry(0.05 + Math.random() * 0.04, 8, 8), bloodMat)
-        d.position.set(-0.6 + Math.random() * 1.2, -0.85 - Math.random() * 0.6, 0.5 + Math.random() * 0.3)
-        d.scale.y = 1.5 + Math.random() * 2.5; group.add(d)
+      const bloodMat = new THREE.MeshBasicMaterial({ color: 0x8B0000 })
+      for (let i = 0; i < 5; i++) {
+        const drop = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), bloodMat)
+        drop.position.set(-0.5 + i * 0.22, -0.92 - Math.random() * 0.4, 0.55 + Math.random() * 0.2)
+        drop.scale.y = 1.8 + Math.random() * 1.5
+        group.add(drop)
       }
 
       scene.add(group)
-      scene.add(new THREE.AmbientLight(0x080000, 1))
-      const redPt = new THREE.PointLight(0xff2200, 3, 12); redPt.position.set(2, 2, 4); scene.add(redPt)
-      const fillPt = new THREE.PointLight(0x220000, 2, 8); fillPt.position.set(-2, -1, 3); scene.add(fillPt)
 
-      const onMouse = (e: MouseEvent) => { mouseX = (e.clientX / window.innerWidth - 0.5) * 2; mouseY = -(e.clientY / window.innerHeight - 0.5) * 2 }
-      const onTouch = (e: TouchEvent) => { mouseX = (e.touches[0].clientX / window.innerWidth - 0.5) * 2; mouseY = -(e.touches[0].clientY / window.innerHeight - 0.5) * 2 }
+      scene.add(new THREE.AmbientLight(0x050000, 2))
+      const keyLight = new THREE.PointLight(0xff2200, 4, 15)
+      keyLight.position.set(1.5, 2, 5)
+      scene.add(keyLight)
+      const fillLight = new THREE.PointLight(0x8B0000, 2, 10)
+      fillLight.position.set(-2, -1, 3)
+      scene.add(fillLight)
+      const rimLight = new THREE.PointLight(0x440000, 3, 8)
+      rimLight.position.set(0, 0, -4)
+      scene.add(rimLight)
+
+      const onMouse = (e: MouseEvent) => {
+        targetMx = (e.clientX / window.innerWidth - 0.5) * 2
+        targetMy = -(e.clientY / window.innerHeight - 0.5) * 2
+      }
+      const onTouch = (e: TouchEvent) => {
+        targetMx = (e.touches[0].clientX / window.innerWidth - 0.5) * 2
+        targetMy = -(e.touches[0].clientY / window.innerHeight - 0.5) * 2
+      }
       window.addEventListener('mousemove', onMouse)
       window.addEventListener('touchmove', onTouch, { passive: true })
 
       let t = 0
       const animate = () => {
-        raf = requestAnimationFrame(animate); t += 0.01
-        group.rotation.y += (mouseX * 0.45 - group.rotation.y) * 0.05
-        group.rotation.x += (mouseY * 0.22 - group.rotation.x) * 0.05
-        group.rotation.z = Math.sin(t * 0.35) * 0.025
-        group.position.y = Math.sin(t * 0.55) * 0.06
-        const ei = Math.max(0.1, 0.7 + Math.sin(t * 1.5) * 0.5 + Math.sin(t * 3.7) * 0.2)
-        eyes.forEach(eye => { (eye.material as MeshPhongMaterial).emissiveIntensity = ei })
-        redPt.intensity = 2.5 + Math.sin(t * 2.1) * 0.8
+        if (destroyed) return
+        raf = requestAnimationFrame(animate)
+        t += 0.008
+
+        mx += (targetMx - mx) * 0.04
+        my += (targetMy - my) * 0.04
+
+        group.rotation.y += (mx * 0.35 - group.rotation.y) * 0.06
+        group.rotation.x += (my * 0.18 - group.rotation.x) * 0.06
+        group.rotation.z = Math.sin(t * 0.3) * 0.02
+        group.position.y = Math.sin(t * 0.5) * 0.05
+
+        const pulse = 0.5 + Math.sin(t * 1.2) * 0.35 + Math.sin(t * 3.3) * 0.15
+        const c = new THREE.Color(0.55 + pulse * 0.45, 0, 0)
+        ;(lEye.material as MeshBasicMaterial).color = c
+        ;(rEye.material as MeshBasicMaterial).color = c.clone()
+
+        keyLight.intensity = 3.5 + Math.sin(t * 1.8) * 0.8
+
         renderer.render(scene, camera)
       }
       animate()
 
-      cleanup = () => {
+      const destroy = () => {
+        destroyed = true
         cancelAnimationFrame(raf)
         window.removeEventListener('mousemove', onMouse)
         window.removeEventListener('touchmove', onTouch)
         renderer.dispose()
-        if (mountRef.current?.contains(renderer.domElement)) mountRef.current.removeChild(renderer.domElement)
+        if (ref.current?.contains(renderer.domElement)) ref.current.removeChild(renderer.domElement)
       }
+
+      return destroy
     })
 
-    return () => cleanup?.()
+    return () => { destroyed = true; cancelAnimationFrame(raf) }
   }, [size])
 
-  return <div ref={mountRef} style={{ width: size, height: size, filter: 'drop-shadow(0 0 30px rgba(139,0,0,0.6))' }} />
+  return (
+    <div ref={ref} style={{
+      width: size, height: size,
+      filter: 'drop-shadow(0 0 20px rgba(200,0,0,0.7)) drop-shadow(0 0 60px rgba(139,0,0,0.4)) drop-shadow(0 0 100px rgba(100,0,0,0.2))',
+    }} />
+  )
 }
