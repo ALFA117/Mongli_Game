@@ -1,11 +1,13 @@
 @import "tailwindcss";
 
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
 :root {
   --background: #000000;
   --foreground: #e8d5b0;
   --accent: #c4923a;
   --blood: #8b0000;
-  --border: #1a1a1a;
 }
 
 @theme inline {
@@ -16,91 +18,115 @@
   --font-display: var(--font-special-elite), serif;
 }
 
-body {
-  background: #000000;
-  color: var(--foreground);
-}
+body { background: #000; color: var(--foreground); }
+.cursor-crosshair { cursor: crosshair; }
+::selection { background: #8b000040; color: #e8d5b0; }
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #1a0000; }
 
-/* Custom crosshair cursor */
-.cursor-crosshair {
-  cursor: crosshair;
-}
-
-::selection {
-  background: #8b000040;
-  color: #e8d5b0;
-}
-
-::-webkit-scrollbar {
-  width: 3px;
-}
-
-::-webkit-scrollbar-track {
-  background: #000;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1a0000;
-}
-
-/* Scanlines overlay */
+/* Scanlines — pure CSS */
 .scanlines {
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.15) 2px,
-    rgba(0, 0, 0, 0.15) 4px
-  );
-  opacity: 0.5;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px);
+  pointer-events: none;
 }
 
-/* Hover micro-shake */
-.hover-shake {
-  transition: transform 0.1s;
+/* Static noise — CSS only, no canvas */
+.static-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
 }
 
-.hover-shake:hover {
-  animation: micro-shake 0.3s ease-in-out;
-}
-
-@keyframes micro-shake {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-1px, 1px) rotate(-0.5deg); }
-  50% { transform: translate(1px, -1px) rotate(0.5deg); }
-  75% { transform: translate(-1px, -1px) rotate(-0.3deg); }
-}
-
-/* Wallet button glow */
-.wallet-btn {
-  animation: wallet-glow 3s ease-in-out infinite;
-}
-
-@keyframes wallet-glow {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(139, 0, 0, 0.1), inset 0 0 10px rgba(139, 0, 0, 0.05);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(139, 0, 0, 0.3), inset 0 0 20px rgba(139, 0, 0, 0.1);
-  }
-}
-
-/* Polaroid card */
-.polaroid-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 40px rgba(139, 0, 0, 0.05);
-}
-
-/* Choice button fill */
-.choice-btn::before {
-  content: "";
+/* Rain — CSS only, 20 drops */
+.rain-container { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.raindrop {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 0;
-  transition: height 0.5s ease;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(150,160,180,0.3));
+  animation: rain-fall linear infinite;
+}
+@keyframes rain-fall { from { transform: translateY(-20px); } to { transform: translateY(100vh); } }
+
+/* Hover shake */
+.hover-shake:hover { animation: micro-shake 0.3s ease-in-out; }
+@keyframes micro-shake {
+  0%,100% { transform: translate(0) rotate(0); }
+  25% { transform: translate(-1px,1px) rotate(-0.5deg); }
+  50% { transform: translate(1px,-1px) rotate(0.5deg); }
+  75% { transform: translate(-1px,-1px) rotate(-0.3deg); }
 }
 
-.choice-btn:hover::before {
-  height: 100%;
+/* Wallet glow */
+.wallet-btn { animation: wallet-glow 3s ease-in-out infinite; }
+@keyframes wallet-glow {
+  0%,100% { box-shadow: 0 0 10px rgba(139,0,0,0.1); }
+  50% { box-shadow: 0 0 30px rgba(139,0,0,0.3), inset 0 0 15px rgba(139,0,0,0.1); }
+}
+
+/* Blood stains */
+.blood-stain {
+  position: absolute;
+  border-radius: 40% 60% 55% 45% / 50% 40% 60% 50%;
+  background: radial-gradient(ellipse, rgba(100,0,0,0.25), transparent 70%);
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+/* Character shadow */
+.char-shadow {
+  width: 60px; height: 16px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 50%;
+  filter: blur(6px);
+}
+
+/* Glitch title */
+.glitch-title {
+  position: relative;
+  font-size: clamp(60px, 15vw, 140px);
+  letter-spacing: 0.15em;
+  color: #e8d5b0;
+  animation: glitch-shift 4s ease-in-out infinite alternate;
+}
+.glitch-title::before, .glitch-title::after {
+  content: attr(data-text);
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+}
+.glitch-title::before {
+  color: #ff0000;
+  animation: glitch-1 2.5s infinite linear alternate-reverse;
+  clip-path: inset(0 0 60% 0);
+}
+.glitch-title::after {
+  color: #00ffff;
+  animation: glitch-2 3s infinite linear alternate-reverse;
+  clip-path: inset(50% 0 0 0);
+}
+@keyframes glitch-1 {
+  0%{transform:translate(0)} 20%{transform:translate(-4px,2px)} 40%{transform:translate(4px,-1px)}
+  60%{transform:translate(-3px,-2px)} 80%{transform:translate(5px,1px)} 100%{transform:translate(0)}
+}
+@keyframes glitch-2 {
+  0%{transform:translate(0)} 20%{transform:translate(5px,-1px)} 40%{transform:translate(-4px,2px)}
+  60%{transform:translate(3px,1px)} 80%{transform:translate(-5px,-2px)} 100%{transform:translate(0)}
+}
+@keyframes glitch-shift {
+  0%,90%,100%{transform:translate(0)} 92%{transform:translate(-6px,2px) skewX(-2deg)}
+  94%{transform:translate(4px,-1px) skewX(1deg)} 96%{transform:translate(-3px,3px)}
+  98%{transform:translate(5px,-2px) skewX(-1deg)}
+}
+
+/* Joystick */
+.joystick-base {
+  width: 100px; height: 100px; border-radius: 50%;
+  background: rgba(30,30,30,0.7); border: 1px solid rgba(196,146,58,0.2);
+  position: relative;
+}
+.joystick-thumb {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(232,213,176,0.3); border: 1px solid rgba(232,213,176,0.2);
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  transition: transform 0.05s;
 }
