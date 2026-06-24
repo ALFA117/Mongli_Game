@@ -4,6 +4,13 @@ import { uploadFragment } from "@/lib/og-storage";
 import { Fragment, GenerateRequest } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json(
+      { error: "ANTHROPIC_API_KEY not configured" },
+      { status: 500 }
+    );
+  }
+
   try {
     const body: GenerateRequest = await request.json();
     const { scene, choice, history, fragment_id } = body;
@@ -30,9 +37,10 @@ export async function POST(request: NextRequest) {
       choices: aiResult.choices,
     });
   } catch (error) {
-    console.error("Generate error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Generate error:", message);
     return NextResponse.json(
-      { error: "Error generando fragmento" },
+      { error: "Error generando fragmento", details: message },
       { status: 500 }
     );
   }

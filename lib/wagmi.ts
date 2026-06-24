@@ -1,5 +1,10 @@
-import { getDefaultConfig } from "@rainbow-me/rainbowkit";
+"use client";
+
+import { createConfig, http } from "wagmi";
 import { defineChain } from "viem";
+import { metaMask } from "wagmi/connectors";
+
+const RPC_URL = "https://evmrpc-testnet.0g.ai";
 
 export const og_galileo = defineChain({
   id: 16602,
@@ -11,10 +16,7 @@ export const og_galileo = defineChain({
   },
   rpcUrls: {
     default: {
-      http: [
-        process.env.NEXT_PUBLIC_OG_CHAIN_RPC ||
-          "https://evmrpc-testnet.0g.ai",
-      ],
+      http: [RPC_URL],
     },
   },
   blockExplorers: {
@@ -26,9 +28,11 @@ export const og_galileo = defineChain({
   testnet: true,
 });
 
-export const config = getDefaultConfig({
-  appName: "Mongli Game",
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_ID || "mongli-game-dev",
+export const config = createConfig({
   chains: [og_galileo],
+  connectors: [metaMask()],
+  transports: {
+    [og_galileo.id]: http(RPC_URL),
+  },
   ssr: true,
 });

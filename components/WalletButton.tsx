@@ -1,55 +1,36 @@
 "use client";
 
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 
 export default function WalletButton() {
-  return (
-    <ConnectButton.Custom>
-      {({
-        account,
-        chain,
-        openAccountModal,
-        openChainModal,
-        openConnectModal,
-        mounted,
-      }) => {
-        const connected = mounted && account && chain;
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
 
-        return (
-          <div
-            {...(!mounted && {
-              "aria-hidden": true,
-              style: { opacity: 0, pointerEvents: "none", userSelect: "none" },
-            })}
-          >
-            {!connected ? (
-              <button
-                onClick={openConnectModal}
-                className="border border-[#c4923a]/50 text-[#e8d5b0] px-6 py-3 font-mono text-sm
-                  hover:bg-[#c4923a]/10 hover:border-[#c4923a] transition-all uppercase tracking-widest"
-              >
-                Conectar Wallet
-              </button>
-            ) : chain.unsupported ? (
-              <button
-                onClick={openChainModal}
-                className="border border-red-700/50 text-red-400 px-6 py-3 font-mono text-sm
-                  hover:bg-red-900/20 transition-all"
-              >
-                Red incorrecta
-              </button>
-            ) : (
-              <button
-                onClick={openAccountModal}
-                className="border border-[#c4923a]/30 text-[#e8d5b0]/70 px-4 py-2 font-mono text-xs
-                  hover:border-[#c4923a]/60 transition-all"
-              >
-                {account.displayName}
-              </button>
-            )}
-          </div>
-        );
+  if (isConnected && address) {
+    return (
+      <button
+        onClick={() => disconnect()}
+        className="border border-[#c4923a]/30 text-[#e8d5b0]/70 px-4 py-2 font-mono text-xs
+          hover:border-[#c4923a]/60 transition-all cursor-pointer"
+      >
+        {address.slice(0, 6)}...{address.slice(-4)}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => {
+        const metamask = connectors.find((c) => c.id === "metaMaskSDK") || connectors[0];
+        if (metamask) connect({ connector: metamask });
       }}
-    </ConnectButton.Custom>
+      className="wallet-btn border border-red-900/60 text-[#e8d5b0] px-8 py-4 font-mono text-sm
+        uppercase tracking-widest cursor-pointer relative overflow-hidden
+        transition-all duration-300 hover:border-red-700 hover:shadow-[0_0_30px_rgba(180,0,0,0.3)]"
+    >
+      <span className="relative z-10">Conectar Wallet</span>
+      <div className="absolute inset-0 bg-red-900/10 animate-pulse" />
+    </button>
   );
 }
