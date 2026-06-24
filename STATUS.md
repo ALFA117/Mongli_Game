@@ -8,7 +8,10 @@
 - **Deployer:** `0x2E64066Fb794e1241b0F27b4DD02dC8fC0A3C04f`
 
 ## Deploy en Vercel
-- **URL:** _pendiente — deploy en progreso_
+- **URL:** https://mongli-game.vercel.app
+- **Project:** alfa117s-projects/mongli-game
+- **Status:** READY
+- **Env vars:** ANTHROPIC_API_KEY, NEXT_PUBLIC_CHAIN_ID, NEXT_PUBLIC_CONTRACT_ADDRESS, NEXT_PUBLIC_OG_CHAIN_RPC, OG_STORAGE_RPC
 
 ---
 
@@ -34,7 +37,7 @@
 
 ## Pendiente
 
-- [ ] Deploy en Vercel con variables de entorno
+- [x] Deploy en Vercel con variables de entorno
 - [ ] Verificar flujo completo en producción
 - [ ] Fragmentos bloqueados con blur + candado (visual listo, lógica pendiente)
 - [ ] Acto III: síntesis final con todo el historial de 0G
