@@ -5,16 +5,18 @@ import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import dynamic from 'next/dynamic'
 import WalletButton from '@/components/WalletButton'
-import SkullHero from '@/components/SkullHero'
 import { audioEngine } from '@/lib/audioEngine'
 
 const Cursor = dynamic(() => import('@/components/Cursor'), { ssr: false })
+const Skull3D = dynamic(() => import('@/components/Skull3D'), {
+  ssr: false,
+  loading: () => <div style={{ width: 420, height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a0000', fontSize: 12, letterSpacing: 3 }}>CARGANDO...</div>,
+})
 
 const TR = {
   es: {
     title: 'MONGLI', sub: 'Alguien tomó tus recuerdos. Recupéralos antes de que sea tarde.',
-    btn: 'RECUPERA TU IDENTIDAD', wake: 'TOCA PARA DESPERTAR', where: '¿ Dónde despertar ?',
-    ver: 'MONGLI v0.7 // Claude AI + 0G Chain',
+    wake: 'TOCA PARA DESPERTAR', where: '¿ Dónde despertar ?', ver: 'MONGLI v0.8 // Claude AI + 0G Chain',
     scenes: [
       { id: 'alley', t: 'El callejón', d: 'Despiertas en un callejón oscuro. La lluvia golpea el asfalto.' },
       { id: 'office', t: 'La oficina', d: 'Un escritorio viejo. Una lámpara parpadea. Hay una foto boca abajo.' },
@@ -23,8 +25,7 @@ const TR = {
   },
   en: {
     title: 'MONGLI', sub: 'Someone took your memories. Take them back before it\'s too late.',
-    btn: 'RECLAIM YOUR IDENTITY', wake: 'TAP TO AWAKEN', where: 'Where to awaken?',
-    ver: 'MONGLI v0.7 // Claude AI + 0G Chain',
+    wake: 'TAP TO AWAKEN', where: 'Where to awaken?', ver: 'MONGLI v0.8 // Claude AI + 0G Chain',
     scenes: [
       { id: 'alley', t: 'The alley', d: 'You wake in a dark alley. Rain hits the pavement.' },
       { id: 'office', t: 'The office', d: 'An old desk. A lamp flickers. A photo face-down.' },
@@ -37,9 +38,16 @@ const FOG = Array.from({ length: 8 }, (_, i) => ({ left: `${10 + (i * 12) % 80}%
 const RAIN = Array.from({ length: 30 }, (_, i) => ({ left: `${(i * 3.4) % 100}%`, h: 15 + (i * 7) % 25, dur: 0.6 + i * 0.03, delay: (i * 0.15) % 2 }))
 const DUST = Array.from({ length: 20 }, (_, i) => ({ left: `${(i * 5.1) % 100}%`, top: `${(i * 7.3) % 100}%`, size: 2 + (i % 3), dur: 6 + i * 0.8, delay: i * 0.4, color: i % 5 === 0 ? 'rgba(139,0,0,0.3)' : 'rgba(196,146,58,0.15)' }))
 
+function useIsMobile() {
+  const [mobile, setMobile] = useState(false)
+  useEffect(() => { const c = () => setMobile(window.innerWidth < 768); c(); window.addEventListener('resize', c); return () => window.removeEventListener('resize', c) }, [])
+  return mobile
+}
+
 export default function Home() {
   const { isConnected } = useAccount()
   const router = useRouter()
+  const mobile = useIsMobile()
   const [lang, setLang] = useState<'es' | 'en'>('es')
   const [audioOn, setAudioOn] = useState(false)
   const [volume, setVolume] = useState(0.4)
@@ -70,10 +78,11 @@ export default function Home() {
     )
   }
 
+  const skullSize = mobile ? 280 : 420
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#000', overflow: 'hidden' }}>
       <Cursor />
-
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, #1a0000 0%, #000 55%)', zIndex: 0 }} />
 
       {FOG.map((f, i) => <div key={`f${i}`} style={{ position: 'absolute', left: f.left, top: f.top, width: f.w, height: f.w * 0.6, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(139,0,0,0.08), transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 1, animation: `fog-drift ${f.dur}s ease-in-out ${f.delay}s infinite alternate` }} />)}
@@ -94,48 +103,46 @@ export default function Home() {
       {/* HUD */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', zIndex: 50 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => { const on = audioEngine.toggle(); setAudioOn(on) }} style={{ background: 'none', border: 'none', padding: 4, color: '#8B0000', fontSize: 14 }}>
-            {audioOn ? '🔊' : '🔇'}
-          </button>
+          <button onClick={() => { const on = audioEngine.toggle(); setAudioOn(on) }} style={{ background: 'none', border: 'none', padding: 4, color: '#8B0000', fontSize: 14 }}>{audioOn ? '🔊' : '🔇'}</button>
           {audioOn && <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => { const v = +e.target.value; setVolume(v); audioEngine.setVolume(v) }} className="volume-slider" />}
         </div>
         <button onClick={toggleLang} style={{ background: 'transparent', border: '1px solid #1a0000', color: '#555', fontSize: 10, padding: '3px 8px', fontFamily: 'monospace' }}>{lang.toUpperCase()}</button>
       </div>
 
       {/* Content */}
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: '0 16px' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: mobile ? '0 12px' : '0 16px', gap: 4 }}>
 
-        <div style={{ position: 'relative', zIndex: 2, filter: 'drop-shadow(0 0 40px rgba(139,0,0,0.8)) drop-shadow(0 0 80px rgba(139,0,0,0.4))', animation: 'skull-sway 5s ease-in-out infinite', marginBottom: 4 }}>
-          <SkullHero size={480} />
+        <div style={{ filter: 'drop-shadow(0 0 40px rgba(139,0,0,0.7)) drop-shadow(0 0 80px rgba(139,0,0,0.4))', willChange: 'transform' }}>
+          <Skull3D size={skullSize} />
         </div>
 
-        <h1 className="glitch-title" data-text={t.title} style={{ fontFamily: "var(--font-horror, 'Creepster'), var(--font-display, 'Special Elite'), cursive", marginBottom: 8, lineHeight: 1 }}>
+        <h1 className="glitch-title" data-text={t.title} style={{ fontFamily: "var(--font-horror, 'Creepster'), var(--font-display, 'Special Elite'), cursive", marginBottom: 4, lineHeight: 1, fontSize: mobile ? 'clamp(50px, 12vw, 100px)' : undefined }}>
           {t.title}
         </h1>
 
-        <div style={{ width: 380, marginBottom: 16 }}>
-          <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(139,0,0,0.3), transparent)', marginBottom: 12 }} />
-          <p style={{ fontFamily: 'monospace', fontSize: 12, color: 'rgba(232,213,176,0.4)', textAlign: 'center', lineHeight: 1.6 }}>
+        <div style={{ width: mobile ? '90%' : 380, marginBottom: 12 }}>
+          <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(139,0,0,0.3), transparent)', marginBottom: 10 }} />
+          <p style={{ fontFamily: 'monospace', fontSize: mobile ? 11 : 12, color: 'rgba(232,213,176,0.4)', textAlign: 'center', lineHeight: 1.6 }}>
             {subText}{!subDone && <span style={{ color: '#8B0000', animation: 'blink 0.6s infinite' }}>▌</span>}
           </p>
         </div>
 
-        <p style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(0,255,65,0.25)', marginBottom: 12 }}>
+        <p style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(0,255,65,0.25)', marginBottom: 10 }}>
           <span style={{ color: 'rgba(0,255,65,0.4)' }}>●</span> 0G Galileo Testnet
         </p>
 
         <WalletButton />
 
         {isConnected && (
-          <div style={{ width: '100%', maxWidth: 640, marginTop: 24 }}>
+          <div style={{ width: '100%', maxWidth: 640, marginTop: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
               <div style={{ flex: 1, height: 1, background: 'rgba(139,0,0,0.1)' }} />
               <span style={{ fontSize: 10, color: 'rgba(139,0,0,0.25)', fontFamily: 'monospace', letterSpacing: 3 }}>{t.where}</span>
               <div style={{ flex: 1, height: 1, background: 'rgba(139,0,0,0.1)' }} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
               {t.scenes.map(sc => (
-                <button key={sc.id} onClick={() => router.push(`/map?lang=${lang}`)} className="scene-card glass-panel" style={{ padding: 14, textAlign: 'left', cursor: 'pointer' }}>
+                <button key={sc.id} onClick={() => router.push(`/map?lang=${lang}`)} className="scene-card glass-panel" style={{ padding: mobile ? 12 : 14, textAlign: 'left', cursor: 'pointer' }}>
                   <div style={{ fontFamily: "var(--font-display), serif", fontSize: 14, color: 'rgba(232,213,176,0.5)', marginBottom: 4 }}>{sc.t}</div>
                   <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'rgba(232,213,176,0.15)', lineHeight: 1.5 }}>{sc.d}</div>
                 </button>
@@ -152,7 +159,6 @@ export default function Home() {
         @keyframes rain-fall{from{transform:translateY(-30px) rotate(8deg)}to{transform:translateY(100vh) rotate(8deg)}}
         @keyframes scanline-move{from{transform:translateY(-2px)}to{transform:translateY(100vh)}}
         @keyframes dust-float{0%{transform:translate(0,0);opacity:.3}50%{opacity:.6}100%{transform:translate(15px,-20px);opacity:.2}}
-        @keyframes skull-sway{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4px) rotate(-0.5deg)}75%{transform:translateY(2px) rotate(0.3deg)}}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
         @keyframes pulse-text{0%,100%{opacity:.4}50%{opacity:1}}
       `}</style>
