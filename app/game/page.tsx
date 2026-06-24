@@ -1,376 +1,372 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
-import WalletButton from "@/components/WalletButton";
-import BloodCursor from "@/components/BloodCursor";
-import PixelSprite from "@/components/PixelSprite";
-import { audioEngine } from "@/lib/ambientAudio";
-import { t, Lang } from "@/lib/i18n";
-import { INITIAL_SCENES, Fragment, GenerateResponse } from "@/lib/types";
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 
-const TOTAL_FRAGMENTS = 10;
+const NODES = 10
+const SPEED = 8
 
-const ACT_NAMES_ES: Record<number, string> = { 1: "LA AMNESIA", 2: "EL DESDOBLAMIENTO", 3: "LA REVELACIÓN" };
-const ACT_NAMES_EN: Record<number, string> = { 1: "THE AMNESIA", 2: "THE SPLIT", 3: "THE REVELATION" };
-
-function HexNode({ x, y, size, active, done, label, onClick }: {
-  x: number; y: number; size: number; active: boolean; done: boolean; label: string; onClick?: () => void;
-}) {
-  const pts = Array.from({ length: 6 }, (_, i) => {
-    const angle = (Math.PI / 3) * i - Math.PI / 6;
-    return `${x + size * Math.cos(angle)},${y + size * Math.sin(angle)}`;
-  }).join(" ");
-
-  return (
-    <g className="hex-node" onClick={onClick} style={{ cursor: done ? "pointer" : "default" }}>
-      {active && (
-        <polygon points={pts} fill="none" stroke="#8B0000" strokeWidth={1} opacity={0.4}>
-          <animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite" />
-        </polygon>
-      )}
-      <polygon
-        points={pts}
-        fill={active ? "#8B0000" : done ? "#0a0a0a" : "#0a0a0a"}
-        stroke={active ? "#ff2222" : done ? "#C4923A" : "#222"}
-        strokeWidth={active ? 2 : 1}
-      />
-      <text x={x} y={y + 4} textAnchor="middle" fill={active ? "#ff4444" : done ? "#C4923A" : "#333"} fontSize={9} fontFamily="monospace">
-        {done ? "✓" : label}
-      </text>
-    </g>
-  );
+const COLORS = {
+  bg: '#000000',
+  red: '#8B0000',
+  redBright: '#cc0000',
+  amber: '#C4923A',
+  text: '#e8d5b0',
+  muted: '#444',
+  green: '#00ff41',
+  border: '#1a0000',
 }
 
+const TR = {
+  es: {
+    fragment: 'FRAGMENTO',
+    acts: ['ACTO I — LA AMNESIA', 'ACTO II — EL DESDOBLAMIENTO', 'ACTO III — LA REVELACIÓN'],
+    access: '▶ ACCEDER AL RECUERDO',
+    choose: '— ELIGE TU DESTINO —',
+    stored: '✓ GUARDADO EN 0G',
+    loading: ['CONECTANDO A 0G...', 'IA PROCESANDO...', 'RECUPERANDO MEMORIA...'],
+    choiceA: 'Recordar con culpa',
+    choiceB: 'Olvidar y seguir',
+    move: 'WASD o flechas para moverte',
+    interact: 'E para interactuar',
+    complete: '— FIN DE LA HISTORIA —',
+    waiting: 'UN RECUERDO ESPERA EN ESTE LUGAR',
+  },
+  en: {
+    fragment: 'FRAGMENT',
+    acts: ['ACT I — THE AMNESIA', 'ACT II — THE SPLIT', 'ACT III — THE REVELATION'],
+    access: '▶ ACCESS MEMORY',
+    choose: '— CHOOSE YOUR FATE —',
+    stored: '✓ SAVED ON 0G',
+    loading: ['CONNECTING TO 0G...', 'AI PROCESSING...', 'RECOVERING MEMORY...'],
+    choiceA: 'Remember with guilt',
+    choiceB: 'Forget and move on',
+    move: 'WASD or arrows to move',
+    interact: 'E to interact',
+    complete: '— END OF STORY —',
+    waiting: 'A MEMORY AWAITS IN THIS PLACE',
+  },
+}
+
+const NODE_POSITIONS = [
+  { x: 60, y: 40 }, { x: 160, y: 80 }, { x: 80, y: 130 }, { x: 180, y: 170 },
+  { x: 70, y: 220 }, { x: 170, y: 260 }, { x: 80, y: 310 }, { x: 180, y: 350 },
+  { x: 90, y: 400 }, { x: 180, y: 440 },
+]
+
 function GameContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const { isConnected } = useAccount();
-  const sceneId = searchParams.get("scene") || "alley";
-  const scene = INITIAL_SCENES.find((s) => s.id === sceneId) || INITIAL_SCENES[0];
+  const searchParams = useSearchParams()
+  const initLang = (searchParams.get('lang') || 'es') as 'es' | 'en'
 
-  const [fragments, setFragments] = useState<Fragment[]>([]);
-  const [currentNode, setCurrentNode] = useState(0);
-  const [displayText, setDisplayText] = useState("");
-  const [typing, setTyping] = useState(false);
-  const [choiceA, setChoiceA] = useState("");
-  const [choiceB, setChoiceB] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [hash, setHash] = useState("");
-  const [slowMsg, setSlowMsg] = useState(false);
-  const [audioOn, setAudioOn] = useState(false);
-  const [volume, setVolume] = useState(0.4);
-  const [lang, setLang] = useState<Lang>("es");
-  const [shadowNode, setShadowNode] = useState(8);
+  const [lang, setLang] = useState<'es' | 'en'>(initLang)
+  const [playerPos, setPlayerPos] = useState(0)
+  const [shadowPos, setShadowPos] = useState(9)
+  const [display, setDisplay] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadMsg, setLoadMsg] = useState(0)
+  const [choiceA, setChoiceA] = useState('')
+  const [choiceB, setChoiceB] = useState('')
+  const [showChoices, setShowChoices] = useState(false)
+  const [history, setHistory] = useState<string[]>([])
+  const [volume, setVolume] = useState(0.4)
+  const [done, setDone] = useState(false)
+  const [hasFragment, setHasFragment] = useState(false)
+  const [storageHash, setStorageHash] = useState('')
 
-  const act = currentNode < 5 ? 1 : currentNode < 8 ? 2 : 3;
-  const ACT_NAMES = lang === "es" ? ACT_NAMES_ES : ACT_NAMES_EN;
-  const L = t[lang];
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const masterGainRef = useRef<GainNode | null>(null)
+  const keysRef = useRef<Set<string>>(new Set())
+  const moveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const typeTimerRef = useRef<ReturnType<typeof setInterval>>(undefined)
+  const loadTimerRef = useRef<ReturnType<typeof setInterval>>(undefined)
+  const genLockRef = useRef(false)
 
-  useEffect(() => {
-    const savedLang = (searchParams.get("lang") || localStorage.getItem("mongli-lang") || "es") as Lang;
-    if (savedLang === "en" || savedLang === "es") setLang(savedLang);
-  }, [searchParams]);
+  const t = TR[lang]
+  const act = playerPos < 5 ? 0 : playerPos < 8 ? 1 : 2
 
-  useEffect(() => {
-    if (!isConnected) router.push("/");
-  }, [isConnected, router]);
+  const startAudio = useCallback(() => {
+    if (audioCtxRef.current) return
+    const ctx = new AudioContext()
+    const master = ctx.createGain()
+    master.gain.value = 0.4
+    master.connect(ctx.destination)
+    audioCtxRef.current = ctx
+    masterGainRef.current = master
 
-  useEffect(() => {
-    setAudioOn(audioEngine.isRunning());
-    if (!audioEngine.isRunning()) {
-      audioEngine.start();
-      setAudioOn(true);
+    const freqs: [number, OscillatorType, number][] = [[55, 'sine', 0.1], [110, 'sine', 0.05], [82.5, 'triangle', 0.03]]
+    freqs.forEach(([freq, type, vol]) => {
+      const o = ctx.createOscillator()
+      const g = ctx.createGain()
+      o.frequency.value = freq
+      o.type = type
+      g.gain.value = vol
+      o.connect(g)
+      g.connect(master)
+      o.start()
+    })
+
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate)
+    const d = buf.getChannelData(0)
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.loop = true
+    const flt = ctx.createBiquadFilter()
+    flt.type = 'lowpass'
+    flt.frequency.value = 250
+    const ng = ctx.createGain()
+    ng.gain.value = 0.015
+    src.connect(flt)
+    flt.connect(ng)
+    ng.connect(master)
+    src.start()
+
+    const notes = [130.8, 155.6, 174.6, 196, 174.6, 155.6, 130.8, 123.5]
+    let ni = 0
+    const playNote = () => {
+      if (!audioCtxRef.current) return
+      const o = ctx.createOscillator()
+      const g = ctx.createGain()
+      o.frequency.value = notes[ni++ % notes.length]
+      o.type = 'triangle'
+      g.gain.setValueAtTime(0, ctx.currentTime)
+      g.gain.linearRampToValueAtTime(0.025, ctx.currentTime + 0.4)
+      g.gain.linearRampToValueAtTime(0, ctx.currentTime + 2.8)
+      o.connect(g)
+      g.connect(master)
+      o.start()
+      o.stop(ctx.currentTime + 2.8)
+      setTimeout(playNote, 3000 + Math.random() * 1500)
     }
-  }, []);
+    setTimeout(playNote, 800)
+
+    const beat = () => {
+      if (!audioCtxRef.current) return
+      const o = ctx.createOscillator()
+      const g = ctx.createGain()
+      o.frequency.value = 58
+      o.type = 'sine'
+      g.gain.setValueAtTime(0, ctx.currentTime)
+      g.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05)
+      g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3)
+      o.connect(g)
+      g.connect(master)
+      o.start()
+      o.stop(ctx.currentTime + 0.3)
+      setTimeout(beat, 1600 + Math.random() * 600)
+    }
+    setTimeout(beat, 1200)
+  }, [])
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setShadowNode((prev) => (prev > currentNode + 1 ? prev - 1 : prev));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [currentNode]);
+    if (masterGainRef.current) masterGainRef.current.gain.value = volume
+  }, [volume])
 
-  const handleLang = (l: Lang) => {
-    setLang(l);
-    localStorage.setItem("mongli-lang", l);
-  };
-
-  const typeText = useCallback((text: string) => {
-    setDisplayText("");
-    setTyping(true);
-    let i = 0;
-    const interval = setInterval(() => {
-      setDisplayText(text.slice(0, i + 1));
-      i++;
-      if (i >= text.length) {
-        clearInterval(interval);
-        setTyping(false);
+  const typeWriter = useCallback((text: string) => {
+    if (typeTimerRef.current) clearInterval(typeTimerRef.current)
+    setDisplay('')
+    setIsTyping(true)
+    setShowChoices(false)
+    let i = 0
+    typeTimerRef.current = setInterval(() => {
+      if (i < text.length) {
+        setDisplay(text.slice(0, i + 1))
+        i++
+      } else {
+        if (typeTimerRef.current) clearInterval(typeTimerRef.current)
+        setIsTyping(false)
+        setShowChoices(true)
       }
-    }, 8);
-    return () => clearInterval(interval);
-  }, []);
+    }, SPEED)
+  }, [])
 
-  const generateFragment = useCallback(async (choiceText: string = "") => {
-    setLoading(true);
-    setSlowMsg(false);
-    setChoiceA("");
-    setChoiceB("");
-    setHash("");
-    const slowTimer = setTimeout(() => setSlowMsg(true), 8000);
-    const fragmentId = fragments.length + 1;
-    const currentScene = fragmentId === 1 ? scene.description : fragments[fragments.length - 1]?.text || scene.description;
+  const generateFragment = useCallback(async (choice?: string) => {
+    if (genLockRef.current) return
+    genLockRef.current = true
+    startAudio()
+    setIsLoading(true)
+    setShowChoices(false)
+    setDisplay('')
+    setHasFragment(false)
+    setStorageHash('')
+
+    let mi = 0
+    loadTimerRef.current = setInterval(() => { setLoadMsg(mi++ % 3) }, 900)
 
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 25000);
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scene: currentScene, choice: choiceText, history: fragments, fragment_id: fragmentId }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      if (!response.ok) throw new Error("Error");
-      const data: GenerateResponse = await response.json();
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scene: 'noir city night', history: choice ? [...history, choice] : history, fragmentNumber: playerPos + 1, lang }),
+      })
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json()
 
-      setFragments((prev) => [...prev, data.fragment]);
-      setCurrentNode(fragmentId - 1);
-      if (data.fragment.storage_hash) setHash(data.fragment.storage_hash);
-      if (data.choices && data.choices.length >= 2) {
-        setChoiceA(data.choices[0].text);
-        setChoiceB(data.choices[1].text);
-      }
-      setLoading(false);
-      typeText(data.fragment.text);
-    } catch (e) {
-      console.error(e);
-      setLoading(false);
+      const raw: string = data.fragment?.text || data.fragment_text || data.fragment || ''
+      const hash: string = data.fragment?.storage_hash || data.storage_hash || ''
+
+      const optA = raw.match(/\[OPCI[ÓO]N A\]:\s*(.+)/i)?.[1]?.trim() || raw.match(/\[OPTION A\]:\s*(.+)/i)?.[1]?.trim() || data.choices?.[0]?.text || t.choiceA
+      const optB = raw.match(/\[OPCI[ÓO]N B\]:\s*(.+)/i)?.[1]?.trim() || raw.match(/\[OPTION B\]:\s*(.+)/i)?.[1]?.trim() || data.choices?.[1]?.text || t.choiceB
+      const clean = raw.replace(/\[OPCI[ÓO]N [AB]\]:.+/gi, '').replace(/\[OPTION [AB]\]:.+/gi, '').trim()
+
+      setChoiceA(optA)
+      setChoiceB(optB)
+      setHasFragment(true)
+      setStorageHash(hash)
+      if (choice) setHistory(prev => [...prev, choice])
+      if (playerPos >= NODES - 1) setDone(true)
+      typeWriter(clean)
+    } catch {
+      setDisplay('Error de conexión...')
+      setIsTyping(false)
     } finally {
-      clearTimeout(slowTimer);
-      setSlowMsg(false);
+      if (loadTimerRef.current) clearInterval(loadTimerRef.current)
+      setIsLoading(false)
+      genLockRef.current = false
     }
-  }, [fragments, scene.description, typeText]);
+  }, [history, playerPos, lang, startAudio, t.choiceA, t.choiceB, typeWriter])
 
-  const handleChoice = (opt: string) => {
-    const text = opt === "A" ? choiceA : choiceB;
-    setDisplayText("");
-    setChoiceA("");
-    setChoiceB("");
-    generateFragment(text);
-  };
+  useEffect(() => {
+    const onDown = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase()
+      keysRef.current.add(key)
+      if (key === 'e' && !isTyping && !isLoading && !showChoices && !genLockRef.current) generateFragment()
+    }
+    const onUp = (e: KeyboardEvent) => { keysRef.current.delete(e.key.toLowerCase()) }
+    window.addEventListener('keydown', onDown)
+    window.addEventListener('keyup', onUp)
+    return () => { window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp) }
+  }, [isTyping, isLoading, showChoices, generateFragment])
 
-  const mapNodes = Array.from({ length: TOTAL_FRAGMENTS }, (_, i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = col === 0 ? 100 : 200;
-    const y = 30 + row * 70;
-    return { x, y, i };
-  });
+  useEffect(() => {
+    const tick = () => {
+      const keys = keysRef.current
+      if (keys.has('arrowup') || keys.has('w')) setPlayerPos(p => Math.max(0, p - 1))
+      if (keys.has('arrowdown') || keys.has('s')) setPlayerPos(p => Math.min(NODES - 1, p + 1))
+      moveTimerRef.current = setTimeout(tick, 200)
+    }
+    moveTimerRef.current = setTimeout(tick, 200)
+    return () => { if (moveTimerRef.current) clearTimeout(moveTimerRef.current) }
+  }, [])
+
+  useEffect(() => {
+    const interval = setInterval(() => { setShadowPos(p => Math.max(p - 1, playerPos + 1)) }, 8000)
+    return () => clearInterval(interval)
+  }, [playerPos])
+
+  const handleChoice = (opt: 'A' | 'B') => {
+    const chosen = opt === 'A' ? choiceA : choiceB
+    setDisplay('')
+    setShowChoices(false)
+    setHasFragment(false)
+    if (playerPos < NODES - 1) setPlayerPos(p => p + 1)
+    generateFragment(chosen)
+  }
 
   return (
-    <div style={{ width: "100vw", height: "100vh", background: "#000", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "'Special Elite', serif", color: "#e8d5b0" }}>
-      <BloodCursor />
+    <div onClick={startAudio} style={{ position: 'fixed', inset: 0, background: COLORS.bg, display: 'flex', flexDirection: 'column', fontFamily: '"Special Elite", Georgia, serif', color: COLORS.text, overflow: 'hidden', userSelect: 'none' }}>
 
-      {/* TOP BAR */}
-      <div className="glass-panel" style={{ height: 48, minHeight: 48, borderBottom: "1px solid #8B0000", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0, borderRadius: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span onClick={() => router.push("/")} style={{ color: "#8B0000", fontSize: 15, letterSpacing: 2 }}>MONGLI</span>
-          <span style={{ color: "#8B0000", fontSize: 12 }}>{L.fragment} {String(currentNode + 1).padStart(2, "0")} / {TOTAL_FRAGMENTS}</span>
+      <div style={{ flexShrink: 0, height: 48, background: '#050000', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.muted} strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => setVolume(+e.target.value)} style={{ width: 70, accentColor: COLORS.red }} />
         </div>
-        <span style={{ color: "#555", fontSize: 11, letterSpacing: 2 }}>
-          {lang === "es" ? "ACTO" : "ACT"} {act} — {ACT_NAMES[act]}
-        </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Volume */}
-          <button
-            onClick={() => { const on = audioEngine.toggle(); setAudioOn(on); }}
-            className="font-mono text-[10px] text-red-400/40 hover:text-red-400"
-            style={{ background: "none", border: "none", padding: "2px" }}
-            aria-label="Toggle audio"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {audioOn ? (
-                <><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></>
-              ) : (
-                <><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></>
-              )}
-            </svg>
-          </button>
-          {audioOn && (
-            <input type="range" min="0" max="1" step="0.01" value={volume}
-              onChange={(e) => { const v = parseFloat(e.target.value); setVolume(v); audioEngine.setVolume(v); }}
-              className="volume-slider" aria-label="Volume" />
-          )}
-
-          {/* Lang toggle */}
-          <div className="lang-toggle">
-            <button className={lang === "es" ? "active" : ""} onClick={() => handleLang("es")}>ES</button>
-            <button className={lang === "en" ? "active" : ""} onClick={() => handleLang("en")}>EN</button>
-          </div>
-
-          <span style={{ color: "#0f0", fontSize: 10, opacity: 0.4 }}>● {L.chainActive}</span>
-          <WalletButton />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ color: COLORS.red, fontSize: 16, letterSpacing: 4, fontWeight: 'bold' }}>MONGLI</span>
+          <span style={{ color: COLORS.muted, fontSize: 11, fontFamily: 'monospace' }}>{t.fragment} {String(playerPos + 1).padStart(2, '0')}/{NODES}</span>
+          <span style={{ color: '#2a0000', fontSize: 10 }}>{t.acts[act]}</span>
         </div>
+        <button onClick={e => { e.stopPropagation(); setLang(l => l === 'es' ? 'en' : 'es') }} style={{ background: 'transparent', border: `1px solid ${COLORS.border}`, color: COLORS.muted, fontSize: 11, padding: '4px 10px', cursor: 'pointer', fontFamily: 'monospace' }}>{lang.toUpperCase()}</button>
       </div>
 
-      {/* PROGRESS BAR */}
-      <div style={{ height: 2, background: "#0a0a0a", flexShrink: 0 }}>
-        <div style={{ height: "100%", background: "linear-gradient(to right, #8B0000, #C4923A)", width: `${((currentNode + 1) / TOTAL_FRAGMENTS) * 100}%`, transition: "width 0.8s ease" }} />
+      <div style={{ height: 2, background: '#0a0a0a', flexShrink: 0 }}>
+        <div style={{ height: '100%', background: `linear-gradient(to right, ${COLORS.red}, ${COLORS.amber})`, width: `${((playerPos + 1) / NODES) * 100}%`, transition: 'width 0.6s ease' }} />
       </div>
 
-      {/* CENTRAL AREA */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
-
-        {/* MAP SIDEBAR */}
-        <div className="glass-panel" style={{ width: 300, minWidth: 300, borderRight: "1px solid #1a0000", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 0", flexShrink: 0, borderRadius: 0 }}>
-          <div style={{ color: "#8B0000", fontSize: 10, marginBottom: 12, letterSpacing: 3, textTransform: "uppercase" }}>{L.map}</div>
-
-          <svg width="300" height="400" viewBox="0 0 300 400">
-            {/* Path lines */}
-            {mapNodes.map((node, idx) => {
-              if (idx === 0) return null;
-              const prev = mapNodes[idx - 1];
-              const isDone = idx < currentNode;
-              return (
-                <line key={`l-${idx}`} x1={prev.x} y1={prev.y} x2={node.x} y2={node.y}
-                  stroke={isDone ? "#8B0000" : "#1a1a1a"} strokeWidth={isDone ? 1.5 : 0.7}
-                  strokeDasharray={isDone ? "none" : "4 3"} />
-              );
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        <div style={{ flexShrink: 0, width: 260, background: '#020000', borderRight: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden', paddingTop: 12 }}>
+          <div style={{ fontSize: 9, letterSpacing: 3, color: '#2a0000', marginBottom: 4 }}>{t.move}</div>
+          <div style={{ fontSize: 8, letterSpacing: 2, color: '#1a0000', marginBottom: 8 }}>{t.interact}</div>
+          <svg width="240" height="480" style={{ overflow: 'visible' }}>
+            {NODE_POSITIONS.map((n, i) => {
+              if (i === 0) return null
+              const prev = NODE_POSITIONS[i - 1]
+              return <line key={`l${i}`} x1={prev.x} y1={prev.y} x2={n.x} y2={n.y} stroke={i <= playerPos ? COLORS.red : '#111'} strokeWidth={i <= playerPos ? 1.5 : 1} strokeDasharray={i <= playerPos ? '' : '4 4'} />
             })}
-
-            {/* Hex nodes */}
-            {mapNodes.map((node) => (
-              <HexNode
-                key={node.i}
-                x={node.x}
-                y={node.y}
-                size={16}
-                active={node.i === currentNode}
-                done={node.i < currentNode}
-                label={String(node.i + 1)}
-                onClick={() => {
-                  if (node.i < currentNode && fragments[node.i]) {
-                    typeText(fragments[node.i].text);
-                    setHash(fragments[node.i].storage_hash);
-                  }
-                }}
-              />
-            ))}
-
-            {/* Detective sprite position */}
-            <foreignObject x={mapNodes[Math.min(currentNode, TOTAL_FRAGMENTS - 1)].x - 20} y={mapNodes[Math.min(currentNode, TOTAL_FRAGMENTS - 1)].y + 18} width={40} height={40} style={{ transition: "all 0.8s ease" }}>
-              <div style={{ animation: "sprite-idle 1.5s ease-in-out infinite" }}>
-                <PixelSprite type="detective" size={40} />
-              </div>
-            </foreignObject>
-
-            {/* Witness at node 3 */}
-            {currentNode <= 3 && (
-              <foreignObject x={mapNodes[2].x - 20} y={mapNodes[2].y - 48} width={40} height={48}>
-                <div style={{ animation: "sprite-idle 1.8s ease-in-out infinite" }}>
-                  <PixelSprite type="witness" size={36} />
-                </div>
-              </foreignObject>
-            )}
-
-            {/* Shadow approaching */}
-            {shadowNode < TOTAL_FRAGMENTS && (
-              <foreignObject x={mapNodes[shadowNode].x - 20} y={mapNodes[shadowNode].y - 44} width={40} height={44}>
-                <div style={{ animation: "sprite-idle 2s ease-in-out infinite", transition: "all 1s ease" }}>
-                  <PixelSprite type="shadow" size={36} />
-                </div>
-              </foreignObject>
-            )}
+            {NODE_POSITIONS.map((n, i) => {
+              const isActive = i === playerPos
+              const isDone = i < playerPos
+              const isShadow = i === shadowPos
+              const r = 14
+              const pts = Array.from({ length: 6 }, (_, k) => { const a = (Math.PI / 180) * (60 * k - 30); return `${n.x + r * Math.cos(a)},${n.y + r * Math.sin(a)}` }).join(' ')
+              return (
+                <g key={i}>
+                  {isActive && <circle cx={n.x} cy={n.y} r={22} fill="none" stroke={COLORS.red} strokeWidth={1} opacity={0.3}><animate attributeName="r" values="16;24;16" dur="2s" repeatCount="indefinite" /><animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite" /></circle>}
+                  <polygon points={pts} fill={isActive ? COLORS.red : isDone ? '#1a0800' : '#0a0a0a'} stroke={isActive ? '#ff2200' : isDone ? COLORS.red : '#222'} strokeWidth={isActive ? 2 : 1} />
+                  <text x={n.x} y={n.y + 4} textAnchor="middle" fill={isDone ? COLORS.amber : isActive ? '#fff' : '#333'} fontSize="9" fontFamily="monospace">{isDone ? '✓' : isActive ? '◆' : i + 1}</text>
+                  {isActive && <g><rect x={n.x-8} y={n.y-36} width={16} height={20} rx={2} fill="#1a1a1a" stroke={COLORS.red} strokeWidth={0.5}/><rect x={n.x-6} y={n.y-32} width={12} height={4} rx={1} fill="#c4923a"/><rect x={n.x-4} y={n.y-27} width={8} height={8} fill="#333"/><circle cx={n.x-1} cy={n.y-23} r={1} fill="#fff"/><circle cx={n.x+3} cy={n.y-23} r={1} fill="#fff"/></g>}
+                  {i === 3 && !isDone && <g><rect x={n.x-6} y={n.y-34} width={12} height={16} rx={2} fill={COLORS.amber} opacity={0.6}/><text x={n.x} y={n.y-38} textAnchor="middle" fontSize="10" fill={COLORS.amber} fontFamily="monospace" fontWeight="bold">!</text></g>}
+                  {isShadow && <g><circle cx={n.x} cy={n.y-20} r={14} fill="rgba(139,0,0,0.08)"><animate attributeName="r" values="12;18;12" dur="1.5s" repeatCount="indefinite"/></circle><rect x={n.x-7} y={n.y-34} width={14} height={18} rx={2} fill="#080808"/><circle cx={n.x-2} cy={n.y-26} r={1.5} fill="#ff0000"><animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/></circle><circle cx={n.x+4} cy={n.y-26} r={1.5} fill="#ff0000"><animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" begin="0.3s"/></circle></g>}
+                </g>
+              )
+            })}
           </svg>
         </div>
 
-        {/* FRAGMENT AREA */}
-        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", background: "#020000" }}>
-          <div style={{ flex: 1, overflowY: "auto", padding: "28px 32px", minHeight: 0 }}>
-            <div className="glass-panel" style={{ borderRadius: 4, padding: 24, minHeight: 180 }}>
-              {loading ? (
-                <div style={{ textAlign: "center", padding: "40px 0" }}>
-                  <div style={{ width: 40, height: 40, border: "2px solid #1a0000", borderTop: "2px solid #8B0000", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
-                  <p style={{ fontFamily: "monospace", fontSize: 12, color: "#C4923A", opacity: 0.5 }}>
-                    {slowMsg ? L.slowLoading : L.loading1}
-                  </p>
-                </div>
-              ) : displayText ? (
-                <p style={{ fontSize: 16, lineHeight: 1.9, color: "#e8d5b0", margin: 0 }}>
-                  {displayText}
-                  {typing && <span style={{ animation: "blink 0.7s infinite", color: "#8B0000" }}>▌</span>}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+            {!hasFragment && !isLoading && !display && (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+                <div style={{ fontSize: 11, color: '#2a0000', letterSpacing: 4, textAlign: 'center' }}>{t.waiting}</div>
+                <button onClick={e => { e.stopPropagation(); generateFragment() }} style={{ background: 'transparent', border: `1px solid ${COLORS.red}`, color: COLORS.red, padding: '14px 36px', fontFamily: '"Special Elite", serif', fontSize: 13, cursor: 'pointer', letterSpacing: 3, transition: 'all 0.3s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = COLORS.red; e.currentTarget.style.color = '#fff' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = COLORS.red }}>
+                  {t.access}
+                </button>
+                <div style={{ fontSize: 10, color: '#1a0000', letterSpacing: 2 }}>{t.move} · {t.interact}</div>
+              </div>
+            )}
+            {isLoading && (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                {t.loading.map((msg, i) => <div key={i} style={{ fontSize: 11, letterSpacing: 2, color: i === loadMsg ? COLORS.red : '#1a0000', transition: 'color 0.5s', fontFamily: 'monospace' }}>{i <= loadMsg ? '▶' : '·'} {msg}</div>)}
+              </div>
+            )}
+            {display && (
+              <div style={{ background: '#04000a', border: `1px solid ${COLORS.border}`, borderLeft: `3px solid ${COLORS.red}`, padding: '20px 24px', borderRadius: 2 }}>
+                <div style={{ fontSize: 9, color: '#2a0000', letterSpacing: 4, marginBottom: 14, fontFamily: 'monospace' }}>[{t.fragment} {String(playerPos + 1).padStart(2, '0')} / {NODES}]</div>
+                <p style={{ fontSize: 15, lineHeight: 1.95, color: COLORS.text, margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {display}{isTyping && <span style={{ color: COLORS.red, animation: 'blink 0.6s infinite' }}>▌</span>}
                 </p>
-              ) : (
-                <div style={{ textAlign: "center", padding: "40px 0" }}>
-                  <button
-                    onClick={() => generateFragment()}
-                    className="choice-btn"
-                    style={{ background: "transparent", border: "1px solid #8B0000", color: "#8B0000", padding: "14px 28px", fontFamily: "'Special Elite'", fontSize: 14, letterSpacing: 2, transition: "all 0.3s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "#8B0000"; e.currentTarget.style.color = "#fff"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#8B0000"; }}
-                  >
-                    {L.access}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {displayText && !typing && hash && (
-              <div style={{ marginTop: 10, fontFamily: "monospace", fontSize: 11, color: "#00ff41", opacity: 0.6 }}>
-                {L.stored} — {hash.slice(0, 20)}...
+                {!isTyping && storageHash && <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${COLORS.border}`, fontSize: 10, color: COLORS.green, fontFamily: 'monospace', opacity: 0.7 }}>{t.stored} · {storageHash.slice(0, 22)}...</div>}
               </div>
             )}
-
-            {displayText && !typing && fragments.length > 0 && (
-              <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {fragments[fragments.length - 1]?.tags?.map((tag) => (
-                  <span key={tag} style={{ fontSize: 9, color: "#8B0000", border: "1px solid #1a0000", padding: "2px 6px", fontFamily: "monospace", textTransform: "uppercase", opacity: 0.5 }}>{tag}</span>
-                ))}
-              </div>
-            )}
+            {done && !isTyping && <div style={{ marginTop: 20, textAlign: 'center', fontSize: 12, color: COLORS.red, letterSpacing: 4 }}>{t.complete}</div>}
           </div>
         </div>
       </div>
 
-      {/* CHOICES — bottom fixed */}
-      {displayText && !typing && !loading && choiceA && choiceB && currentNode < TOTAL_FRAGMENTS - 1 && (
-        <div className="glass-panel" style={{ height: 130, minHeight: 130, borderTop: "1px solid #8B0000", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 32px", gap: 8, flexShrink: 0, borderRadius: 0 }}>
-          <div style={{ fontSize: 10, color: "#555", letterSpacing: 3, textAlign: "center", marginBottom: 2 }}>{L.choose}</div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <button onClick={() => handleChoice("A")} className="choice-btn" style={{ flex: 1, height: 50, background: "transparent", border: "1px solid #8B0000", color: "#e8d5b0", fontFamily: "'Special Elite'", fontSize: 13, padding: "0 16px", textAlign: "left" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "#8B0000"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#e8d5b0"; }}>
-              <span style={{ fontSize: 9, color: "#8B0000", display: "block", marginBottom: 2, letterSpacing: 2 }}>{L.optionA}</span>
-              {choiceA}
-            </button>
-            <button onClick={() => handleChoice("B")} className="choice-btn" style={{ flex: 1, height: 50, background: "transparent", border: "1px solid #333", color: "#888", fontFamily: "'Special Elite'", fontSize: 13, padding: "0 16px", textAlign: "left" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "#1a0000"; e.currentTarget.style.color = "#e8d5b0"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#888"; }}>
-              <span style={{ fontSize: 9, color: "#555", display: "block", marginBottom: 2, letterSpacing: 2 }}>{L.optionB}</span>
-              {choiceB}
-            </button>
+      <div style={{ flexShrink: 0, height: showChoices && !done ? 108 : 0, overflow: 'hidden', transition: 'height 0.5s cubic-bezier(0.4,0,0.2,1)', background: '#030000', borderTop: showChoices ? `1px solid ${COLORS.border}` : 'none' }}>
+        <div style={{ height: 108, padding: '10px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
+          <div style={{ textAlign: 'center', fontSize: 9, color: '#2a0000', letterSpacing: 4 }}>{t.choose}</div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {([{ opt: 'A' as const, label: choiceA, bc: COLORS.red, hbg: COLORS.red }, { opt: 'B' as const, label: choiceB, bc: '#222', hbg: '#1a0000' }]).map(({ opt, label, bc, hbg }) => (
+              <button key={opt} onClick={e => { e.stopPropagation(); handleChoice(opt) }}
+                style={{ flex: 1, height: 44, background: 'transparent', border: `1px solid ${bc}`, color: COLORS.text, fontFamily: '"Special Elite", serif', fontSize: 12, cursor: 'pointer', transition: 'all 0.25s', letterSpacing: 1 }}
+                onMouseEnter={e => { e.currentTarget.style.background = hbg; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = COLORS.redBright }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = COLORS.text; e.currentTarget.style.borderColor = bc }}>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
-      )}
+      </div>
 
-      {currentNode >= TOTAL_FRAGMENTS - 1 && displayText && !typing && (
-        <div className="glass-panel" style={{ height: 100, minHeight: 100, borderTop: "1px solid #8B0000", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, borderRadius: 0 }}>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: 22, color: "#8B0000", margin: 0 }}>{L.endTitle}</p>
-            <p style={{ fontSize: 11, color: "#C4923A", opacity: 0.4, marginTop: 4, fontFamily: "monospace" }}>{TOTAL_FRAGMENTS} {L.endSub}</p>
-          </div>
-        </div>
-      )}
+      <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:#000}::-webkit-scrollbar-thumb{background:#2a0000}`}</style>
     </div>
-  );
+  )
 }
 
 export default function GamePage() {
-  return (
-    <Suspense fallback={<div style={{ width: "100vw", height: "100vh", background: "#000" }} />}>
-      <GameContent />
-    </Suspense>
-  );
+  return <Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#000' }} />}><GameContent /></Suspense>
 }

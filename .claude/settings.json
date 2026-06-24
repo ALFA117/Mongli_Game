@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(*)",
+      "PowerShell(*)",
+      "Write(*)",
+      "Edit(*)",
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "TodoWrite(*)",
+      "Skill(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Agent(*)",
+      "NotebookEdit(*)",
+      "AskUserQuestion(*)"
+    ]
+  }
+}
