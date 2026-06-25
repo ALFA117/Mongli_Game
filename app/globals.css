@@ -99,7 +99,7 @@ body {
     height: 200%;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='5' stitchTiles='stitch' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
     pointer-events: none;
-    z-index: 9998;
+    z-index: 1;
     animation: grainShift 0.4s steps(1) infinite;
     mix-blend-mode: overlay;
   }
@@ -123,7 +123,7 @@ body {
     height: 100%;
     background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.6) 80%, rgba(0, 0, 0, 0.9) 100%);
     pointer-events: none;
-    z-index: 9997;
+    z-index: 1;
   }
 
   /* ══════════ Typewriter Cursor ══════════ */

@@ -51,7 +51,7 @@ function GameContent() {
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
   const generatingGuard = useRef(false);
 
-  const act = ACTS[currentActIdx];
+  const act = ACTS[Math.min(currentActIdx, ACTS.length - 1)];
   const totalActs = ACTS.length;
   const progressPercent = ((currentActIdx) / totalActs) * 100 + (fragIdx / 3) * (100 / totalActs);
 
@@ -250,13 +250,14 @@ function GameContent() {
     }, 2000);
   }, [fragIdx, actFragments.length, currentActIdx]);
 
-  // Skip typewriter on click
+  // Click anywhere during fragments: skip typewriter OR advance to next/decision
   const handleSkipClick = useCallback(() => {
     if (phase !== "fragments") return;
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+
     if (!fragmentDone && actFragments[fragIdx]) {
-      // Force complete
+      // Typewriter still running — force complete, then auto-advance quickly
       setFragmentDone(true);
-      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
       autoAdvanceTimer.current = setTimeout(() => {
         if (fragIdx < 2 && actFragments.length > fragIdx + 1) {
           setFragIdx((prev) => prev + 1);
@@ -265,7 +266,16 @@ function GameContent() {
           if (currentActIdx >= 4) setPhase("revelation");
           else setPhase("decision");
         }
-      }, 500);
+      }, 400);
+    } else if (fragmentDone) {
+      // Typewriter done — advance immediately on click
+      if (fragIdx < 2 && actFragments.length > fragIdx + 1) {
+        setFragIdx((prev) => prev + 1);
+        setFragmentDone(false);
+      } else if (fragIdx >= 2) {
+        if (currentActIdx >= 4) setPhase("revelation");
+        else setPhase("decision");
+      }
     }
   }, [phase, fragmentDone, fragIdx, actFragments, currentActIdx]);
 
@@ -535,19 +545,31 @@ function GameContent() {
                     fragment={actFragments[fragIdx]}
                     onComplete={handleFragmentComplete}
                   />
-                ) : null}
+                ) : (
+                  <p style={{ color: "#8C8275", fontSize: 12, textAlign: "center", padding: 40 }}>
+                    Esperando fragmento...
+                  </p>
+                )}
 
-                {/* Skip hint */}
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} transition={{ delay: 3 }}
-                  className="text-center mt-4 font-body text-[8px] text-noir-muted/40 tracking-wider">
-                  click para avanzar
-                </motion.p>
+                {/* Skip hint — clickable */}
+                <motion.button
+                  initial={{ opacity: 0 }} animate={{ opacity: fragmentDone ? 0.7 : 0.3 }} transition={{ delay: fragmentDone ? 0 : 3 }}
+                  onClick={(e) => { e.stopPropagation(); handleSkipClick(); }}
+                  style={{ position: "relative", zIndex: 30, cursor: "pointer" }}
+                  className="text-center mt-4 font-body text-[10px] tracking-wider block w-full py-3"
+                  whileHover={{ opacity: 1 }}
+                >
+                  <span style={{ color: fragmentDone ? "#B30000" : "#8C8275" }}>
+                    {fragmentDone ? "▶ click para avanzar" : "click para saltar"}
+                  </span>
+                </motion.button>
               </motion.div>
             )}
 
             {/* ═══ DECISION ═══ */}
             {phase === "decision" && (
-              <motion.div key="decide" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <motion.div key="decide" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                style={{ position: "relative", zIndex: 25 }}>
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.5 }}
                   className="font-body text-[9px] text-noir-accent tracking-[0.3em] uppercase mb-6 text-center lg:text-left">
                   Esta decisión define tu historia
