@@ -11,7 +11,7 @@ import LoadingScreen from "@/components/LoadingScreen";
 import ScanlineOverlay from "@/components/ScanlineOverlay";
 import AudioToggle from "@/components/AudioToggle";
 import { INITIAL_SCENES } from "@/lib/types";
-import { initAudio, playAmbient, playChoice } from "@/lib/audio";
+import { initAudio, playChoice, startAudioOnFirstInteraction } from "@/lib/audio";
 import { useKeyboardNav } from "@/lib/useKeyboardNav";
 import { useRouter } from "next/navigation";
 
@@ -41,8 +41,7 @@ function LandingContent() {
 
   const startAudio = useCallback(() => {
     if (!audioStarted) {
-      initAudio();
-      playAmbient();
+      startAudioOnFirstInteraction();
       setAudioStarted(true);
     }
   }, [audioStarted]);
@@ -245,6 +244,15 @@ function LandingContent() {
           <p className="font-body text-[8px] text-noir-muted/50">
             Recuerdos almacenados en 0G Storage &middot; Verificados en 0G Chain
           </p>
+          {!audioStarted && (
+            <motion.p
+              animate={{ opacity: [0.3, 0.7, 0.3] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="font-body text-[9px] text-noir-accent/50 mt-2 tracking-wider"
+            >
+              [ click en cualquier lugar para activar el audio ]
+            </motion.p>
+          )}
         </motion.div>
       </footer>
     </div>

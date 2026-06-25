@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 
 type SceneType = "hotel" | "alley" | "office" | "void" | "archive";
@@ -11,226 +11,251 @@ interface Skull3DProps {
   onSkullClick?: () => void;
 }
 
-const SCENE_CONFIG = {
-  hotel: { color: "#d4a244", glow: "rgba(212,162,68,0.4)", eyeColor: "#d4a244", bg: "rgba(212,162,68,0.03)" },
-  alley: { color: "#6090c0", glow: "rgba(96,144,192,0.4)", eyeColor: "#80b0e0", bg: "rgba(96,144,192,0.03)" },
-  office: { color: "#40c040", glow: "rgba(64,192,64,0.3)", eyeColor: "#60ff60", bg: "rgba(64,192,64,0.02)" },
-  void: { color: "#d4a244", glow: "rgba(212,162,68,0.2)", eyeColor: "#d4a244", bg: "transparent" },
-  archive: { color: "#c4a070", glow: "rgba(196,160,112,0.3)", eyeColor: "#d4a244", bg: "rgba(196,160,112,0.02)" },
+const SCENES = {
+  hotel:  { eye: "#d4a244", glow: "rgba(212,162,68,0.5)", bone: "#d4a244", bg: "rgba(212,162,68,0.04)" },
+  alley:  { eye: "#4080d0", glow: "rgba(64,128,208,0.5)", bone: "#6090c0", bg: "rgba(64,128,208,0.03)" },
+  office: { eye: "#00ff41", glow: "rgba(0,255,65,0.4)",   bone: "#30b030", bg: "rgba(0,255,65,0.02)" },
+  void:   { eye: "#ffffff", glow: "rgba(255,255,255,0.3)", bone: "#888888", bg: "transparent" },
+  archive:{ eye: "#d4a244", glow: "rgba(212,162,68,0.4)", bone: "#c4a070", bg: "rgba(196,160,112,0.03)" },
 };
 
-function SkullSVG({ color, eyeColor, glow }: { color: string; eyeColor: string; glow: string }) {
+// ─── The skull SVG (shared across all layers) ───
+function SkullPath({ color, opacity = 1 }: { color: string; opacity?: number }) {
   return (
-    <svg viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-      <defs>
-        <filter id="skull-glow">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <filter id="eye-glow">
-          <feGaussianBlur stdDeviation="5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <radialGradient id="bone-grad" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stopColor={color} stopOpacity="0.15" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-        </radialGradient>
-      </defs>
-
-      {/* Cranium outline */}
-      <path
-        d="M100 12 C55 12, 22 50, 22 90 C22 120, 30 140, 42 152 L42 160 C42 165, 45 170, 55 172 L65 174 L65 180 C65 185, 70 190, 80 190 L120 190 C130 190, 135 185, 135 180 L135 174 L145 172 C155 170, 158 165, 158 160 L158 152 C170 140, 178 120, 178 90 C178 50, 145 12, 100 12Z"
-        stroke={color}
-        strokeWidth="1.8"
-        fill="url(#bone-grad)"
-        filter="url(#skull-glow)"
-        strokeLinejoin="round"
-      />
-
-      {/* Cranium top detail lines */}
-      <path d="M60 55 Q100 48, 140 55" stroke={color} strokeWidth="0.5" strokeOpacity="0.3" fill="none" />
-      <path d="M100 12 L100 48" stroke={color} strokeWidth="0.4" strokeOpacity="0.2" />
-
+    <svg viewBox="0 0 200 230" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ opacity }}>
+      {/* Cranium */}
+      <path d="M100 15 C52 15, 20 55, 20 95 C20 125, 30 145, 44 158 L44 166 C44 172, 50 176, 58 178 L68 180 L68 188 C68 194, 74 198, 84 198 L116 198 C126 198, 132 194, 132 188 L132 180 L142 178 C150 176, 156 172, 156 166 L156 158 C170 145, 180 125, 180 95 C180 55, 148 15, 100 15Z" stroke={color} strokeWidth="2" fill="none" />
+      {/* Cranium suture lines */}
+      <path d="M58 50 Q100 42, 142 50" stroke={color} strokeWidth="0.6" opacity="0.25" />
+      <path d="M100 15 Q102 35, 100 50" stroke={color} strokeWidth="0.5" opacity="0.2" />
+      <path d="M70 45 Q65 70, 55 85" stroke={color} strokeWidth="0.4" opacity="0.15" />
+      <path d="M130 45 Q135 70, 145 85" stroke={color} strokeWidth="0.4" opacity="0.15" />
       {/* Brow ridge */}
-      <path
-        d="M45 95 Q60 82, 78 88 M122 88 Q140 82, 155 95"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeOpacity="0.6"
-        fill="none"
-        strokeLinecap="round"
-      />
-
-      {/* Left eye socket */}
-      <ellipse cx="72" cy="105" rx="18" ry="20" stroke={color} strokeWidth="1.5" fill="#050505">
-        <animate attributeName="ry" values="20;19;20" dur="4s" repeatCount="indefinite" />
-      </ellipse>
-      {/* Left eye glow */}
-      <ellipse cx="72" cy="105" rx="8" ry="9" fill={eyeColor} opacity="0.7" filter="url(#eye-glow)">
-        <animate attributeName="opacity" values="0.7;0.4;0.7" dur="3s" repeatCount="indefinite" />
-      </ellipse>
-      <ellipse cx="72" cy="105" rx="3" ry="3.5" fill={eyeColor} opacity="0.9" />
-
-      {/* Right eye socket */}
-      <ellipse cx="128" cy="105" rx="18" ry="20" stroke={color} strokeWidth="1.5" fill="#050505">
-        <animate attributeName="ry" values="20;19;20" dur="4s" repeatCount="indefinite" />
-      </ellipse>
-      {/* Right eye glow */}
-      <ellipse cx="128" cy="105" rx="8" ry="9" fill={eyeColor} opacity="0.7" filter="url(#eye-glow)">
-        <animate attributeName="opacity" values="0.7;0.4;0.7" dur="3s" repeatCount="indefinite" />
-      </ellipse>
-      <ellipse cx="128" cy="105" rx="3" ry="3.5" fill={eyeColor} opacity="0.9" />
-
-      {/* Nasal cavity */}
-      <path
-        d="M95 125 L100 140 L105 125 Z"
-        stroke={color}
-        strokeWidth="1.2"
-        fill="#080808"
-        strokeLinejoin="round"
-      />
-      <line x1="100" y1="118" x2="100" y2="125" stroke={color} strokeWidth="0.8" strokeOpacity="0.4" />
-
+      <path d="M42 98 Q58 82, 80 90" stroke={color} strokeWidth="1.8" opacity="0.5" />
+      <path d="M120 90 Q142 82, 158 98" stroke={color} strokeWidth="1.8" opacity="0.5" />
       {/* Cheekbones */}
-      <path d="M50 115 Q58 125, 55 140" stroke={color} strokeWidth="1" strokeOpacity="0.5" fill="none" />
-      <path d="M150 115 Q142 125, 145 140" stroke={color} strokeWidth="1" strokeOpacity="0.5" fill="none" />
-
+      <path d="M48 118 Q56 130, 52 148" stroke={color} strokeWidth="1.2" opacity="0.4" />
+      <path d="M152 118 Q144 130, 148 148" stroke={color} strokeWidth="1.2" opacity="0.4" />
       {/* Zygomatic arch */}
-      <path d="M40 105 Q35 115, 42 130" stroke={color} strokeWidth="0.8" strokeOpacity="0.3" fill="none" />
-      <path d="M160 105 Q165 115, 158 130" stroke={color} strokeWidth="0.8" strokeOpacity="0.3" fill="none" />
-
+      <path d="M32 95 Q28 112, 36 130" stroke={color} strokeWidth="0.8" opacity="0.3" />
+      <path d="M168 95 Q172 112, 164 130" stroke={color} strokeWidth="0.8" opacity="0.3" />
+      {/* Temporal */}
+      <path d="M28 78 Q24 95, 28 115" stroke={color} strokeWidth="0.5" opacity="0.2" />
+      <path d="M172 78 Q176 95, 172 115" stroke={color} strokeWidth="0.5" opacity="0.2" />
+      {/* Nose cavity */}
+      <path d="M93 128 L100 146 L107 128 Z" stroke={color} strokeWidth="1.5" fill="none" />
+      <path d="M97 128 L100 118" stroke={color} strokeWidth="0.7" opacity="0.3" />
+      <path d="M103 128 L100 118" stroke={color} strokeWidth="0.7" opacity="0.3" />
+      {/* Jaw / mandible */}
+      <path d="M56 162 Q58 186, 84 198 L116 198 Q142 186, 144 162" stroke={color} strokeWidth="1" opacity="0.35" />
       {/* Upper teeth */}
-      {Array.from({ length: 8 }, (_, i) => (
-        <rect
-          key={`ut${i}`}
-          x={72 + i * 7}
-          y={155}
-          width={5.5}
-          height={10}
-          rx={1}
-          stroke={color}
-          strokeWidth="0.8"
-          fill="#0a0a0a"
-          strokeOpacity="0.7"
-        />
-      ))}
-
+      {[-3,-2,-1,0,1,2,3].map(i => <rect key={`u${i}`} x={74+i*7.5} y={160} width={6} height={11} rx={1} stroke={color} strokeWidth="0.8" fill="none" opacity="0.5" />)}
       {/* Lower teeth */}
-      {Array.from({ length: 6 }, (_, i) => (
-        <rect
-          key={`lt${i}`}
-          x={78 + i * 7}
-          y={167}
-          width={5}
-          height={8}
-          rx={1}
-          stroke={color}
-          strokeWidth="0.6"
-          fill="#0a0a0a"
-          strokeOpacity="0.5"
-        />
-      ))}
-
-      {/* Jaw line / mandible */}
-      <path
-        d="M55 155 Q55 178, 80 190 L120 190 Q145 178, 145 155"
-        stroke={color}
-        strokeWidth="1"
-        strokeOpacity="0.4"
-        fill="none"
-      />
-
-      {/* Temporal bone details */}
-      <path d="M30 80 Q25 100, 30 120" stroke={color} strokeWidth="0.5" strokeOpacity="0.25" fill="none" />
-      <path d="M170 80 Q175 100, 170 120" stroke={color} strokeWidth="0.5" strokeOpacity="0.25" fill="none" />
+      {[-2,-1,0,1,2].map(i => <rect key={`l${i}`} x={80+i*7.5} y={173} width={5.5} height={9} rx={1} stroke={color} strokeWidth="0.6" fill="none" opacity="0.35" />)}
     </svg>
   );
 }
 
 export default function Skull3D({ className = "", scene = "hotel", onSkullClick }: Skull3DProps) {
-  const config = SCENE_CONFIG[scene];
-  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+  const cfg = SCENES[scene];
   const containerRef = useRef<HTMLDivElement>(null);
+  const rotRef = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
+  const rafRef = useRef<number>(0);
+  const [flash, setFlash] = useState(false);
 
+  // Parallax with inertia via rAF
   useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
+    const onMove = (cx: number, cy: number) => {
       if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      setMouseOffset({
-        x: ((e.clientX - cx) / rect.width) * 12,
-        y: ((e.clientY - cy) / rect.height) * 8,
-      });
+      const r = containerRef.current.getBoundingClientRect();
+      rotRef.current.tx = ((cx - r.left - r.width / 2) / r.width) * 15;
+      rotRef.current.ty = -((cy - r.top - r.height / 2) / r.height) * 12;
     };
-    window.addEventListener("mousemove", handleMove);
-    return () => window.removeEventListener("mousemove", handleMove);
+    const mouseHandler = (e: MouseEvent) => onMove(e.clientX, e.clientY);
+    const touchHandler = (e: TouchEvent) => { if (e.touches[0]) onMove(e.touches[0].clientX, e.touches[0].clientY); };
+
+    const animate = () => {
+      rotRef.current.x += (rotRef.current.tx - rotRef.current.x) * 0.08;
+      rotRef.current.y += (rotRef.current.ty - rotRef.current.y) * 0.08;
+      if (containerRef.current) {
+        const inner = containerRef.current.querySelector("[data-skull-inner]") as HTMLElement;
+        if (inner) {
+          inner.style.transform = `rotateY(${rotRef.current.x}deg) rotateX(${rotRef.current.y}deg)`;
+        }
+      }
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    window.addEventListener("mousemove", mouseHandler);
+    window.addEventListener("touchmove", touchHandler, { passive: true });
+    rafRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      window.removeEventListener("mousemove", mouseHandler);
+      window.removeEventListener("touchmove", touchHandler);
+      cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
-  const handleClick = useCallback(() => { onSkullClick?.(); }, [onSkullClick]);
+  const handleClick = useCallback(() => {
+    setFlash(true);
+    setTimeout(() => setFlash(false), 300);
+    onSkullClick?.();
+  }, [onSkullClick]);
+
+  if (scene === "archive") {
+    return (
+      <div ref={containerRef} className={`relative ${className}`} style={{ perspective: 800 }}>
+        <div data-skull-inner style={{ transformStyle: "preserve-3d", transition: "transform 0.1s" }}>
+          {[
+            { x: 0, y: 0, z: 0, s: 0.55 },
+            { x: -35, y: -20, z: -30, s: 0.3 },
+            { x: 30, y: 15, z: -50, s: 0.25 },
+            { x: -25, y: 25, z: -70, s: 0.2 },
+          ].map((pos, i) => (
+            <motion.div
+              key={i}
+              className="absolute inset-0"
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 3 + i, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
+              style={{
+                transform: `translate(${pos.x}%, ${pos.y}%) translateZ(${pos.z}px) scale(${pos.s})`,
+                opacity: i === 0 ? 0.9 : 0.35,
+                filter: i > 0 ? "blur(0.5px)" : "none",
+              }}
+            >
+              <SkullPath color={cfg.bone} />
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const skullScale = scene === "void" ? 1.15 : 1;
 
   return (
-    <div ref={containerRef} className={`relative ${className}`} onClick={handleClick}>
-      {/* Background glow */}
-      <div
-        className="absolute inset-0 rounded-full blur-[60px] scale-[1.3]"
-        style={{ backgroundColor: config.bg }}
-      />
-
-      {/* Animated skull */}
+    <div
+      ref={containerRef}
+      className={`relative ${className}`}
+      style={{ perspective: 800 }}
+      onClick={handleClick}
+    >
+      {/* Breathing + 3D container */}
       <motion.div
-        animate={{
-          y: [0, -6, 0],
-          rotateX: mouseOffset.y * 0.3,
-          rotateY: mouseOffset.x * 0.5,
-        }}
-        transition={{
-          y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-          rotateX: { duration: 0.3 },
-          rotateY: { duration: 0.3 },
-        }}
-        style={{
-          perspective: 800,
-          filter: `drop-shadow(0 0 20px ${config.glow})`,
-        }}
-        className="w-full h-full"
+        data-skull-inner
+        animate={{ scale: [skullScale, skullScale * 1.03, skullScale] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        style={{ transformStyle: "preserve-3d", willChange: "transform" }}
       >
-        <SkullSVG color={config.color} eyeColor={config.eyeColor} glow={config.glow} />
+        {/* Layer 1: Deep shadow (far back) */}
+        <div
+          className="absolute inset-0"
+          style={{
+            transform: "translateZ(-40px) scale(1.05)",
+            filter: "blur(12px)",
+            opacity: 0.25,
+          }}
+        >
+          <SkullPath color={cfg.bone} />
+        </div>
+
+        {/* Layer 2: Outer glow / contour (mid-back) */}
+        <div
+          className="absolute inset-0"
+          style={{
+            transform: "translateZ(-20px) scale(1.02)",
+            filter: "blur(4px)",
+            opacity: 0.4,
+          }}
+        >
+          <SkullPath color={cfg.bone} />
+        </div>
+
+        {/* Layer 3: Main skull (center) */}
+        <div className="relative" style={{ transform: "translateZ(0px)" }}>
+          <SkullPath color={cfg.bone} />
+        </div>
+
+        {/* Layer 4: Bone detail lines (slightly forward) */}
+        <div
+          className="absolute inset-0"
+          style={{ transform: "translateZ(10px)", opacity: 0.15 }}
+        >
+          <SkullPath color={cfg.bone} opacity={0.3} />
+        </div>
+
+        {/* Layer 5: Eye glow (forward) */}
+        <div className="absolute inset-0" style={{ transform: "translateZ(20px)" }}>
+          <svg viewBox="0 0 200 230" className="w-full h-full">
+            <defs>
+              <filter id="eye-glow-3d">
+                <feGaussianBlur stdDeviation="6" />
+              </filter>
+            </defs>
+            {/* Left eye glow */}
+            <ellipse cx="72" cy="108" rx="14" ry="16" fill={cfg.eye} opacity="0.6" filter="url(#eye-glow-3d)" />
+            <ellipse cx="72" cy="108" rx="6" ry="7" fill={cfg.eye} opacity="0.85" />
+            <ellipse cx="72" cy="108" rx="2.5" ry="3" fill="#fff" opacity="0.7" />
+            {/* Right eye glow */}
+            <ellipse cx="128" cy="108" rx="14" ry="16" fill={cfg.eye} opacity="0.6" filter="url(#eye-glow-3d)" />
+            <ellipse cx="128" cy="108" rx="6" ry="7" fill={cfg.eye} opacity="0.85" />
+            <ellipse cx="128" cy="108" rx="2.5" ry="3" fill="#fff" opacity="0.7" />
+            {/* Eye sockets dark */}
+            <ellipse cx="72" cy="108" rx="18" ry="21" stroke={cfg.bone} strokeWidth="1.5" fill="#050505" opacity="0.7" />
+            <ellipse cx="128" cy="108" rx="18" ry="21" stroke={cfg.bone} strokeWidth="1.5" fill="#050505" opacity="0.7" />
+          </svg>
+        </div>
+
+        {/* Layer 6: Floating particles (more forward) */}
+        <div className="absolute inset-0" style={{ transform: "translateZ(35px)" }}>
+          {Array.from({ length: 10 }, (_, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                width: 2 + Math.random() * 2,
+                height: 2 + Math.random() * 2,
+                backgroundColor: cfg.eye,
+                left: `${20 + Math.random() * 60}%`,
+                top: `${15 + Math.random() * 70}%`,
+              }}
+              animate={{
+                y: [0, -15 - Math.random() * 20, 0],
+                opacity: [0.15, 0.4, 0.15],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 3,
+                repeat: Infinity,
+                delay: Math.random() * 3,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Layer 7: Highlights / specular (closest) */}
+        <div className="absolute inset-0" style={{ transform: "translateZ(50px)", opacity: 0.08 }}>
+          <svg viewBox="0 0 200 230" className="w-full h-full">
+            <ellipse cx="85" cy="55" rx="20" ry="12" fill="#fff" />
+            <ellipse cx="130" cy="60" rx="12" ry="8" fill="#fff" />
+          </svg>
+        </div>
       </motion.div>
 
-      {/* Floating particles */}
-      {Array.from({ length: 12 }, (_, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full"
-          style={{
-            width: 2 + Math.random() * 3,
-            height: 2 + Math.random() * 3,
-            backgroundColor: config.color,
-            opacity: 0.2 + Math.random() * 0.2,
-            left: `${15 + Math.random() * 70}%`,
-            top: `${10 + Math.random() * 80}%`,
-          }}
-          animate={{
-            y: [0, -20 - Math.random() * 30, 0],
-            x: [0, (Math.random() - 0.5) * 20, 0],
-            opacity: [0.15, 0.35, 0.15],
-          }}
-          transition={{
-            duration: 3 + Math.random() * 4,
-            repeat: Infinity,
-            delay: Math.random() * 3,
-            ease: "easeInOut",
-          }}
+      {/* Background glow */}
+      <div
+        className="absolute inset-0 rounded-full blur-[50px] scale-[1.3] -z-10"
+        style={{ backgroundColor: cfg.bg }}
+      />
+
+      {/* Click flash */}
+      {flash && (
+        <div
+          className="absolute inset-0 z-20 rounded-full transition-opacity duration-300"
+          style={{ backgroundColor: "rgba(255,255,255,0.3)", opacity: flash ? 1 : 0 }}
         />
-      ))}
+      )}
     </div>
   );
 }
