@@ -3,312 +3,288 @@
 import { useState, useCallback, useEffect, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import Cursor from "@/components/Cursor";
 import Providers from "@/components/Providers";
 import WalletButton from "@/components/WalletButton";
 import FragmentComponent from "@/components/Fragment";
-import ChoicePanel from "@/components/ChoicePanel";
-import MemoryMap from "@/components/MemoryMap";
 import Toast from "@/components/Toast";
 import ScanlineOverlay from "@/components/ScanlineOverlay";
 import AudioToggle from "@/components/AudioToggle";
 import GlitchText from "@/components/GlitchText";
-import FragmentTimeline from "@/components/FragmentTimeline";
-import PlayerStats from "@/components/PlayerStats";
-import Revelation from "@/components/Revelation";
-import FragmentViewer from "@/components/FragmentViewer";
-import Achievements, { ACHIEVEMENTS } from "@/components/Achievements";
-import type { AchievementMeta } from "@/components/Achievements";
-import AchievementNotification from "@/components/AchievementNotification";
-import type { AchievementNotifItem } from "@/components/AchievementNotification";
-import MobileNav from "@/components/MobileNav";
-import { initAudio, playChainConfirm, playChoice, playAchievementSound, playDiscovery, setAct, startAudioOnFirstInteraction } from "@/lib/audio";
-import { useKeyboardNav } from "@/lib/useKeyboardNav";
+import { initAudio, playChainConfirm, playChoice, playDiscovery, setAct as setAudioAct, startAudioOnFirstInteraction } from "@/lib/audio";
 import { useChainWrite } from "@/lib/useChainWrite";
-import { INITIAL_SCENES } from "@/lib/types";
-import type { Fragment, Choice, GenerateResponse } from "@/lib/types";
+import { ACTS } from "@/lib/types";
+import type { Fragment, ActRecord, GenerateResponse } from "@/lib/types";
 import { useAccount } from "wagmi";
 
+const Skull3D = dynamic(() => import("@/components/Skull3D"), { ssr: false });
+
+type GamePhase = "transition" | "fragments" | "decision" | "revelation";
+
 function GameContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { isConnected } = useAccount();
-  const sceneId = searchParams.get("scene") || "hotel";
-  const scene = INITIAL_SCENES.find((s) => s.id === sceneId) || INITIAL_SCENES[0];
-
   const chainWrite = useChainWrite();
-  const [aiModel, setAiModel] = useState<string>("demo");
-  const [fragments, setFragments] = useState<Fragment[]>([]);
-  const [currentFragment, setCurrentFragment] = useState<Fragment | null>(null);
-  const [choices, setChoices] = useState<Choice[]>([]);
+
+  // Core game state
+  const [currentActIdx, setCurrentActIdx] = useState(0);
+  const [phase, setPhase] = useState<GamePhase>("transition");
+  const [actFragments, setActFragments] = useState<Fragment[]>([]);
+  const [fragIdx, setFragIdx] = useState(0);
+  const [allFragments, setAllFragments] = useState<Fragment[]>([]);
+  const [actRecords, setActRecords] = useState<ActRecord[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [fragmentRevealed, setFragmentRevealed] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-  const [showAchievements, setShowAchievements] = useState(false);
-  const [showRevelation, setShowRevelation] = useState(false);
-  const [viewingFragment, setViewingFragment] = useState<Fragment | null>(null);
-  const [toast, setToast] = useState<{ message: string; hash?: string; visible: boolean }>({
-    message: "",
-    visible: false,
-  });
+  const [fragmentDone, setFragmentDone] = useState(false);
+  const [aiModel, setAiModel] = useState<string>("demo");
   const [error, setError] = useState<string | null>(null);
-  const [screenShake, setScreenShake] = useState(false);
-  const [focusedChoiceIdx, setFocusedChoiceIdx] = useState(0);
-  const [newlyUnlockedId, setNewlyUnlockedId] = useState<number | undefined>();
-
-  // Achievement system
-  const [notifQueue, setNotifQueue] = useState<AchievementNotifItem[]>([]);
-  const [achievementMeta, setAchievementMeta] = useState<AchievementMeta>({
-    fragmentViewCounts: {},
-    txLinkClicked: false,
-    pointOfNoReturnTriggered: false,
+  const [toast, setToast] = useState<{ message: string; hash?: string; visible: boolean }>({
+    message: "", visible: false,
   });
-  const checkedAchievements = useRef(new Set<string>());
+  const [storageFallback, setStorageFallback] = useState(false);
+  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const anyModalOpen = showMap || showStats || showAchievements || showRevelation || !!viewingFragment;
+  const act = ACTS[currentActIdx];
+  const totalActs = ACTS.length;
+  const progressPercent = ((currentActIdx) / totalActs) * 100 + (fragIdx / 3) * (100 / totalActs);
 
-  // Track fragment views for "Eco Del Pasado" achievement
-  const handleViewFragment = useCallback((frag: Fragment) => {
-    setViewingFragment(frag);
-    setAchievementMeta((prev) => ({
-      ...prev,
-      fragmentViewCounts: {
-        ...prev.fragmentViewCounts,
-        [frag.id]: (prev.fragmentViewCounts[frag.id] || 0) + 1,
-      },
-    }));
-  }, []);
-
-  // Track TX link clicks for "La Cadena No Miente" achievement
-  const handleTxLinkClick = useCallback(() => {
-    setAchievementMeta((prev) => ({ ...prev, txLinkClicked: true }));
-  }, []);
-
-  // Keyboard navigation
-  useKeyboardNav({
-    onLeft: () => {
-      if (!anyModalOpen && fragmentRevealed && choices.length > 0) {
-        setFocusedChoiceIdx(0);
-      } else if (!anyModalOpen && currentFragment && currentFragment.id > 1) {
-        const prev = fragments.find((f) => f.id === currentFragment.id - 1);
-        if (prev) handleViewFragment(prev);
-      }
-    },
-    onRight: () => {
-      if (!anyModalOpen && fragmentRevealed && choices.length > 0) {
-        setFocusedChoiceIdx(Math.min(1, choices.length - 1));
-      }
-    },
-    onEnter: () => {
-      if (!anyModalOpen && fragmentRevealed && choices.length > 0) {
-        handleChoice(choices[focusedChoiceIdx]);
-      }
-    },
-    onEscape: () => {
-      if (showMap) setShowMap(false);
-      else if (showStats) setShowStats(false);
-      else if (showAchievements) setShowAchievements(false);
-      else if (viewingFragment) setViewingFragment(null);
-    },
-    enabled: !isGenerating,
-  });
-
+  // Audio init on first interaction
   useEffect(() => {
     initAudio();
-    // Audio starts on first user interaction (browser autoplay policy)
     const start = () => startAudioOnFirstInteraction();
     document.addEventListener("click", start, { once: true });
     document.addEventListener("touchstart", start, { once: true });
-    return () => {
-      document.removeEventListener("click", start);
-      document.removeEventListener("touchstart", start);
-    };
+    return () => { document.removeEventListener("click", start); document.removeEventListener("touchstart", start); };
   }, []);
 
-  // Redirect if wallet not connected on mount
+  // Redirect if no wallet
   useEffect(() => {
-    if (!isConnected && fragments.length === 0) {
-      router.push("/");
-    }
-  }, [isConnected, fragments.length, router]);
-
-  // Check all achievements whenever state changes
-  useEffect(() => {
-    for (const ach of ACHIEVEMENTS) {
-      if (checkedAchievements.current.has(ach.id)) continue;
-      if (ach.check(fragments, achievementMeta)) {
-        checkedAchievements.current.add(ach.id);
-        const notifItem: AchievementNotifItem = {
-          id: ach.id,
-          title: ach.title,
-          asciiIcon: ach.asciiIcon,
-          category: ach.category,
-        };
-        setTimeout(() => {
-          playAchievementSound(ach.category);
-          setNotifQueue((prev) => [...prev, notifItem]);
-        }, 1200);
-      }
-    }
-  }, [fragments, achievementMeta]);
-
-  // Trigger revelation at fragment 15
-  useEffect(() => {
-    if (fragments.length >= 15 && !showRevelation) {
-      setTimeout(() => setShowRevelation(true), 3000);
-    }
-  }, [fragments.length, showRevelation]);
-
-  const generateFragment = useCallback(
-    async (choiceText: string = "") => {
-      setIsGenerating(true);
-      setFragmentRevealed(false);
-      setChoices([]);
-      setError(null);
-
-      // Track point-of-no-return choices
-      const currentChoices = choices;
-      const chosenChoice = currentChoices.find((c) => c.text === choiceText);
-      if (chosenChoice?.isPointOfNoReturn) {
-        setAchievementMeta((prev) => ({ ...prev, pointOfNoReturnTriggered: true }));
-      }
-
-      try {
-        const response = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            scene: scene.description,
-            history: fragments,
-            choice: choiceText,
-            fragmentId: fragments.length + 1,
-          }),
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => null);
-          throw new Error(errData?.error || "Error generando fragmento");
-        }
-
-        const data = await response.json() as GenerateResponse & { aiModel?: string };
-
-        setAiModel(data.aiModel || "demo");
-        setCurrentFragment(data.fragment);
-        setFragments((prev) => [...prev, data.fragment]);
-        setChoices(data.choices);
-        setNewlyUnlockedId(data.fragment.id);
-        playDiscovery();
-
-        if (data.fragment.toneScore >= 7) {
-          setScreenShake(true);
-          setTimeout(() => setScreenShake(false), 500);
-        }
-
-        // Sign on-chain with MetaMask if wallet connected
-        if (chainWrite.isConnected && chainWrite.hasContract && data.storageHash) {
-          const onChainTx = await chainWrite.saveFragment(data.storageHash, data.fragment.id);
-          if (onChainTx) {
-            data.fragment.txHash = onChainTx;
-            setFragments((prev) =>
-              prev.map((f) => (f.id === data.fragment.id ? { ...f, txHash: onChainTx } : f))
-            );
-          }
-        }
-
-        playChainConfirm();
-        setToast({
-          message: chainWrite.isConnected
-            ? "Fragmento firmado y grabado en cadena"
-            : "Fragmento grabado (conecta wallet para firmar on-chain)",
-          hash: data.fragment.txHash || data.storageHash,
-          visible: true,
-        });
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Error desconocido";
-        setError(msg);
-        console.error(err);
-      } finally {
-        setIsGenerating(false);
-      }
-    },
-    [fragments, scene, choices]
-  );
-
-  useEffect(() => {
-    if (fragments.length === 0 && !isGenerating) {
-      generateFragment();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleChoice = (choice: Choice) => {
-    playChoice();
-    generateFragment(choice.text);
-  };
-
-  const handleMapSelect = (id: number) => {
-    const frag = fragments.find((f) => f.id === id);
-    if (frag) handleViewFragment(frag);
-  };
-
-  const handleTimelineSelect = (id: number) => {
-    const frag = fragments.find((f) => f.id === id);
-    if (frag) handleViewFragment(frag);
-  };
-
-  const handleDismissNotif = useCallback((id: string) => {
-    setNotifQueue((prev) => prev.filter((n) => n.id !== id));
-  }, []);
-
-  const act: 1 | 2 | 3 = fragments.length <= 5 ? 1 : fragments.length <= 12 ? 2 : 3;
+    if (!isConnected && allFragments.length === 0) router.push("/");
+  }, [isConnected, allFragments.length, router]);
 
   // Sync audio drone with act
   useEffect(() => {
-    setAct(showRevelation ? "revelation" : act);
-  }, [act, showRevelation]);
-  const actLabels = ["Identidad Desconocida", "Dos Caminos", "La Revelación"];
-  const actColors = [
-    "border-noir-accent/60 text-noir-accent",
-    "border-red-800/60 text-red-400",
-    "border-purple-800/60 text-purple-400",
-  ];
-  const progressPercent = (fragments.length / 15) * 100;
-  const unlockedAchCount = ACHIEVEMENTS.filter((a) =>
-    a.check(fragments, achievementMeta)
-  ).length;
+    const audioAct = currentActIdx < 2 ? 1 : currentActIdx < 4 ? 2 : 3;
+    setAudioAct(phase === "revelation" ? "revelation" : audioAct as 1 | 2 | 3);
+  }, [currentActIdx, phase]);
+
+  // Auto-start first act transition
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPhase("transition");
+      setTimeout(() => startActFragments(), 2500);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Generate one fragment from the API
+  const generateOneFragment = useCallback(async (fragmentNum: number, choiceText: string = ""): Promise<Fragment | null> => {
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scene: act.sceneDescription,
+          history: allFragments,
+          choice: choiceText,
+          fragmentId: allFragments.length + fragmentNum + 1,
+        }),
+      });
+
+      if (response.status === 429) {
+        const data = await response.json();
+        setToast({ message: `Espera ${data.retryAfter || 3}s`, visible: true });
+        return null;
+      }
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.error || "Error generando fragmento");
+      }
+
+      const data = await response.json() as GenerateResponse & { aiModel?: string; storageFallback?: boolean };
+      setAiModel(data.aiModel || "demo");
+      if (data.storageFallback) setStorageFallback(true);
+      return data.fragment;
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  }, [act, allFragments]);
+
+  // Start generating the 3 fragments for current act
+  const startActFragments = useCallback(async () => {
+    setPhase("fragments");
+    setActFragments([]);
+    setFragIdx(0);
+    setFragmentDone(false);
+    setIsGenerating(true);
+    setError(null);
+
+    const frags: Fragment[] = [];
+
+    for (let i = 0; i < 3; i++) {
+      const frag = await generateOneFragment(i);
+      if (frag) {
+        frags.push(frag);
+        setActFragments([...frags]);
+        if (i === 0) {
+          setFragIdx(0);
+          setIsGenerating(false);
+        }
+        playDiscovery();
+      } else {
+        // Use a placeholder if generation fails
+        frags.push({
+          id: allFragments.length + i + 1,
+          text: "La memoria se resiste. Fragmentos de un recuerdo que no termina de formarse...",
+          toneScore: 5, tags: ["niebla"], traces: [],
+          choiceMade: "", timestamp: Date.now(), unlocked: true,
+        });
+        setActFragments([...frags]);
+        if (i === 0) { setFragIdx(0); setIsGenerating(false); }
+      }
+    }
+  }, [generateOneFragment, allFragments.length]);
+
+  // When typewriter finishes a fragment, auto-advance after 2s
+  const handleFragmentComplete = useCallback(() => {
+    setFragmentDone(true);
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+
+    autoAdvanceTimer.current = setTimeout(() => {
+      if (fragIdx < 2 && actFragments.length > fragIdx + 1) {
+        setFragIdx((prev) => prev + 1);
+        setFragmentDone(false);
+      } else if (fragIdx >= 2) {
+        // All 3 fragments shown — show decision (or revelation for Act 5)
+        if (currentActIdx >= 4) {
+          setPhase("revelation");
+        } else {
+          setPhase("decision");
+        }
+      }
+    }, 2000);
+  }, [fragIdx, actFragments.length, currentActIdx]);
+
+  // Skip typewriter on click
+  const handleSkipClick = useCallback(() => {
+    if (phase !== "fragments") return;
+    if (!fragmentDone && actFragments[fragIdx]) {
+      // Force complete
+      setFragmentDone(true);
+      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+      autoAdvanceTimer.current = setTimeout(() => {
+        if (fragIdx < 2 && actFragments.length > fragIdx + 1) {
+          setFragIdx((prev) => prev + 1);
+          setFragmentDone(false);
+        } else if (fragIdx >= 2) {
+          if (currentActIdx >= 4) setPhase("revelation");
+          else setPhase("decision");
+        }
+      }, 500);
+    }
+  }, [phase, fragmentDone, fragIdx, actFragments, currentActIdx]);
+
+  // Handle act decision
+  const handleDecision = useCallback(async (decisionText: string) => {
+    playChoice();
+
+    // Save act record
+    const record: ActRecord = {
+      actId: act.id,
+      fragments: actFragments,
+      decision: decisionText,
+      timestamp: Date.now(),
+      toneAverage: actFragments.length > 0
+        ? actFragments.reduce((s, f) => s + f.toneScore, 0) / actFragments.length
+        : 5,
+    };
+
+    // Upload to 0G Storage
+    try {
+      const resp = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scene: act.sceneDescription,
+          history: [...allFragments, ...actFragments],
+          choice: decisionText,
+          fragmentId: allFragments.length + actFragments.length + 1,
+        }),
+      });
+      const data = await resp.json();
+      record.storageHash = data.storageHash;
+
+      // Sign on-chain
+      if (chainWrite.isConnected && chainWrite.hasContract && data.storageHash) {
+        const tx = await chainWrite.saveFragment(data.storageHash, act.id);
+        if (tx) record.txHash = tx;
+      }
+
+      playChainConfirm();
+      setToast({
+        message: `Acto ${act.id} guardado en 0G`,
+        hash: record.txHash || record.storageHash,
+        visible: true,
+      });
+    } catch {
+      setToast({ message: `Acto ${act.id} guardado localmente`, visible: true });
+    }
+
+    // Save records and advance
+    setActRecords((prev) => [...prev, record]);
+    setAllFragments((prev) => [...prev, ...actFragments]);
+
+    // Transition to next act
+    if (currentActIdx < 4) {
+      setPhase("transition");
+      setCurrentActIdx((prev) => prev + 1);
+      setTimeout(() => startActFragments(), 2500);
+    } else {
+      setPhase("revelation");
+    }
+  }, [act, actFragments, allFragments, chainWrite, currentActIdx, startActFragments]);
+
+  // Tone-based background tint
+  const currentFrag = actFragments[fragIdx];
+  const toneTint = currentFrag
+    ? currentFrag.toneScore > 7 ? "rgba(180,40,40,0.04)"
+      : currentFrag.toneScore < 4 ? "rgba(60,100,180,0.04)"
+      : "rgba(196,146,58,0.03)"
+    : "transparent";
 
   return (
-    <motion.div
-      className="min-h-screen flex flex-col relative"
-      animate={screenShake ? { x: [0, -4, 4, -3, 3, 0] } : {}}
-      transition={{ duration: 0.4 }}
-    >
+    <div className="min-h-screen flex flex-col relative" style={{ backgroundColor: toneTint }} onClick={handleSkipClick}>
       <Cursor />
       <ScanlineOverlay />
       <AudioToggle />
 
-      <FragmentTimeline
-        fragments={fragments}
-        currentId={currentFragment?.id || 0}
-        onSelect={handleTimelineSelect}
-      />
+      {/* Wallet disconnect overlay */}
+      {!isConnected && allFragments.length > 0 && (
+        <div className="fixed inset-0 z-[10000] bg-black/90 flex items-center justify-center p-6">
+          <div className="uxpm-glass p-8 max-w-sm w-full text-center">
+            <p className="font-display text-lg text-red-400 mb-3">Wallet desconectada</p>
+            <p className="font-body text-xs text-noir-muted mb-6">
+              Reconecta para continuar. Tu progreso está guardado.
+            </p>
+            <WalletButton />
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <header className="flex items-center justify-between p-3 sm:p-4 border-b border-noir-border/20 relative z-50">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <motion.button
-            onClick={() => router.push("/")}
-            whileHover={{ scale: 1.05 }}
-            className="font-display text-base sm:text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent transition-colors"
-          >
+        <div className="flex items-center gap-3">
+          <motion.button onClick={() => router.push("/")} whileHover={{ scale: 1.05 }}
+            className="font-display text-base sm:text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent transition-colors">
             <GlitchText text="MONGLI" intensity="low" />
           </motion.button>
-
-          <div className="hidden sm:flex items-center gap-3 text-[10px] font-body text-noir-muted">
-            <span className={`px-2 py-0.5 border ${actColors[act - 1]}`}>
-              Acto {act}: {actLabels[act - 1]}
+          <div className="hidden sm:flex items-center gap-2 text-[10px] font-body text-noir-muted">
+            <span className="px-2 py-0.5 border border-noir-accent/50 text-noir-accent">
+              Acto {act.id}: {act.title}
             </span>
-            <span className={`px-1.5 py-0.5 text-[8px] font-mono tracking-wider border ${
+            <span className={`px-1.5 py-0.5 text-[8px] font-mono border ${
               aiModel === "claude" ? "text-noir-accent border-noir-accent/40" :
               aiModel === "gemini" ? "text-blue-400 border-blue-400/40" :
               "text-noir-muted border-noir-border/40"
@@ -317,350 +293,225 @@ function GameContent() {
             </span>
           </div>
         </div>
-
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Achievement counter */}
-          <motion.button
-            onClick={() => setShowAchievements(true)}
-            whileHover={{ scale: 1.05 }}
-            className="px-2.5 sm:px-3 py-1.5 text-[10px] font-body border border-noir-border/80 text-noir-text/70 hover:border-noir-accent hover:text-noir-accent transition-colors uxpm-press flex items-center gap-1"
-            title="Logros"
-          >
-            <span className="font-mono text-noir-accent">{unlockedAchCount}</span>
-            <span className="text-noir-muted/50">/</span>
-            <span className="text-noir-muted/50">{ACHIEVEMENTS.length}</span>
-            <span className="ml-0.5 text-[9px]">◈</span>
-          </motion.button>
-          <motion.button
-            onClick={() => setShowStats(true)}
-            whileHover={{ scale: 1.05 }}
-            className="px-2.5 sm:px-3 py-1.5 text-[10px] font-body border border-noir-border/80 text-noir-text/70 hover:border-noir-accent hover:text-noir-accent transition-colors uxpm-press hidden sm:block"
-          >
-            Perfil
-          </motion.button>
-          <motion.button
-            onClick={() => setShowMap(!showMap)}
-            whileHover={{ scale: 1.05 }}
-            className={`px-2 sm:px-3 py-1.5 text-[10px] font-body border transition-colors uxpm-press ${
-              showMap
-                ? "border-noir-accent bg-noir-accent/20 text-noir-accent"
-                : "border-noir-border text-noir-muted hover:border-noir-accent/50"
-            }`}
-          >
-            Mapa
-          </motion.button>
+        <div className="flex items-center gap-2">
+          {storageFallback && (
+            <span className="text-[8px] font-body text-yellow-500 border border-yellow-600/40 px-1.5 py-0.5">
+              ⚠ local
+            </span>
+          )}
+          <button onClick={() => router.push("/history")}
+            className="px-2 py-1.5 text-[10px] font-body border border-noir-border/80 text-noir-text/60 hover:text-noir-accent hover:border-noir-accent transition-colors uxpm-press hidden sm:block">
+            Mi expediente
+          </button>
           <WalletButton />
         </div>
       </header>
 
       {/* Progress bar */}
-      <div className="h-[2px] bg-noir-border/20 relative">
-        <motion.div
-          className="absolute left-0 top-0 h-full bg-gradient-to-r from-noir-accent via-noir-accent to-noir-accent/30"
-          animate={{ width: `${progressPercent}%` }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-        />
-        <motion.div
-          className="absolute top-0 h-full bg-noir-accent/50 blur-sm"
-          animate={{ width: `${progressPercent}%` }}
-          transition={{ duration: 0.8 }}
-        />
+      <div className="h-[3px] bg-noir-border/20 relative">
+        <motion.div className="absolute left-0 top-0 h-full bg-noir-accent"
+          animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.8 }} />
+        <div className="absolute top-0 left-0 right-0 h-full flex">
+          {ACTS.map((_, i) => (
+            <div key={i} className="flex-1 border-r border-noir-bg/50 last:border-r-0" />
+          ))}
+        </div>
       </div>
 
-      {/* Main */}
-      <main className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 relative min-h-[60vh] sm:min-h-[70vh]">
-        <AnimatePresence mode="wait">
-          {showMap ? (
-            <motion.div
-              key="map"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-2xl"
-            >
-              <div className="flex items-center justify-between mb-4 sm:mb-6">
-                <h2 className="font-display text-sm text-noir-accent tracking-[0.2em]">
-                  Mapa de Recuerdos
-                </h2>
-                <span className="font-body text-[10px] text-noir-muted">
-                  {fragments.length} de 15
-                </span>
-              </div>
-              <div className="h-[350px] sm:h-[450px] border border-noir-border/30 bg-noir-card/30 p-2 sm:p-4 relative">
-                <MemoryMap
-                  fragments={fragments}
-                  currentId={currentFragment?.id || 0}
-                  onSelect={handleMapSelect}
-                  newlyUnlockedId={newlyUnlockedId}
-                />
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="fragment"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="w-full max-w-lg"
-            >
-              {/* Scene label */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.3 }}
-                className="text-center mb-6 sm:mb-8"
-              >
-                <span className="font-body text-[9px] text-noir-muted tracking-[0.4em] uppercase">
-                  {scene.icon} {scene.title}
-                </span>
+      {/* Act label bar */}
+      <div className="text-center py-1.5 border-b border-noir-border/10">
+        <span className="font-body text-[9px] text-noir-muted/50 tracking-[0.3em] uppercase">
+          Acto {act.id} · {act.title} — {act.subtitle}
+        </span>
+      </div>
+
+      {/* Main content */}
+      <main className="flex-1 flex flex-col lg:flex-row relative">
+        {/* Left: Skull3D */}
+        <div className="lg:w-[40%] flex items-center justify-center p-4 sm:p-8">
+          <motion.div
+            className="w-[180px] h-[180px] sm:w-[250px] sm:h-[250px] lg:w-[300px] lg:h-[300px]"
+            animate={{ scale: phase === "fragments" && !fragmentDone ? [1, 1.02, 1] : 1 }}
+            transition={{ duration: 2, repeat: phase === "fragments" ? Infinity : 0 }}>
+            <Skull3D scene={act.scene} className="w-full h-full" />
+          </motion.div>
+        </div>
+
+        {/* Right: Fragments & Decisions */}
+        <div className="lg:w-[60%] flex flex-col justify-center p-4 sm:p-8 lg:pr-12">
+          <AnimatePresence mode="wait">
+            {/* ═══ TRANSITION SCREEN ═══ */}
+            {phase === "transition" && (
+              <motion.div key="trans" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="text-center lg:text-left py-12">
+                <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 0.4, y: 0 }}
+                  className="font-body text-[9px] text-noir-muted tracking-[0.5em] uppercase mb-3">
+                  {currentActIdx > 0 ? "Siguiente acto" : "Comienza"}
+                </motion.p>
+                <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                  className="font-display text-2xl sm:text-3xl text-noir-accent tracking-wider mb-2">
+                  ACTO {act.id}
+                </motion.h2>
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} transition={{ delay: 0.8 }}
+                  className="font-display text-sm text-noir-text/70">
+                  {act.title}
+                </motion.p>
+                <motion.div initial={{ width: 0 }} animate={{ width: "60px" }} transition={{ delay: 1.2, duration: 1 }}
+                  className="h-[1px] bg-noir-accent/40 mt-4 mx-auto lg:mx-0" />
               </motion.div>
+            )}
 
-              {/* Loading state */}
-              {isGenerating && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-12 sm:py-16"
-                >
-                  <div className="inline-flex flex-col items-center gap-6">
-                    <div className="relative w-14 h-14 sm:w-16 sm:h-16">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        className="absolute inset-0 border border-noir-accent/30 rounded-full"
-                      />
-                      <motion.div
-                        animate={{ rotate: -360 }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        className="absolute inset-2 border border-noir-accent/50 border-t-noir-accent rounded-full"
-                      />
-                      <motion.div
-                        animate={{ scale: [1, 1.3, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                        className="absolute inset-5 bg-noir-accent/20 rounded-full"
-                      />
-                    </div>
-                    <div className="space-y-2 text-center">
-                      <p className="font-display text-xs text-noir-muted tracking-wider animate-flicker">
-                        Recuperando recuerdo #{fragments.length + 1}...
-                      </p>
-                      <p className="font-body text-[9px] text-noir-muted/40">
-                        Claude genera &middot; 0G almacena &middot; Chain verifica
-                      </p>
-                    </div>
+            {/* ═══ FRAGMENTS (auto-revealing) ═══ */}
+            {phase === "fragments" && (
+              <motion.div key="frags" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {/* Fragment counter */}
+                <div className="flex items-center gap-2 mb-4">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className={`h-[2px] flex-1 transition-colors duration-500 ${
+                      i < fragIdx ? "bg-noir-accent" : i === fragIdx ? "bg-noir-accent/60" : "bg-noir-border/30"
+                    }`} />
+                  ))}
+                  <span className="text-[9px] font-body text-noir-muted/40 ml-2">{fragIdx + 1}/3</span>
+                </div>
+
+                {isGenerating && actFragments.length === 0 ? (
+                  <div className="text-center py-12">
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="w-10 h-10 border border-noir-accent/40 border-t-noir-accent rounded-full mx-auto mb-4" />
+                    <p className="font-display text-xs text-noir-muted animate-flicker">Recuperando memorias...</p>
                   </div>
-                </motion.div>
-              )}
-
-              {/* Error state */}
-              {error && !isGenerating && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-12 sm:py-16"
-                >
-                  <div className="inline-flex flex-col items-center gap-4 max-w-xs">
-                    <div className="w-12 h-12 border border-red-800/50 rounded-full flex items-center justify-center">
-                      <span className="text-red-400 text-lg">!</span>
-                    </div>
-                    <p className="font-body text-red-400/80 text-xs leading-relaxed">{error}</p>
-                    <motion.button
-                      onClick={() => generateFragment()}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="px-5 py-2 border border-noir-accent/50 text-noir-accent text-xs font-display tracking-wider hover:bg-noir-accent/10 transition-colors uxpm-press"
-                    >
-                      Reintentar
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Fragment display */}
-              {currentFragment && !isGenerating && !error && (
-                <>
+                ) : actFragments[fragIdx] ? (
                   <FragmentComponent
-                    fragment={currentFragment}
-                    onComplete={() => setFragmentRevealed(true)}
+                    key={`frag-${currentActIdx}-${fragIdx}`}
+                    fragment={actFragments[fragIdx]}
+                    onComplete={handleFragmentComplete}
                   />
+                ) : null}
 
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: fragmentRevealed ? 0.3 : 0 }}
-                    className="text-center mt-3"
-                  >
-                    <span className="font-body text-[9px] text-noir-muted tracking-[0.3em]">
-                      {currentFragment.id} / 15
-                    </span>
-                  </motion.div>
+                {/* Skip hint */}
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} transition={{ delay: 3 }}
+                  className="text-center mt-4 font-body text-[8px] text-noir-muted/40 tracking-wider">
+                  click para avanzar
+                </motion.p>
+              </motion.div>
+            )}
 
-                  <AnimatePresence>
-                    {fragmentRevealed && choices.length > 0 && fragments.length < 15 && (
-                      <ChoicePanel choices={choices} onChoose={handleChoice} disabled={isGenerating} />
-                    )}
-                  </AnimatePresence>
+            {/* ═══ DECISION ═══ */}
+            {phase === "decision" && (
+              <motion.div key="decide" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.5 }}
+                  className="font-body text-[9px] text-noir-accent tracking-[0.3em] uppercase mb-6 text-center lg:text-left">
+                  Esta decisión define tu historia
+                </motion.p>
 
-                  {fragmentRevealed && fragments.length >= 15 && !showRevelation && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-center mt-8 sm:mt-10"
-                    >
-                      <p className="font-body text-[10px] text-noir-muted mb-4">
-                        15 fragmentos recopilados. La verdad espera.
-                      </p>
-                      <motion.button
-                        onClick={() => setShowRevelation(true)}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="px-8 py-3 border border-purple-700/60 text-purple-400 font-display text-sm tracking-[0.2em] hover:bg-purple-900/20 transition-colors uxpm-press"
-                        animate={{
-                          boxShadow: [
-                            "0 0 5px rgba(147,51,234,0.2)",
-                            "0 0 20px rgba(147,51,234,0.4)",
-                            "0 0 5px rgba(147,51,234,0.2)",
-                          ],
-                        }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
-                        Revelar la verdad
-                      </motion.button>
-                    </motion.div>
-                  )}
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <div className="flex flex-col gap-4">
+                  {/* Dark choice */}
+                  <motion.button
+                    initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
+                    onClick={() => handleDecision(act.decision.dark.text)}
+                    data-choice-dark
+                    className="p-5 sm:p-6 border-2 border-red-800/50 bg-noir-card text-left hover:border-red-600/70 hover:bg-red-950/20 transition-all uxpm-press group">
+                    <span className="text-[9px] uppercase tracking-[0.2em] text-red-400/70 font-body block mb-2">Sombra</span>
+                    <p className="font-display text-sm sm:text-base text-noir-text leading-relaxed">{act.decision.dark.text}</p>
+                    <p className="font-body text-[9px] text-noir-muted/40 mt-2 italic">{act.decision.dark.consequence}</p>
+                  </motion.button>
+
+                  {/* Light choice */}
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}
+                    onClick={() => handleDecision(act.decision.light.text)}
+                    data-choice-light
+                    className="p-5 sm:p-6 border-2 border-noir-accent/50 bg-noir-card text-left hover:border-noir-accent hover:bg-noir-accent/10 transition-all uxpm-press group">
+                    <span className="text-[9px] uppercase tracking-[0.2em] text-noir-accent/70 font-body block mb-2">Luz</span>
+                    <p className="font-display text-sm sm:text-base text-noir-text leading-relaxed">{act.decision.light.text}</p>
+                    <p className="font-body text-[9px] text-noir-muted/40 mt-2 italic">{act.decision.light.consequence}</p>
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ═══ REVELATION (Act 5 end) ═══ */}
+            {phase === "revelation" && (
+              <motion.div key="rev" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="text-center lg:text-left py-8">
+                <p className="font-body text-[9px] text-noir-muted tracking-[0.4em] uppercase mb-4">
+                  {allFragments.length + actFragments.length} memorias recopiladas
+                </p>
+                <h2 className="font-display text-2xl text-noir-accent mb-4">La verdad espera</h2>
+                <p className="font-body text-xs text-noir-muted/60 mb-8">
+                  Todos tus recuerdos han sido grabados en 0G Storage.
+                  Tus decisiones determinan quién eres.
+                </p>
+                <motion.button
+                  onClick={() => router.push("/")}
+                  whileHover={{ scale: 1.05 }}
+                  className="px-8 py-3 border-2 border-purple-600/60 text-purple-400 font-display text-sm tracking-[0.2em] hover:bg-purple-900/20 uxpm-press"
+                  animate={{ boxShadow: ["0 0 5px rgba(147,51,234,0.2)", "0 0 20px rgba(147,51,234,0.4)", "0 0 5px rgba(147,51,234,0.2)"] }}
+                  transition={{ duration: 2, repeat: Infinity }}>
+                  Revelar la verdad
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </main>
 
-      {/* Wallet disconnect overlay */}
-      {!isConnected && fragments.length > 0 && (
-        <div className="fixed inset-0 z-[10000] bg-black/90 flex items-center justify-center p-6">
-          <div className="uxpm-glass p-8 max-w-sm w-full text-center">
-            <p className="font-display text-lg text-red-400 mb-3">Wallet desconectada</p>
-            <p className="font-body text-xs text-noir-muted mb-6">
-              Tus {fragments.length} fragmentos están guardados. Reconecta para continuar.
-            </p>
-            <WalletButton />
-          </div>
-        </div>
-      )}
+      {/* Ambient particles */}
+      <ActParticles scene={act.scene} />
 
-      {/* Modals */}
-      <PlayerStats
-        fragments={fragments}
-        achievementMeta={achievementMeta}
-        visible={showStats}
-        onClose={() => setShowStats(false)}
-      />
-      <Achievements
-        fragments={fragments}
-        meta={achievementMeta}
-        visible={showAchievements}
-        onClose={() => setShowAchievements(false)}
-      />
-      <Revelation
-        fragments={fragments}
-        achievementMeta={achievementMeta}
-        visible={showRevelation}
-        onClose={() => {
-          setShowRevelation(false);
-          router.push("/");
-        }}
-      />
-      <FragmentViewer
-        fragment={viewingFragment}
-        allFragments={fragments}
-        visible={!!viewingFragment}
-        onClose={() => setViewingFragment(null)}
-        onNavigate={(id) => {
-          const frag = fragments.find((f) => f.id === id);
-          if (frag) handleViewFragment(frag);
-        }}
-        onTxLinkClick={handleTxLinkClick}
-      />
-      <Toast
-        message={toast.message}
-        hash={toast.hash}
-        visible={toast.visible}
-        onClose={() => setToast((prev) => ({ ...prev, visible: false }))}
-      />
-      <AchievementNotification
-        queue={notifQueue}
-        onDismiss={handleDismissNotif}
-        onClickNotif={() => {
-          setNotifQueue([]);
-          setShowAchievements(true);
-        }}
-      />
-
-      {/* Mobile navigation */}
-      <MobileNav
-        onLeft={() => {
-          if (currentFragment && currentFragment.id > 1) {
-            const prev = fragments.find((f) => f.id === currentFragment.id - 1);
-            if (prev) handleViewFragment(prev);
-          }
-        }}
-        onRight={() => {
-          if (currentFragment && currentFragment.id < fragments.length) {
-            const next = fragments.find((f) => f.id === currentFragment.id + 1);
-            if (next) handleViewFragment(next);
-          }
-        }}
-        leftDisabled={!currentFragment || currentFragment.id <= 1}
-        rightDisabled={!currentFragment || currentFragment.id >= fragments.length}
-        visible={fragments.length > 1 && !anyModalOpen && !isGenerating}
-      />
+      <Toast message={toast.message} hash={toast.hash} visible={toast.visible}
+        onClose={() => setToast((prev) => ({ ...prev, visible: false }))} />
 
       {/* Footer */}
-      <footer className="p-3 border-t border-noir-border/10 uxpm-safe-bottom">
-        <div className="flex items-center justify-between text-[9px] font-body text-noir-muted/40">
-          <span>
-            {scene.icon} {scene.title}
-          </span>
+      <footer className="p-2 border-t border-noir-border/10 uxpm-safe-bottom">
+        <div className="flex items-center justify-between text-[8px] font-body text-noir-muted/30">
+          <span>Acto {act.id}/5 · {act.scene}</span>
           <div className="flex items-center gap-3">
-            {/* Mobile-only stats and about buttons */}
-            <button
-              onClick={() => setShowStats(true)}
-              className="sm:hidden hover:text-noir-accent transition-colors"
-            >
-              Perfil
-            </button>
-            <button
-              onClick={() => router.push("/about")}
-              className="hover:text-noir-accent transition-colors"
-            >
-              Sobre Mongli
-            </button>
-            <span className="hidden sm:inline">
-              Acto {act} &middot; {fragments.length} fragmentos
-              {chainWrite.isConnected && " · wallet ✓"}
-              {chainWrite.isWriting && " · firmando..."}
-            </span>
+            <button onClick={() => router.push("/history")} className="sm:hidden hover:text-noir-accent transition-colors">Expediente</button>
+            <span className="hidden sm:inline">{allFragments.length + actFragments.length} fragmentos · 0G Chain</span>
           </div>
         </div>
       </footer>
-    </motion.div>
+    </div>
+  );
+}
+
+// ─── Ambient CSS particles per act ───
+function ActParticles({ scene }: { scene: string }) {
+  const particles = Array.from({ length: 15 }, (_, i) => i);
+  const config = {
+    hotel: { char: "·", color: "#d4a244", speed: "8s" },
+    alley: { char: "|", color: "#6090c0", speed: "1.5s" },
+    office: { char: "0", color: "#30a030", speed: "4s" },
+    void: { char: "✦", color: "#ffffff", speed: "6s" },
+    archive: { char: "·", color: "#c4a070", speed: "10s" },
+  }[scene] || { char: "·", color: "#d4a244", speed: "8s" };
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+      {particles.map((i) => (
+        <div key={i} className="absolute font-mono text-[10px] animate-float"
+          style={{
+            color: config.color, opacity: 0.15,
+            left: `${5 + Math.random() * 90}%`, top: `${Math.random() * 100}%`,
+            animationDuration: config.speed, animationDelay: `${Math.random() * 5}s`,
+          }}>
+          {config.char}
+        </div>
+      ))}
+    </div>
   );
 }
 
 export default function GamePage() {
   return (
     <Providers>
-      <Suspense
-        fallback={
-          <div className="min-h-screen flex items-center justify-center bg-noir-bg">
-            <motion.p
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="font-display text-noir-muted text-sm tracking-wider"
-            >
-              Cargando...
-            </motion.p>
-          </div>
-        }
-      >
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-noir-bg">
+          <motion.p animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 2, repeat: Infinity }}
+            className="font-display text-noir-muted text-sm tracking-wider">Cargando...</motion.p>
+        </div>
+      }>
         <GameContent />
       </Suspense>
     </Providers>
