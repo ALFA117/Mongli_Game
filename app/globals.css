@@ -12,7 +12,18 @@
   --noir-muted: #9a8a6a;
 }
 
-* {
+*,
+*::before,
+*::after,
+html,
+body,
+a,
+button,
+input,
+svg,
+canvas,
+img,
+div {
   cursor: none !important;
 }
 

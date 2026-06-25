@@ -159,11 +159,15 @@ async function generateWithGemini(system: string, user: string): Promise<ClaudeR
 
 // ─── Main export: cascade Claude → Gemini → Demo ───
 
+export interface GenerateResult extends ClaudeResponse {
+  aiModel: "claude" | "gemini" | "demo";
+}
+
 export async function generateFragment(
   scene: string,
   history: Fragment[],
   choice: string
-): Promise<ClaudeResponse> {
+): Promise<GenerateResult> {
   const { system, user } = buildPrompt(scene, history, choice);
   const fragmentId = history.length + 1;
 
@@ -171,19 +175,17 @@ export async function generateFragment(
   try {
     const result = await generateWithClaude(system, user);
     console.log("[MONGLI] Using: claude");
-    return result;
+    return { ...result, aiModel: "claude" };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn(`[MONGLI] Claude failed: ${msg.slice(0, 80)}`);
-
-    // Only fall through to Gemini, don't retry Claude
   }
 
   // 2. Try Gemini
   try {
     const result = await generateWithGemini(system, user);
     console.log("[MONGLI] Using: gemini");
-    return result;
+    return { ...result, aiModel: "gemini" };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn(`[MONGLI] Gemini failed: ${msg.slice(0, 80)}`);
@@ -191,5 +193,5 @@ export async function generateFragment(
 
   // 3. Demo fallback
   console.log("[MONGLI] Using: demo");
-  return getFallback(fragmentId);
+  return { ...getFallback(fragmentId), aiModel: "demo" };
 }

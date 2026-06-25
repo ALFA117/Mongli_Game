@@ -14,10 +14,12 @@ import { INITIAL_SCENES } from "@/lib/types";
 import { initAudio, playChoice, startAudioOnFirstInteraction } from "@/lib/audio";
 import { useKeyboardNav } from "@/lib/useKeyboardNav";
 import { useRouter } from "next/navigation";
+import { useAccount } from "wagmi";
 
 const Skull3D = dynamic(() => import("@/components/Skull3D"), { ssr: false });
 
 function LandingContent() {
+  const { isConnected } = useAccount();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [audioStarted, setAudioStarted] = useState(false);
@@ -133,23 +135,43 @@ function LandingContent() {
         {/* Enter button */}
         <AnimatePresence>
           {!showScenes && titleRevealed && (
-            <motion.button
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ delay: 2 }}
-              onClick={() => setShowScenes(true)}
-              className="mt-12 group relative"
+              className="mt-12 flex flex-col items-center gap-3"
             >
-              <span className="px-10 py-3.5 border-2 border-noir-accent bg-noir-accent/15 text-noir-accent font-display text-sm tracking-[0.2em] block transition-all duration-500 group-hover:bg-noir-accent/25 group-hover:border-noir-accent">
-                Despertar
-              </span>
-              <motion.span
-                className="absolute -bottom-1 left-0 right-0 h-[1px] bg-noir-accent/30"
-                animate={{ scaleX: [0, 1, 0] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              />
-            </motion.button>
+              {!isConnected && (
+                <motion.p
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="font-body text-[10px] text-noir-accent tracking-wider"
+                >
+                  Conecta tu wallet para comenzar
+                </motion.p>
+              )}
+              <motion.button
+                onClick={() => isConnected && setShowScenes(true)}
+                disabled={!isConnected}
+                className={`group relative ${!isConnected ? "opacity-40 cursor-not-allowed" : ""}`}
+              >
+                <span className={`px-10 py-3.5 border-2 font-display text-sm tracking-[0.2em] block transition-all duration-500 ${
+                  isConnected
+                    ? "border-noir-accent bg-noir-accent/15 text-noir-accent group-hover:bg-noir-accent/25 group-hover:border-noir-accent"
+                    : "border-noir-border bg-noir-card/50 text-noir-muted"
+                }`}>
+                  Despertar
+                </span>
+                {isConnected && (
+                  <motion.span
+                    className="absolute -bottom-1 left-0 right-0 h-[1px] bg-noir-accent/30"
+                    animate={{ scaleX: [0, 1, 0] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  />
+                )}
+              </motion.button>
+            </motion.div>
           )}
         </AnimatePresence>
 
