@@ -10,6 +10,36 @@ export interface Fragment {
   txHash?: string;
   timestamp: number;
   unlocked: boolean;
+  editedByPlayer?: boolean;
+  originalText?: string;
+  editedAt?: string;
+}
+
+// ─── Legacy / Inheritance ───
+export interface LegacyFragment {
+  fromWallet: string;
+  fragment: Fragment;
+  message: string;
+  sentAt: string;
+}
+
+// ─── Cross-player Traces ───
+export interface CrossTrace {
+  fromWallet: string;
+  traceText: string;
+  fragmentId: number;
+  leftAt: string;
+}
+
+// ─── Voting ───
+export interface VoteCandidate {
+  id: string;
+  walletAddress: string;
+  fragmentText: string;
+  actNumber: number;
+  votes: number;
+  submittedAt: string;
+  voterWallets: string[];
 }
 
 // ─── Act system (new 5-act structure) ───
