@@ -49,12 +49,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link
           rel="preload"
-          href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Special+Elite&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap"
           as="style"
         />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Special+Elite&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap"
         />
       </head>
       <body className="grain vignette antialiased min-h-screen">{children}</body>

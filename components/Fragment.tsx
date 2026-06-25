@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Fragment as FragmentType } from "@/lib/types";
+import { generateFragmentVisual } from "@/lib/fragment-visual";
 
 interface FragmentProps {
   fragment: FragmentType;
@@ -106,11 +107,12 @@ function FragmentInner({ fragment, onComplete }: FragmentProps) {
   const { displayed, done } = useVariableTypewriter(fragment.text);
   const hasCalledComplete = useRef(false);
 
-  // Stable random rotation per fragment id
   const rotation = useMemo(() => {
     const seed = fragment.id * 7919;
     return ((seed % 400) - 200) / 100;
   }, [fragment.id]);
+
+  const visual = useMemo(() => generateFragmentVisual(fragment), [fragment]);
 
   useEffect(() => {
     if (done && onComplete && !hasCalledComplete.current) {
@@ -149,6 +151,14 @@ function FragmentInner({ fragment, onComplete }: FragmentProps) {
             className="absolute -top-[2px] left-1/2 -translate-x-1/2 w-16 h-3 bg-noir-accent/15"
             style={{ transform: `translateX(-50%) rotate(${rotation > 0 ? 1.5 : -0.8}deg)` }}
           />
+
+          {/* Generative visual */}
+          <div
+            className="w-full h-[60px] sm:h-[70px] mb-3 rounded-t overflow-hidden relative"
+            title="Visual único generado para este fragmento"
+            dangerouslySetInnerHTML={{ __html: visual.svgContent }}
+          />
+          <div className="h-[1px] bg-noir-border/20 mb-3" />
 
           {/* Fragment number watermark */}
           <div className="absolute top-3 right-4 font-body text-[9px] text-noir-muted/20 tracking-wider">

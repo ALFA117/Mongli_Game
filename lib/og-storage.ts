@@ -1,4 +1,4 @@
-import type { Fragment, GameSaveState, GalleryEntry } from "./types";
+import type { Fragment, GameSaveState, GalleryEntry, SpeedrunRecord } from "./types";
 
 // ─── Cache ───
 interface CacheEntry { data: unknown; cachedAt: number }
@@ -118,5 +118,28 @@ export async function getGallery(limit = 20): Promise<GalleryEntry[]> {
   const entries = Array.from(galleryStore.values())
     .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
   cache.set(cacheKey, { data: entries, cachedAt: Date.now() });
+  return entries.slice(0, limit);
+}
+
+// ─── Speedrun Leaderboard ───
+const speedrunStore = new Map<string, SpeedrunRecord>();
+
+export async function saveSpeedrunRecord(record: SpeedrunRecord): Promise<void> {
+  const key = record.walletAddress.toLowerCase();
+  const existing = speedrunStore.get(key);
+  if (!existing || record.completionTimeMs < existing.completionTimeMs) {
+    speedrunStore.set(key, record);
+    cache.delete("leaderboard");
+  }
+}
+
+export async function getLeaderboard(limit = 10): Promise<SpeedrunRecord[]> {
+  const cached = cache.get("leaderboard");
+  if (cached && Date.now() - cached.cachedAt < 2 * 60 * 1000) {
+    return (cached.data as SpeedrunRecord[]).slice(0, limit);
+  }
+  const entries = Array.from(speedrunStore.values())
+    .sort((a, b) => a.completionTimeMs - b.completionTimeMs);
+  cache.set("leaderboard", { data: entries, cachedAt: Date.now() });
   return entries.slice(0, limit);
 }

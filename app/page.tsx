@@ -99,6 +99,10 @@ function LandingContent() {
             }`}>
             DESPERTAR
           </motion.button>
+          <div className="flex items-center gap-4 mt-3">
+            <button onClick={() => router.push("/speedrun")} className="font-body text-[10px] text-red-400/60 hover:text-red-400 transition-colors">⚡ Modo Speedrun</button>
+            <button onClick={() => router.push("/trailer")} className="font-body text-[10px] text-noir-muted/50 hover:text-noir-accent transition-colors">Ver trailer →</button>
+          </div>
         </motion.div>
       </section>
 
