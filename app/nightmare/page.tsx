@@ -84,6 +84,13 @@ function NightmareContent() {
     }, 800);
   }, [fragIdx]);
 
+  // Auto-advance fragments after 4s (Fragment no longer has onComplete)
+  useEffect(() => {
+    if (phase !== "fragments" || !frags[fragIdx]) return;
+    const t = setTimeout(() => onFragDone(), 4000);
+    return () => clearTimeout(t);
+  }, [phase, fragIdx, frags, onFragDone]);
+
   // Decision countdown — GAME OVER if 0
   useEffect(() => {
     if (phase !== "decision") return;
@@ -142,7 +149,7 @@ function NightmareContent() {
             {phase === "fragments" && frags[fragIdx] && (
               <motion.div key={`f-${actIdx}-${fragIdx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div className="flex gap-1 mb-3">{[0,1,2].map(i => <div key={i} className={`h-[2px] flex-1 ${i <= fragIdx ? "bg-red-600" : "bg-noir-border/30"}`} />)}</div>
-                <FragmentComponent fragment={frags[fragIdx]} onComplete={onFragDone} />
+                <FragmentComponent text={frags[fragIdx]?.text || ""} toneScore={frags[fragIdx]?.toneScore} fragmentId={frags[fragIdx]?.id} />
               </motion.div>
             )}
 
