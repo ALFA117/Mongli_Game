@@ -177,6 +177,7 @@ function LandingContent() {
               </a>
               <button onClick={() => router.push("/about")} className="hover:text-noir-accent transition-colors">About</button>
               <button onClick={() => router.push("/gallery")} className="hover:text-noir-accent transition-colors">Archivo</button>
+              <button onClick={() => router.push("/vote")} className="hover:text-noir-accent transition-colors">Votos</button>
               <button onClick={() => router.push("/judges")} className="hover:text-noir-accent transition-colors opacity-40">Judges</button>
             </div>
           </div>

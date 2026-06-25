@@ -161,7 +161,8 @@ function FragmentInner({ fragment, onComplete }: FragmentProps) {
           <div className="h-[1px] bg-noir-border/20 mb-3" />
 
           {/* Fragment number watermark */}
-          <div className="absolute top-3 right-4 font-body text-[9px] text-noir-muted/20 tracking-wider">
+          <div className="absolute top-3 right-4 flex items-center gap-1.5 font-body text-[9px] text-noir-muted/20 tracking-wider">
+            {fragment.editedByPlayer && <span className="text-noir-accent/30">✎</span>}
             #{String(fragment.id).padStart(2, "0")}
           </div>
 

@@ -6,6 +6,7 @@ import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./og-chain";
 
 interface ChainWriteResult {
   saveFragment: (storageHash: string, fragmentId: number) => Promise<string | null>;
+  saveAchievement: (achievementId: string, index: number) => Promise<string | null>;
   isWriting: boolean;
   lastTxHash: string | null;
   error: string | null;
@@ -79,5 +80,29 @@ export function useChainWrite(): ChainWriteResult {
     [isConnected, hasContract, writeContractAsync]
   );
 
-  return { saveFragment, isWriting, lastTxHash, error, isConnected, hasContract };
+  const saveAchievement = useCallback(
+    async (achievementId: string, index: number): Promise<string | null> => {
+      if (!isConnected || !hasContract) return null;
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode("ACH_" + achievementId);
+        const hashBuf = await crypto.subtle.digest("SHA-256", data);
+        const hashHex = "0x" + Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+        const tx = await writeContractAsync({
+          address: CONTRACT_ADDRESS,
+          abi: CONTRACT_ABI,
+          functionName: "saveFragment",
+          args: [hashHex as `0x${string}`, BigInt(999 + index)],
+        });
+        console.log(`[Chain] Achievement ${achievementId} → TX: ${tx}`);
+        return tx;
+      } catch (err) {
+        console.warn(`[Chain] Achievement save failed:`, err instanceof Error ? err.message.slice(0, 60) : "");
+        return null;
+      }
+    },
+    [isConnected, hasContract, writeContractAsync]
+  );
+
+  return { saveFragment, saveAchievement, isWriting, lastTxHash, error, isConnected, hasContract };
 }

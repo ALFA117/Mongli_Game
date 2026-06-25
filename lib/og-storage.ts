@@ -1,4 +1,4 @@
-import type { Fragment, GameSaveState, GalleryEntry, SpeedrunRecord } from "./types";
+import type { Fragment, GameSaveState, GalleryEntry, SpeedrunRecord, LegacyFragment, CrossTrace, VoteCandidate } from "./types";
 
 // ─── Cache ───
 interface CacheEntry { data: unknown; cachedAt: number }
@@ -142,4 +142,70 @@ export async function getLeaderboard(limit = 10): Promise<SpeedrunRecord[]> {
     .sort((a, b) => a.completionTimeMs - b.completionTimeMs);
   cache.set("leaderboard", { data: entries, cachedAt: Date.now() });
   return entries.slice(0, limit);
+}
+
+// ─── Legacy / Inheritance ───
+const legacyStore = new Map<string, LegacyFragment>();
+
+export async function saveLegacyFragment(fromWallet: string, toWallet: string, fragment: Fragment, message: string): Promise<void> {
+  legacyStore.set(toWallet.toLowerCase(), { fromWallet, fragment, message, sentAt: new Date().toISOString() });
+}
+
+export async function getLegacyFragment(walletAddress: string): Promise<LegacyFragment | null> {
+  return legacyStore.get(walletAddress.toLowerCase()) || null;
+}
+
+// ─── Cross-player Traces ───
+const traceStore = new Map<string, CrossTrace[]>();
+
+export async function leaveTrace(fromWallet: string, toWallet: string, traceText: string, fragmentId: number): Promise<void> {
+  const key = toWallet.toLowerCase();
+  const existing = traceStore.get(key) || [];
+  const anonWallet = "0x" + fromWallet.slice(2, 10) + "...";
+  existing.push({ fromWallet: anonWallet, traceText, fragmentId, leftAt: new Date().toISOString() });
+  traceStore.set(key, existing);
+}
+
+export async function getTracesForWallet(walletAddress: string): Promise<CrossTrace[]> {
+  return traceStore.get(walletAddress.toLowerCase()) || [];
+}
+
+// ─── Weekly Voting ───
+const voteStore = new Map<string, VoteCandidate>();
+
+function getWeekKey(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const oneJan = new Date(year, 0, 1);
+  const week = Math.ceil(((now.getTime() - oneJan.getTime()) / 86400000 + oneJan.getDay() + 1) / 7);
+  return `${year}-W${String(week).padStart(2, "0")}`;
+}
+
+export async function submitFragmentForVoting(walletAddress: string, fragment: Fragment, actNumber: number): Promise<void> {
+  const id = `${getWeekKey()}-${walletAddress.toLowerCase()}`;
+  if (voteStore.has(id)) return;
+  voteStore.set(id, {
+    id, walletAddress, fragmentText: fragment.text, actNumber,
+    votes: 0, submittedAt: new Date().toISOString(), voterWallets: [],
+  });
+  cache.delete("vote-candidates");
+}
+
+export async function voteForFragment(voterWallet: string, candidateId: string): Promise<void> {
+  const candidate = voteStore.get(candidateId);
+  if (!candidate) return;
+  if (candidate.voterWallets.includes(voterWallet.toLowerCase())) return;
+  candidate.votes++;
+  candidate.voterWallets.push(voterWallet.toLowerCase());
+}
+
+export async function getWeeklyVotingCandidates(): Promise<VoteCandidate[]> {
+  const cached = cache.get("vote-candidates");
+  if (cached && Date.now() - cached.cachedAt < 60000) return cached.data as VoteCandidate[];
+  const weekPrefix = getWeekKey();
+  const entries = Array.from(voteStore.values())
+    .filter(c => c.id.startsWith(weekPrefix))
+    .sort((a, b) => b.votes - a.votes);
+  cache.set("vote-candidates", { data: entries, cachedAt: Date.now() });
+  return entries;
 }
