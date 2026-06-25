@@ -1,24 +1,337 @@
-@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323:wght@400&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body {
-  width: 100%; height: 100%;
-  background: #000; color: #e8d5b0;
-  font-family: 'Special Elite', serif;
-  overflow: hidden; cursor: none;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-text-size-adjust: 100%;
+:root {
+  --noir-bg: #0a0a0a;
+  --noir-text: #e8d5b0;
+  --noir-accent: #c4923a;
+  --noir-border: #2a2a2a;
+  --noir-card: #111111;
 }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #000; }
-::-webkit-scrollbar-thumb { background: #8B0000; }
+* {
+  cursor: none !important;
+}
 
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-@keyframes pulse-red { 0%,100%{box-shadow:0 0 8px #8B0000} 50%{box-shadow:0 0 24px #ff0000, 0 0 48px #8B0000} }
-@keyframes rain { 0%{transform:translateY(-100px) translateX(0);opacity:0} 10%{opacity:1} 90%{opacity:0.4} 100%{transform:translateY(110vh) translateX(-40px);opacity:0} }
-@keyframes glitch-1 { 0%,100%{clip-path:inset(0 0 95% 0);transform:translate(-3px,0)} 25%{clip-path:inset(30% 0 60% 0);transform:translate(3px,0)} 50%{clip-path:inset(70% 0 20% 0);transform:translate(-2px,0)} 75%{clip-path:inset(50% 0 40% 0);transform:translate(2px,0)} }
-@keyframes glitch-2 { 0%,100%{clip-path:inset(80% 0 5% 0);transform:translate(3px,0)} 33%{clip-path:inset(10% 0 80% 0);transform:translate(-3px,0)} 66%{clip-path:inset(45% 0 45% 0);transform:translate(2px,0)} }
-@keyframes fog { 0%,100%{transform:scale(1) translate(0,0);opacity:0.06} 50%{transform:scale(1.2) translate(10px,-10px);opacity:0.12} }
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--noir-bg);
+  color: var(--noir-text);
+  font-family: "IBM Plex Mono", monospace;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(196, 146, 58, 0.3);
+  color: #e8d5b0;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c4923a;
+}
+
+@layer utilities {
+  /* ══════════ Text Effects ══════════ */
+  .text-shadow-noir {
+    text-shadow:
+      0 0 10px rgba(196, 146, 58, 0.3),
+      0 0 40px rgba(196, 146, 58, 0.1),
+      0 0 80px rgba(196, 146, 58, 0.05);
+  }
+
+  .text-shadow-red {
+    text-shadow:
+      0 0 10px rgba(220, 50, 50, 0.3),
+      0 0 30px rgba(220, 50, 50, 0.1);
+  }
+
+  /* ══════════ Film Grain ══════════ */
+  .grain {
+    position: relative;
+  }
+
+  .grain::before {
+    content: "";
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    right: -50%;
+    bottom: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='5' stitchTiles='stitch' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+    animation: grainShift 0.4s steps(1) infinite;
+    mix-blend-mode: overlay;
+  }
+
+  @keyframes grainShift {
+    0% { transform: translate(0, 0); }
+    20% { transform: translate(-1.5%, 1.5%); }
+    40% { transform: translate(1.5%, -1%); }
+    60% { transform: translate(-0.5%, -1.5%); }
+    80% { transform: translate(1%, 0.5%); }
+    100% { transform: translate(0, 0); }
+  }
+
+  /* ══════════ Vignette ══════════ */
+  .vignette::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.6) 80%, rgba(0, 0, 0, 0.9) 100%);
+    pointer-events: none;
+    z-index: 9997;
+  }
+
+  /* ══════════ Typewriter Cursor ══════════ */
+  .typewriter-cursor::after {
+    content: "▌";
+    animation: blink 1s step-end infinite;
+    color: #c4923a;
+    font-weight: 300;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* ══════════ Polaroid Paper Texture ══════════ */
+  .paper-texture {
+    position: relative;
+  }
+
+  .paper-texture::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.04' numOctaves='5' stitchTiles='stitch' seed='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: overlay;
+    border-radius: inherit;
+  }
+
+  /* ══════════ Entrance Animations ══════════ */
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.6s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-slide-left {
+    animation: slideLeft 0.5s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-slide-right {
+    animation: slideRight 0.5s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.5s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-blur-in {
+    animation: blurIn 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-reveal {
+    animation: reveal 1.2s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideLeft {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes slideRight {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes blurIn {
+    from { opacity: 0; filter: blur(8px); }
+    to { opacity: 1; filter: blur(0px); }
+  }
+
+  @keyframes reveal {
+    0% { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+    60% { opacity: 0.8; filter: blur(1px); }
+    100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+
+  /* ══════════ Stagger delay utilities ══════════ */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+  .delay-600 { animation-delay: 600ms; }
+  .delay-700 { animation-delay: 700ms; }
+  .delay-800 { animation-delay: 800ms; }
+
+  /* ══════════ Noir card variations ══════════ */
+  .card-noir {
+    background-color: var(--noir-card);
+    border: 1px solid var(--noir-border);
+    position: relative;
+  }
+
+  .card-noir-amber {
+    background-color: var(--noir-card);
+    border: 1px solid rgba(196, 146, 58, 0.25);
+    box-shadow: 0 0 15px rgba(196, 146, 58, 0.05);
+  }
+
+  .card-noir-red {
+    background-color: var(--noir-card);
+    border: 1px solid rgba(180, 40, 40, 0.25);
+    box-shadow: 0 0 15px rgba(180, 40, 40, 0.05);
+  }
+
+  .card-noir-blue {
+    background-color: var(--noir-card);
+    border: 1px solid rgba(60, 120, 200, 0.2);
+    box-shadow: 0 0 15px rgba(60, 120, 200, 0.04);
+  }
+
+  /* ══════════ Manila folder / case file styling ══════════ */
+  .manila-folder {
+    background: linear-gradient(135deg, #1a1710 0%, #151310 50%, #1a1710 100%);
+    border: 1px solid rgba(196, 146, 58, 0.15);
+    box-shadow:
+      2px 2px 0 rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(232, 213, 176, 0.03);
+  }
+
+  /* ══════════ Terminal styling ══════════ */
+  .terminal-text {
+    font-family: "IBM Plex Mono", monospace;
+    color: #4ade80;
+    text-shadow: 0 0 5px rgba(74, 222, 128, 0.3);
+  }
+
+  .terminal-prompt::before {
+    content: "$ ";
+    color: #c4923a;
+  }
+
+  /* ══════════════════════════════════════════════════ */
+  /* === UI-UX-PRO-MAX ===                            */
+  /* ══════════════════════════════════════════════════ */
+
+  .uxpm-glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(10, 10, 10, 0.85);
+    border: 0.5px solid rgba(232, 213, 176, 0.15);
+  }
+
+  .uxpm-press {
+    transition: transform 0.1s ease;
+  }
+  .uxpm-press:active {
+    transform: scale(0.96);
+  }
+
+  .uxpm-magnetic {
+    transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .uxpm-surface {
+    background: #0f0f0f;
+    border: 0.5px solid #2a2a2a;
+    border-radius: 8px;
+  }
+
+  .uxpm-glow-amber {
+    box-shadow:
+      0 0 20px rgba(196, 146, 58, 0.3),
+      inset 0 0 20px rgba(196, 146, 58, 0.05);
+  }
+
+  .uxpm-glow-red {
+    box-shadow:
+      0 0 20px rgba(180, 40, 40, 0.3),
+      inset 0 0 20px rgba(180, 40, 40, 0.05);
+  }
+
+  .uxpm-glow-blue {
+    box-shadow:
+      0 0 20px rgba(60, 100, 180, 0.3),
+      inset 0 0 20px rgba(60, 100, 180, 0.05);
+  }
+
+  .uxpm-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .uxpm-smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .uxpm-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .uxpm-tap-highlight {
+    -webkit-tap-highlight-color: rgba(196, 146, 58, 0.2);
+  }
+
+  /* Mobile-first touch targets */
+  @media (max-width: 639px) {
+    .uxpm-touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+}
