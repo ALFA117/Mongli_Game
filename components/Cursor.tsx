@@ -129,7 +129,7 @@ export default function Cursor() {
       {trail.map((point) => (
         <div
           key={point.id}
-          className="fixed pointer-events-none z-[99999] rounded-full bg-noir-accent"
+          className="fixed pointer-events-none z-[2147483647] rounded-full bg-noir-accent"
           style={{
             left: point.x - 2,
             top: point.y - 2,
@@ -144,7 +144,7 @@ export default function Cursor() {
       {/* Outer ring */}
       <div
         ref={outerRef}
-        className="fixed pointer-events-none z-[99999] rounded-full"
+        className="fixed pointer-events-none z-[2147483647] rounded-full"
         style={{
           width: 32,
           height: 32,
@@ -157,7 +157,7 @@ export default function Cursor() {
       {/* Inner dot or lock icon */}
       <div
         ref={innerRef}
-        className="fixed pointer-events-none z-[99999] flex items-center justify-center"
+        className="fixed pointer-events-none z-[2147483647] flex items-center justify-center"
         style={{
           width: 6,
           height: 6,

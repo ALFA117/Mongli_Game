@@ -4,12 +4,20 @@
 
 
 :root {
-  --noir-bg: #0a0a0a;
-  --noir-text: #f0e4c8;
-  --noir-accent: #d4a244;
-  --noir-border: #333333;
-  --noir-card: #141414;
-  --noir-muted: #9a8a6a;
+  --noir-bg: #000000;
+  --noir-text: #E5DEC9;
+  --noir-accent: #B30000;
+  --noir-border: #1a1a1a;
+  --noir-card: #0d0d0d;
+  --noir-muted: #8C8275;
+  --color-bg: #000000;
+  --color-text-red: #B30000;
+  --color-glow-red: #FF1A1A;
+  --color-bone: #E5DEC9;
+  --color-shadow: #8C8275;
+  --color-surface: #0d0d0d;
+  --color-border: #1a1a1a;
+  --color-border-accent: #2a2a2a;
 }
 
 *,
@@ -291,6 +299,18 @@ body {
 }
 
 /* ══════════ Reduced Motion ══════════ */
+/* ══════════ Audio visualizer bars ══════════ */
+@keyframes audioBar0 { to { height: 14px; } }
+@keyframes audioBar1 { to { height: 10px; } }
+@keyframes audioBar2 { to { height: 14px; } }
+@keyframes audioBar3 { to { height: 8px; } }
+@keyframes audioBar4 { to { height: 12px; } }
+
+/* ══════════ RainbowKit + modal cursor fix ══════════ */
+[data-rk] * { cursor: none !important; }
+[role="dialog"] * { cursor: none !important; }
+[role="alertdialog"] * { cursor: none !important; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -7,7 +7,7 @@ import type { Fragment, GenerateRequest } from "@/lib/types";
 
 // ─── Rate limiting ───
 const rateLimitMap = new Map<string, number>();
-const RATE_LIMIT_MS = 3000;
+const RATE_LIMIT_MS = 8000;
 
 // Clean rate limit map every 5 minutes
 if (typeof setInterval !== "undefined") {
