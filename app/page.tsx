@@ -142,7 +142,7 @@ function LandingContent() {
               onClick={() => setShowScenes(true)}
               className="mt-12 group relative"
             >
-              <span className="px-10 py-3 border border-noir-accent/40 bg-transparent text-noir-accent font-display text-sm tracking-[0.2em] block transition-all duration-500 group-hover:bg-noir-accent/10 group-hover:border-noir-accent/70">
+              <span className="px-10 py-3.5 border-2 border-noir-accent bg-noir-accent/15 text-noir-accent font-display text-sm tracking-[0.2em] block transition-all duration-500 group-hover:bg-noir-accent/25 group-hover:border-noir-accent">
                 Despertar
               </span>
               <motion.span

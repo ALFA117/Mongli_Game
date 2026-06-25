@@ -5,10 +5,11 @@
 
 :root {
   --noir-bg: #0a0a0a;
-  --noir-text: #e8d5b0;
-  --noir-accent: #c4923a;
-  --noir-border: #2a2a2a;
-  --noir-card: #111111;
+  --noir-text: #f0e4c8;
+  --noir-accent: #d4a244;
+  --noir-border: #333333;
+  --noir-card: #141414;
+  --noir-muted: #9a8a6a;
 }
 
 * {

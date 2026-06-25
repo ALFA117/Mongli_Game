@@ -298,7 +298,7 @@ function GameContent() {
           <motion.button
             onClick={() => setShowAchievements(true)}
             whileHover={{ scale: 1.05 }}
-            className="px-2 sm:px-3 py-1.5 text-[10px] font-body border border-noir-border text-noir-muted hover:border-noir-accent/50 hover:text-noir-accent transition-colors uxpm-press flex items-center gap-1"
+            className="px-2.5 sm:px-3 py-1.5 text-[10px] font-body border border-noir-border/80 text-noir-text/70 hover:border-noir-accent hover:text-noir-accent transition-colors uxpm-press flex items-center gap-1"
             title="Logros"
           >
             <span className="font-mono text-noir-accent">{unlockedAchCount}</span>
@@ -309,7 +309,7 @@ function GameContent() {
           <motion.button
             onClick={() => setShowStats(true)}
             whileHover={{ scale: 1.05 }}
-            className="px-2 sm:px-3 py-1.5 text-[10px] font-body border border-noir-border text-noir-muted hover:border-noir-accent/50 hover:text-noir-accent transition-colors uxpm-press hidden sm:block"
+            className="px-2.5 sm:px-3 py-1.5 text-[10px] font-body border border-noir-border/80 text-noir-text/70 hover:border-noir-accent hover:text-noir-accent transition-colors uxpm-press hidden sm:block"
           >
             Perfil
           </motion.button>

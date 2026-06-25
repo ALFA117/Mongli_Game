@@ -31,12 +31,12 @@ export default function ChoicePanel({ choices, onChoose, disabled }: ChoicePanel
             ? { "data-choice-dark": true }
             : { "data-choice-light": true })}
           className={`
-            flex-1 p-4 sm:p-5 border text-left transition-all duration-300 group relative overflow-hidden uxpm-press uxpm-tap-highlight min-h-[80px]
+            flex-1 p-4 sm:p-5 border-2 text-left transition-all duration-300 group relative overflow-hidden uxpm-press uxpm-tap-highlight min-h-[80px]
             ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-none"}
             ${
               choice.tone === "dark"
-                ? "border-red-900/40 hover:border-red-800/60 hover:bg-red-950/20"
-                : "border-noir-accent/40 hover:border-noir-accent/60 hover:bg-noir-accent/10"
+                ? "border-red-800/60 hover:border-red-600/80 hover:bg-red-950/30 shadow-[0_0_12px_rgba(180,40,40,0.15)]"
+                : "border-noir-accent/60 hover:border-noir-accent hover:bg-noir-accent/15 shadow-[0_0_12px_rgba(196,146,58,0.15)]"
             }
             bg-noir-card
           `}
