@@ -11,11 +11,11 @@ const config: Config = {
       colors: {
         noir: {
           bg: "#0a0a0a",
-          text: "#e8d5b0",
-          accent: "#c4923a",
-          border: "#2a2a2a",
-          card: "#111111",
-          muted: "#8a7a5a",
+          text: "#f0e4c8",
+          accent: "#d4a244",
+          border: "#333333",
+          card: "#141414",
+          muted: "#9a8a6a",
         },
       },
       fontFamily: {
