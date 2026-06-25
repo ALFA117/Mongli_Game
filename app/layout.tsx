@@ -6,7 +6,7 @@ const SITE_URL = "https://mongli-game.vercel.app";
 export const metadata: Metadata = {
   title: "Mongli Game — Tu memoria vive en la blockchain",
   description:
-    "Juego noir de amnesia donde la IA escribe tu historia y 0G la guarda para siempre. Zero Cup 2026.",
+    "5 game modes · AI narrative · 0G blockchain · 22 routes · Zero Cup 2026. Juego noir donde la IA escribe tu historia y 0G la guarda para siempre.",
   keywords: "0G, blockchain, AI game, noir, amnesia, Zero Cup 2026, Claude, Gemini, Web3, hackathon",
   authors: [{ name: "Edgar Lopez Baeza", url: "https://github.com/ALFA117" }],
   manifest: "/manifest.json",

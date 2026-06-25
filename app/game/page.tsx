@@ -57,6 +57,7 @@ function GameContent() {
   // Audio init on first interaction
   useEffect(() => {
     initAudio();
+    if (address) fetch("/api/world", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallet: address }) }).catch(() => {});
     const start = () => { startAudioOnFirstInteraction(); setTimeout(startMelodicLayer, 3000); };
     document.addEventListener("click", start, { once: true });
     document.addEventListener("touchstart", start, { once: true });
