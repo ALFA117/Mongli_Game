@@ -275,6 +275,14 @@ body {
     color: #c4923a;
   }
 
+  /* ══════════ Game Grid ══════════ */
+  @media (min-width: 1024px) {
+    .game-grid {
+      grid-template-columns: 1fr 1.5fr !important;
+      padding: 24px !important;
+    }
+  }
+
   /* ══════════ Accessibility ══════════ */
   .focus-visible-amber:focus-visible {
     outline: 2px solid #d4a244;

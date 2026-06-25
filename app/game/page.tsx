@@ -335,7 +335,10 @@ function GameContent() {
     : "transparent";
 
   return (
-    <div className="min-h-screen flex flex-col relative" style={{ backgroundColor: toneTint }} onClick={handleSkipClick}>
+    <div className="min-h-screen flex flex-col relative" style={{
+      background: `#080808`,
+      backgroundImage: `radial-gradient(circle at 20% 50%, ${toneTint} 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(139,0,0,0.03) 0%, transparent 50%)`,
+    }} onClick={handleSkipClick}>
       <Cursor />
       <ScanlineOverlay />
       <AudioToggle />
@@ -354,7 +357,10 @@ function GameContent() {
       )}
 
       {/* Header */}
-      <header className="flex items-center justify-between p-3 sm:p-4 border-b border-noir-border/20 relative z-50">
+      <header className="flex items-center justify-between p-3 sm:p-4 relative z-50" style={{
+        background: "rgba(10,10,10,0.95)", borderBottom: "1px solid #1a1a1a",
+        backdropFilter: "blur(10px)", position: "sticky" as const, top: 0,
+      }}>
         <div className="flex items-center gap-3">
           <motion.button onClick={() => router.push("/")} whileHover={{ scale: 1.05 }}
             className="font-display text-base sm:text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent transition-colors">
@@ -420,19 +426,25 @@ function GameContent() {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col lg:flex-row relative">
+      <main style={{
+        display: "grid", gridTemplateColumns: "1fr", gap: 20, padding: "20px 16px",
+        minHeight: "calc(100vh - 140px)", alignItems: "start",
+      }} className="game-grid">
         {/* Left: Skull3D */}
-        <div className="lg:w-[40%] flex items-center justify-center p-4 sm:p-8">
-          <motion.div
-            className="w-[180px] h-[180px] sm:w-[250px] sm:h-[250px] lg:w-[300px] lg:h-[300px]"
-            animate={{ scale: phase === "fragments" && !fragmentDone ? [1, 1.02, 1] : 1 }}
-            transition={{ duration: 2, repeat: phase === "fragments" ? Infinity : 0 }}>
+        <div style={{
+          background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 12,
+          padding: 16, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center",
+        }}>
+          <div className="w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] lg:w-[280px] lg:h-[280px]">
             <Skull3D scene={act.scene} className="w-full h-full" />
-          </motion.div>
+          </div>
+          <p style={{ color: "#444", fontSize: 11, textAlign: "center" as const, marginTop: 8 }}>
+            ● {act.title.toUpperCase()}
+          </p>
         </div>
 
         {/* Right: Fragments & Decisions */}
-        <div className="lg:w-[60%] flex flex-col justify-center p-4 sm:p-8 lg:pr-12">
+        <div className="flex flex-col justify-center">
           <AnimatePresence mode="wait">
             {/* ═══ LOADING SAVE ═══ */}
             {phase === "loading-save" && (
@@ -596,14 +608,17 @@ function GameContent() {
         onClose={() => setToast((prev) => ({ ...prev, visible: false }))} />
 
       {/* Footer */}
-      <footer className="p-2 border-t border-noir-border/10 uxpm-safe-bottom">
-        <div className="flex items-center justify-between text-[8px] font-body text-noir-muted/30">
-          <span>Acto {act.id}/5 · {act.scene}</span>
-          <div className="flex items-center gap-3">
-            <button onClick={() => router.push("/history")} className="sm:hidden hover:text-noir-accent transition-colors">Expediente</button>
-            <span className="hidden sm:inline">{allFragments.length + actFragments.length} fragmentos · 0G Chain</span>
-          </div>
-        </div>
+      <footer style={{
+        background: "rgba(10,10,10,0.95)", borderTop: "1px solid #1a1a1a",
+        padding: "10px 20px", display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <button onClick={() => router.push("/history")}
+          style={{ background: "#111", border: "1px solid #222", color: "#666", padding: "4px 10px", borderRadius: 4, fontSize: 11 }}>
+          Expediente
+        </button>
+        <span style={{ color: "#555", fontSize: 11, fontFamily: "monospace" }}>
+          Fragmento {fragIdx + 1}/3 · Acto {act.id}
+        </span>
       </footer>
     </div>
   );
