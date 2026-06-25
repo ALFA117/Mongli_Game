@@ -264,9 +264,9 @@ function GameContent() {
       {!isConnected && allFragments.length > 0 && (
         <div className="fixed inset-0 z-[10000] bg-black/90 flex items-center justify-center p-6">
           <div className="uxpm-glass p-8 max-w-sm w-full text-center">
-            <p className="font-display text-lg text-red-400 mb-3">Wallet desconectada</p>
+            <p className="font-display text-lg text-red-400 mb-3">La conexión se perdió</p>
             <p className="font-body text-xs text-noir-muted mb-6">
-              Reconecta para continuar. Tu progreso está guardado.
+              La señal se disuelve en la oscuridad. Reconecta tu identidad para seguir recordando.
             </p>
             <WalletButton />
           </div>

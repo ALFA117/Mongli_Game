@@ -484,6 +484,30 @@ export default function FragmentViewer({
               </button>
             </div>
 
+            {/* Twitter share */}
+            <button
+              onClick={() => {
+                const text = encodeURIComponent(
+                  `Un fragmento de mi memoria en @MongliGame:\n"${fragment.text.slice(0, 80)}..."\n\nGrabado en 0G para siempre.\nmongli-game.vercel.app #ZeroCup2026`
+                );
+                window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
+              }}
+              className="w-full py-2 border border-noir-border/40 text-noir-muted text-[10px] font-body tracking-wider hover:text-noir-accent hover:border-noir-accent/40 transition-colors uxpm-press mt-2 flex items-center justify-center gap-2"
+            >
+              Compartir en X/Twitter
+            </button>
+
+            {/* Copy link */}
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`https://mongli-game.vercel.app`);
+                alert("Link copiado");
+              }}
+              className="w-full py-2 border border-noir-border/30 text-noir-muted/50 text-[10px] font-body tracking-wider hover:text-noir-accent transition-colors uxpm-press mt-1"
+            >
+              Copiar link
+            </button>
+
             {/* Footer watermark */}
             <p className="text-[7px] font-body text-noir-muted/20 text-center mt-4 tracking-wider">
               MONGLI GAME — 0G STORAGE — PERMANENTE
