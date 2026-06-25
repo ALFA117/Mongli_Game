@@ -37,6 +37,25 @@ export interface ActRecord {
   toneAverage: number;
 }
 
+// ─── Speedrun ───
+export interface SpeedrunRecord {
+  walletAddress: string;
+  completionTimeMs: number;
+  completionTimeFormatted: string;
+  identity: string;
+  toneAverage: number;
+  completedAt: string;
+}
+
+// ─── New Game+ ───
+export interface PreviousRunSummary {
+  identity: string;
+  toneAverage: number;
+  keyDecisions: string[];
+  completedAt: string;
+  runNumber: number;
+}
+
 // ─── Save/Load state ───
 export interface GameSaveState {
   version: string;
@@ -50,6 +69,7 @@ export interface GameSaveState {
   startedAt: string;
   lastPlayedAt: string;
   saveHash?: string;
+  previousRun?: PreviousRunSummary;
 }
 
 // ─── Gallery ───

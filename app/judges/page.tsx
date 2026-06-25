@@ -86,6 +86,11 @@ export default function JudgesPage() {
               className="px-8 py-3 border-2 border-noir-accent text-noir-accent font-display text-sm tracking-wider uxpm-press">
               Play the game →
             </motion.button>
+            <motion.button onClick={() => router.push("/trailer")}
+              whileHover={{ scale: 1.05 }}
+              className="px-6 py-2.5 border border-noir-border text-noir-muted font-display text-xs tracking-wider uxpm-press hover:text-noir-accent">
+              Ver trailer → (90s, no wallet)
+            </motion.button>
           </div>
         </Section>
 

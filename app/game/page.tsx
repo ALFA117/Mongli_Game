@@ -26,6 +26,8 @@ type GamePhase = "loading-save" | "found-save" | "transition" | "fragments" | "d
 
 function GameContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isNewGamePlus = searchParams.get("ng") === "true";
   const { isConnected, address } = useAccount();
   const chainWrite = useChainWrite();
 
@@ -368,6 +370,11 @@ function GameContent() {
             }`}>
               ✦ {aiModel === "claude" ? "Claude" : aiModel === "gemini" ? "Gemini" : "Demo"}
             </span>
+            {isNewGamePlus && (
+              <span className="px-1.5 py-0.5 text-[8px] font-mono text-purple-400 border border-purple-500/40 tracking-wider">
+                ⊕ NG+
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">

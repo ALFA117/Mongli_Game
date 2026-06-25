@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ClaudeResponse, Fragment, PlayerProfile } from "./types";
+import type { ClaudeResponse, Fragment, PlayerProfile, PreviousRunSummary } from "./types";
 import { buildPlayerProfile } from "./types";
 
 // ─── Fallback fragments for demo mode ───
@@ -32,7 +32,7 @@ function getFallback(fragmentId: number): ClaudeResponse {
 
 // ─── Prompt builders ───
 
-function buildPrompt(scene: string, history: Fragment[], choice: string): { system: string; user: string } {
+function buildPrompt(scene: string, history: Fragment[], choice: string, previousRun?: PreviousRunSummary): { system: string; user: string } {
   const profile = buildPlayerProfile(history);
   const fragmentId = history.length + 1;
 
@@ -48,9 +48,13 @@ function buildPrompt(scene: string, history: Fragment[], choice: string): { syst
     ? `Tendencia LUZ (${profile.lightChoices}/${profile.darkChoices + profile.lightChoices}). Refleja remordimiento.`
     : `EQUILIBRADO. Recuerdos ambiguos.`;
 
+  const ngPlus = previousRun
+    ? `\nNEW GAME+: El jugador ya jugó antes. Identidad anterior: ${previousRun.identity}. Decisiones clave: ${previousRun.keyDecisions.join(", ")}. Esta segunda vuelta debe sentirse diferente — ecos inquietantes de la vida anterior. Tono más oscuro y urgente.`
+    : "";
+
   const system = `Eres el narrador de Mongli Game, juego noir de amnesia psicológica.
 Primera persona (sin nombre). Tono: oscuro, poético, perturbador. Frases cortas. 80-120 palabras.
-La ÚLTIMA FRASE debe crear suspenso. ${actInstr} ${profileInstr}
+La ÚLTIMA FRASE debe crear suspenso. ${actInstr} ${profileInstr}${ngPlus}
 Responde SOLO JSON: { "fragment_text": "...", "tone_score": 0-10, "tags": ["..."], "traces": ["..."] }`;
 
   const historyCtx = history.length > 0
@@ -166,9 +170,10 @@ export interface GenerateResult extends ClaudeResponse {
 export async function generateFragment(
   scene: string,
   history: Fragment[],
-  choice: string
+  choice: string,
+  previousRun?: PreviousRunSummary
 ): Promise<GenerateResult> {
-  const { system, user } = buildPrompt(scene, history, choice);
+  const { system, user } = buildPrompt(scene, history, choice, previousRun);
   const fragmentId = history.length + 1;
 
   // 1. Try Claude

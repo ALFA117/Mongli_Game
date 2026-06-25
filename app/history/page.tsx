@@ -202,6 +202,14 @@ function HistoryContent() {
                   ▶ Reproducir mi historia
                 </motion.button>
               )}
+              {actsPlayed > 0 && address && (
+                <motion.button
+                  onClick={() => router.push(`/diary`)}
+                  whileHover={{ scale: 1.05 }}
+                  className="px-6 py-2.5 border border-noir-accent/40 text-noir-accent/70 font-display text-xs tracking-wider hover:text-noir-accent uxpm-press">
+                  📖 Ver como diario
+                </motion.button>
+              )}
               <motion.button
                 onClick={() => router.push("/")}
                 whileHover={{ scale: 1.05 }}
