@@ -1,80 +1,260 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
+import Cursor from "@/components/Cursor";
+import Providers from "@/components/Providers";
+import WalletButton from "@/components/WalletButton";
+import GlitchText from "@/components/GlitchText";
+import LoadingScreen from "@/components/LoadingScreen";
+import ScanlineOverlay from "@/components/ScanlineOverlay";
+import AudioToggle from "@/components/AudioToggle";
+import { INITIAL_SCENES } from "@/lib/types";
+import { initAudio, playAmbient, playChoice } from "@/lib/audio";
+import { useKeyboardNav } from "@/lib/useKeyboardNav";
+import { useRouter } from "next/navigation";
 
-const Skull3D = dynamic(() => import('@/components/Skull3D'), {
-  ssr: false,
-  loading: () => <div style={{ width: 380, height: 380, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a0000', fontSize: 11, letterSpacing: 4 }}>CARGANDO...</div>,
-})
-const Cursor = dynamic(() => import('@/components/Cursor'), { ssr: false })
+const Skull3D = dynamic(() => import("@/components/Skull3D"), { ssr: false });
 
-export default function Home() {
-  const router = useRouter()
-  const [lang, setLang] = useState<'es' | 'en'>('es')
-  const [subtitle, setSubtitle] = useState('')
-  const [isMobile, setIsMobile] = useState(false)
+function LandingContent() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [audioStarted, setAudioStarted] = useState(false);
+  const [showScenes, setShowScenes] = useState(false);
+  const [titleRevealed, setTitleRevealed] = useState(false);
+  const [hoveredScene, setHoveredScene] = useState<string | null>(null);
+  const [selectedSceneIdx, setSelectedSceneIdx] = useState(0);
 
-  const T = {
-    es: { sub: 'Alguien tomó tus recuerdos. Recupéralos antes de que sea tarde.', btn: 'RECUPERA TU IDENTIDAD', hint: 'Haz clic para comenzar' },
-    en: { sub: 'Someone took your memories. Take them back before it\'s too late.', btn: 'RECLAIM YOUR IDENTITY', hint: 'Click to begin' },
-  }
+  useKeyboardNav({
+    onLeft: () => setSelectedSceneIdx((p) => Math.max(0, p - 1)),
+    onRight: () => setSelectedSceneIdx((p) => Math.min(INITIAL_SCENES.length - 1, p + 1)),
+    onEnter: () => {
+      if (showScenes) {
+        handleSceneSelect(INITIAL_SCENES[selectedSceneIdx].id);
+      } else if (titleRevealed) {
+        setShowScenes(true);
+      }
+    },
+    enabled: !loading,
+  });
 
-  useEffect(() => { setIsMobile(window.innerWidth < 768) }, [])
+  const startAudio = useCallback(() => {
+    if (!audioStarted) {
+      initAudio();
+      playAmbient();
+      setAudioStarted(true);
+    }
+  }, [audioStarted]);
 
   useEffect(() => {
-    const text = T[lang].sub; setSubtitle(''); let i = 0
-    const iv = setInterval(() => { if (i < text.length) setSubtitle(text.slice(0, ++i)); else clearInterval(iv) }, 35)
-    return () => clearInterval(iv)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang])
+    if (!loading) {
+      const timer = setTimeout(() => setTitleRevealed(true), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
-  const [rainDrops] = useState(() => Array.from({ length: 25 }, (_, i) => ({ id: i, left: Math.random() * 100, height: 40 + Math.random() * 60, duration: 1 + Math.random() * 2, delay: Math.random() * 4 })))
+  const handleSceneSelect = (sceneId: string) => {
+    playChoice();
+    router.push(`/game?scene=${sceneId}`);
+  };
+
+  if (loading) {
+    return <LoadingScreen onComplete={() => setLoading(false)} />;
+  }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', gap: 0 }}>
+    <div className="min-h-screen flex flex-col relative" onClick={startAudio}>
       <Cursor />
+      <ScanlineOverlay />
+      <AudioToggle />
 
-      {rainDrops.map(d => <div key={d.id} style={{ position: 'absolute', left: `${d.left}%`, top: 0, width: 1, height: d.height, background: 'rgba(139,0,0,0.25)', animation: `rain ${d.duration}s linear infinite`, animationDelay: `${d.delay}s`, pointerEvents: 'none' }} />)}
+      {/* Header */}
+      <header className="flex items-center justify-between p-4 sm:p-6 relative z-50">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex items-center gap-3"
+        >
+          <span className="font-display text-xs text-noir-muted tracking-[0.3em] uppercase">
+            Zero Cup 2026
+          </span>
+          <span className="w-1 h-1 bg-noir-accent/50 rounded-full" />
+          <span className="font-body text-[10px] text-noir-muted/50">0G Labs</span>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+          <WalletButton />
+        </motion.div>
+      </header>
 
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.85) 100%)', pointerEvents: 'none', zIndex: 1 }} />
+      {/* Main content */}
+      <main className="flex-1 flex flex-col items-center justify-center relative -mt-4 sm:-mt-10 px-4 sm:px-0">
+        {/* 3D Skull */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 2, ease: "easeOut" }}
+          className="w-[220px] h-[220px] sm:w-[280px] sm:h-[280px] md:w-[380px] md:h-[380px] lg:w-[420px] lg:h-[420px] relative"
+        >
+          <Skull3D className="w-full h-full" scene="hotel" />
+          <div className="absolute inset-0 -z-10 bg-noir-accent/5 rounded-full blur-[80px] scale-[2]" />
+        </motion.div>
 
-      {[0, 1, 2, 3].map(i => <div key={`fog${i}`} style={{ position: 'absolute', width: 300 + i * 100, height: 300 + i * 80, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,0,0,0.07) 0%, transparent 70%)', left: `${15 + i * 20}%`, top: `${10 + i * 20}%`, transform: 'translate(-50%,-50%)', animation: `fog ${5 + i * 2}s ease-in-out infinite`, animationDelay: `${i * 1.2}s`, pointerEvents: 'none', zIndex: 0 }} />)}
+        {/* Title */}
+        <AnimatePresence>
+          {titleRevealed && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+              className="text-center mt-2"
+            >
+              <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-noir-text text-shadow-noir tracking-[0.15em]">
+                <GlitchText text="MONGLI" intensity="low" />
+              </h1>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ delay: 0.8, duration: 1.5 }}
+                className="h-[1px] bg-gradient-to-r from-transparent via-noir-accent/50 to-transparent mx-auto mt-3 max-w-[200px]"
+              />
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.6 }}
+                transition={{ delay: 1.2 }}
+                className="font-body text-noir-muted text-[10px] tracking-[0.5em] uppercase mt-4"
+              >
+                Tus recuerdos son tuyos. Nadie puede borrarlos.
+              </motion.p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
-        <button onClick={() => setLang(l => l === 'es' ? 'en' : 'es')}
-          style={{ background: 'transparent', border: '1px solid #2a0000', color: '#555', padding: '6px 14px', fontFamily: 'monospace', fontSize: 12, cursor: 'none', letterSpacing: 2, transition: 'all 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#8B0000'; e.currentTarget.style.color = '#8B0000' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a0000'; e.currentTarget.style.color = '#555' }}>
-          {lang === 'es' ? 'EN' : 'ES'}
-        </button>
-      </div>
+        {/* Enter button */}
+        <AnimatePresence>
+          {!showScenes && titleRevealed && (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ delay: 2 }}
+              onClick={() => setShowScenes(true)}
+              className="mt-12 group relative"
+            >
+              <span className="px-10 py-3 border border-noir-accent/40 bg-transparent text-noir-accent font-display text-sm tracking-[0.2em] block transition-all duration-500 group-hover:bg-noir-accent/10 group-hover:border-noir-accent/70">
+                Despertar
+              </span>
+              <motion.span
+                className="absolute -bottom-1 left-0 right-0 h-[1px] bg-noir-accent/30"
+                animate={{ scaleX: [0, 1, 0] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+            </motion.button>
+          )}
+        </AnimatePresence>
 
-      <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-        <div style={{ marginBottom: -20 }}><Skull3D size={isMobile ? 260 : 380} /></div>
+        {/* Scene selection */}
+        <AnimatePresence>
+          {showScenes && (
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="mt-10 w-full max-w-3xl px-6"
+            >
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.5 }}
+                transition={{ delay: 0.3 }}
+                className="text-center font-display text-noir-muted text-xs mb-8 tracking-[0.3em]"
+              >
+                ¿Dónde despertaste?
+              </motion.p>
 
-        <div style={{ position: 'relative', marginBottom: 16 }}>
-          <h1 style={{ fontSize: isMobile ? 64 : 96, fontFamily: "'VT323', monospace", color: '#fff', letterSpacing: 12, margin: 0, lineHeight: 1, textShadow: '0 0 20px rgba(139,0,0,0.8)' }}>MONGLI</h1>
-          <h1 aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, fontSize: isMobile ? 64 : 96, fontFamily: "'VT323', monospace", color: '#ff0000', letterSpacing: 12, margin: 0, lineHeight: 1, animation: 'glitch-1 4s infinite', animationDelay: '0.5s', opacity: 0.7 }}>MONGLI</h1>
-          <h1 aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, fontSize: isMobile ? 64 : 96, fontFamily: "'VT323', monospace", color: '#00ffff', letterSpacing: 12, margin: 0, lineHeight: 1, animation: 'glitch-2 4s infinite', animationDelay: '1s', opacity: 0.5 }}>MONGLI</h1>
-        </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {INITIAL_SCENES.map((scene, i) => (
+                  <motion.button
+                    key={scene.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + i * 0.2, duration: 0.6 }}
+                    onClick={() => handleSceneSelect(scene.id)}
+                    onMouseEnter={() => setHoveredScene(scene.id)}
+                    onMouseLeave={() => setHoveredScene(null)}
+                    whileHover={{ y: -5 }}
+                    whileTap={{ scale: 0.97 }}
+                    className={`p-4 sm:p-6 bg-noir-card border text-left transition-all duration-500 group relative overflow-hidden uxpm-press uxpm-tap-highlight ${
+                      selectedSceneIdx === i && showScenes
+                        ? "border-noir-accent/60 ring-1 ring-noir-accent/30"
+                        : "border-noir-border hover:border-noir-accent/40"
+                    }`}
+                  >
+                    {/* Background glow on hover */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-br from-noir-accent/8 to-transparent"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: hoveredScene === scene.id ? 1 : 0 }}
+                      transition={{ duration: 0.5 }}
+                    />
 
-        <div style={{ width: isMobile ? 200 : 320, height: 1, background: 'linear-gradient(to right, transparent, #8B0000, transparent)', marginBottom: 16 }} />
+                    {/* Corner decoration */}
+                    <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-noir-border group-hover:border-noir-accent/30 transition-colors" />
+                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b border-l border-noir-border group-hover:border-noir-accent/30 transition-colors" />
 
-        <p style={{ fontSize: isMobile ? 13 : 15, color: '#888', textAlign: 'center', maxWidth: isMobile ? 280 : 420, lineHeight: 1.6, marginBottom: 32, minHeight: 48, letterSpacing: 1 }}>
-          {subtitle}<span style={{ animation: 'blink 0.8s infinite', color: '#8B0000' }}>▌</span>
-        </p>
+                    <div className="relative z-10">
+                      <span className="text-2xl mb-4 block filter grayscale group-hover:grayscale-0 transition-all duration-500">
+                        {scene.icon}
+                      </span>
+                      <h3 className="font-display text-noir-text text-sm mb-2 tracking-wider group-hover:text-noir-accent transition-colors duration-300">
+                        {scene.title}
+                      </h3>
+                      <p className="font-body text-noir-muted text-[11px] leading-relaxed">
+                        {scene.description}
+                      </p>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
 
-        <button onClick={() => router.push('/map')}
-          style={{ background: 'transparent', border: '1px solid #8B0000', color: '#e8d5b0', padding: isMobile ? '14px 32px' : '16px 48px', fontFamily: "'Special Elite', serif", fontSize: isMobile ? 13 : 15, letterSpacing: 4, cursor: 'none', animation: 'pulse-red 2s infinite', transition: 'all 0.3s' }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#8B0000'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.03)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e8d5b0'; e.currentTarget.style.transform = 'scale(1)' }}>
-          {T[lang].btn}
-        </button>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.3 }}
+                transition={{ delay: 1 }}
+                className="text-center font-body text-[9px] text-noir-muted mt-6 tracking-wider"
+              >
+                Cada escena genera una historia única con IA
+              </motion.p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
 
-        <p style={{ marginTop: 16, fontSize: 10, color: '#333', letterSpacing: 3, animation: 'blink 2s infinite' }}>{T[lang].hint}</p>
-      </div>
+      {/* Footer */}
+      <footer className="p-6 text-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.3 }}
+          transition={{ delay: 2.5 }}
+          className="space-y-1"
+        >
+          <p className="font-body text-[9px] text-noir-muted tracking-[0.2em]">
+            Powered by 0G Labs &middot; AI by Claude &middot; Built for Zero Cup 2026
+          </p>
+          <p className="font-body text-[8px] text-noir-muted/50">
+            Recuerdos almacenados en 0G Storage &middot; Verificados en 0G Chain
+          </p>
+        </motion.div>
+      </footer>
     </div>
-  )
+  );
+}
+
+export default function Home() {
+  return (
+    <Providers>
+      <LandingContent />
+    </Providers>
+  );
 }

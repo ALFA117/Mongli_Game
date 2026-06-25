@@ -1,52 +1,52 @@
-import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { NextResponse } from "next/server";
+import { generateFragment } from "@/lib/claude";
+import { uploadFragment } from "@/lib/og-storage";
+import { saveFragmentOnChain } from "@/lib/og-chain";
+import { getChoicesForFragment } from "@/lib/choices";
+import type { Fragment, GenerateRequest } from "@/lib/types";
 
-export async function POST(request: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "No API key" }, { status: 500 });
-
+export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const lang = body.lang || "es";
-    const scene = body.scene || "Una habitación oscura";
-    const desc = body.desc || "";
-    const historyArr: string[] = body.history || [];
-    const fragmentNumber = body.fragmentNumber || 1;
+    const body: GenerateRequest = await request.json();
+    const { scene, history, choice, fragmentId } = body;
 
-    const systemPrompt = `You are the narrator of MONGLI, a psychological noir amnesia game.
-Write in first person. Tone: dark, atmospheric, poetic. Short sentences.
-EXACTLY 60-80 words. No more, no less.
-Location: ${scene}. ${desc}
-Fragment ${fragmentNumber} of 3 for this location.
-${fragmentNumber === 1 ? "First impression. Sensory details. Something feels wrong." : ""}
-${fragmentNumber === 2 ? "Deeper. A memory surfaces. Identity blurs." : ""}
-${fragmentNumber === 3 ? "Revelation. A piece of truth. The memory crystallizes." : ""}
-End with exactly:
-${lang === "es" ? "[OPCIÓN A]: <choice in Spanish>\n[OPCIÓN B]: <choice in Spanish>" : "[OPTION A]: <choice in English>\n[OPTION B]: <choice in English>"}
-Write in ${lang === "es" ? "Spanish" : "English"}.`;
+    const claudeResponse = await generateFragment(scene, history, choice);
 
-    const historyContext = historyArr.length > 0
-      ? `Previous choices: ${historyArr.slice(-3).join(" → ")}`
-      : "No previous choices.";
+    const fragment: Fragment = {
+      id: fragmentId,
+      text: claudeResponse.fragment_text,
+      toneScore: claudeResponse.tone_score,
+      tags: claudeResponse.tags,
+      traces: claudeResponse.traces,
+      choiceMade: choice,
+      timestamp: Date.now(),
+      unlocked: true,
+    };
 
-    const anthropic = new Anthropic({ apiKey });
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 400,
-      system: systemPrompt,
-      messages: [{ role: "user", content: `${historyContext}\nGenerate the next memory fragment.` }],
-    });
+    const storageHash = await uploadFragment(fragment);
+    fragment.storageHash = storageHash;
 
-    const text = message.content[0].type === "text" ? message.content[0].text : "";
+    const txHash = await saveFragmentOnChain(storageHash, fragmentId);
+    fragment.txHash = txHash;
+
+    const allFragments = [...history, fragment];
+    const choices = getChoicesForFragment(fragmentId + 1, allFragments);
 
     return NextResponse.json({
-      fragment: text,
-      fragment_text: text,
-      storage_hash: "0x" + Math.random().toString(16).slice(2).padEnd(64, "0"),
+      fragment,
+      choices,
+      storageHash,
+      txHash,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    console.error("Generate error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("[API] Generate error:", error);
+
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+
+    return NextResponse.json(
+      { error: `Failed to generate fragment: ${errorMessage}` },
+      { status: 500 }
+    );
   }
 }

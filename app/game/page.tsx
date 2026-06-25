@@ -1,179 +1,630 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import dynamic from 'next/dynamic'
-
-const Cursor = dynamic(() => import('@/components/Cursor'), { ssr: false })
-
-const LOCS = [
-  { id: 0, name: 'LA OFICINA', icon: '🏢', desc: 'Papeles. Polvo. Tu nombre en el escritorio.' },
-  { id: 1, name: 'EL CALLEJÓN', icon: '🌆', desc: 'Lluvia. Sangre vieja en el asfalto.' },
-  { id: 2, name: 'LA MORGUE', icon: '⚰️', desc: 'Frío. Olor a formol. Una camilla vacía.' },
-  { id: 3, name: 'EL BAR ROJO', icon: '🍷', desc: 'Jazz. Humo. Alguien te conoce aquí.' },
-  { id: 4, name: 'LA ESTACIÓN', icon: '🚉', desc: 'Trenes que nunca llegan. Taquillas cerradas.' },
-  { id: 5, name: 'EL HOTEL', icon: '🏨', desc: 'Habitación 114. La llave encaja.' },
-  { id: 6, name: 'EL PUERTO', icon: '⚓', desc: 'Barcos oxidados. Cajas sin marcar.' },
-  { id: 7, name: 'EL CEMENTERIO', icon: '☠️', desc: 'Una lápida con tu fecha de nacimiento.' },
-  { id: 8, name: 'LA MANSIÓN', icon: '🏚️', desc: 'Puertas sin cerrar. Retratos sin caras.' },
-  { id: 9, name: 'EL FARO', icon: '🗼', desc: 'La luz gira. Algo espera arriba.' },
-]
+import { useState, useCallback, useEffect, useRef, Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams, useRouter } from "next/navigation";
+import Cursor from "@/components/Cursor";
+import Providers from "@/components/Providers";
+import WalletButton from "@/components/WalletButton";
+import FragmentComponent from "@/components/Fragment";
+import ChoicePanel from "@/components/ChoicePanel";
+import MemoryMap from "@/components/MemoryMap";
+import Toast from "@/components/Toast";
+import ScanlineOverlay from "@/components/ScanlineOverlay";
+import AudioToggle from "@/components/AudioToggle";
+import GlitchText from "@/components/GlitchText";
+import FragmentTimeline from "@/components/FragmentTimeline";
+import PlayerStats from "@/components/PlayerStats";
+import Revelation from "@/components/Revelation";
+import FragmentViewer from "@/components/FragmentViewer";
+import Achievements, { ACHIEVEMENTS } from "@/components/Achievements";
+import type { AchievementMeta } from "@/components/Achievements";
+import AchievementNotification from "@/components/AchievementNotification";
+import type { AchievementNotifItem } from "@/components/AchievementNotification";
+import MobileNav from "@/components/MobileNav";
+import { initAudio, playAmbient, playChainConfirm, playChoice, playAchievementSound, playDiscovery, setAct } from "@/lib/audio";
+import { useKeyboardNav } from "@/lib/useKeyboardNav";
+import { useChainWrite } from "@/lib/useChainWrite";
+import { INITIAL_SCENES } from "@/lib/types";
+import type { Fragment, Choice, GenerateResponse } from "@/lib/types";
 
 function GameContent() {
-  const router = useRouter()
-  const params = useSearchParams()
-  const locId = parseInt(params.get('loc') || '0')
-  const lang = (params.get('lang') || 'es') as 'es' | 'en'
-  const loc = LOCS[locId] || LOCS[0]
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const sceneId = searchParams.get("scene") || "hotel";
+  const scene = INITIAL_SCENES.find((s) => s.id === sceneId) || INITIAL_SCENES[0];
 
-  const [fragNum, setFragNum] = useState(1)
-  const [display, setDisplay] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [choiceA, setChoiceA] = useState('')
-  const [choiceB, setChoiceB] = useState('')
-  const [showChoices, setShowChoices] = useState(false)
-  const [history, setHistory] = useState<string[]>([])
-  const [done, setDone] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const chainWrite = useChainWrite();
+  const [fragments, setFragments] = useState<Fragment[]>([]);
+  const [currentFragment, setCurrentFragment] = useState<Fragment | null>(null);
+  const [choices, setChoices] = useState<Choice[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [fragmentRevealed, setFragmentRevealed] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [showRevelation, setShowRevelation] = useState(false);
+  const [viewingFragment, setViewingFragment] = useState<Fragment | null>(null);
+  const [toast, setToast] = useState<{ message: string; hash?: string; visible: boolean }>({
+    message: "",
+    visible: false,
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [screenShake, setScreenShake] = useState(false);
+  const [focusedChoiceIdx, setFocusedChoiceIdx] = useState(0);
+  const [newlyUnlockedId, setNewlyUnlockedId] = useState<number | undefined>();
 
-  const typeRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  // Achievement system
+  const [notifQueue, setNotifQueue] = useState<AchievementNotifItem[]>([]);
+  const [achievementMeta, setAchievementMeta] = useState<AchievementMeta>({
+    fragmentViewCounts: {},
+    txLinkClicked: false,
+    pointOfNoReturnTriggered: false,
+  });
+  const checkedAchievements = useRef(new Set<string>());
 
-  useEffect(() => { setIsMobile(window.innerWidth < 768) }, [])
+  const anyModalOpen = showMap || showStats || showAchievements || showRevelation || !!viewingFragment;
 
-  const typeWriter = useCallback((text: string) => {
-    clearTimeout(typeRef.current)
-    setIsTyping(true); setShowChoices(false); setDisplay('')
-    let i = 0
-    const tick = () => {
-      if (i < text.length) { setDisplay(text.slice(0, ++i)); typeRef.current = setTimeout(tick, 10) }
-      else { setIsTyping(false); setShowChoices(true) }
+  // Track fragment views for "Eco Del Pasado" achievement
+  const handleViewFragment = useCallback((frag: Fragment) => {
+    setViewingFragment(frag);
+    setAchievementMeta((prev) => ({
+      ...prev,
+      fragmentViewCounts: {
+        ...prev.fragmentViewCounts,
+        [frag.id]: (prev.fragmentViewCounts[frag.id] || 0) + 1,
+      },
+    }));
+  }, []);
+
+  // Track TX link clicks for "La Cadena No Miente" achievement
+  const handleTxLinkClick = useCallback(() => {
+    setAchievementMeta((prev) => ({ ...prev, txLinkClicked: true }));
+  }, []);
+
+  // Keyboard navigation
+  useKeyboardNav({
+    onLeft: () => {
+      if (!anyModalOpen && fragmentRevealed && choices.length > 0) {
+        setFocusedChoiceIdx(0);
+      } else if (!anyModalOpen && currentFragment && currentFragment.id > 1) {
+        const prev = fragments.find((f) => f.id === currentFragment.id - 1);
+        if (prev) handleViewFragment(prev);
+      }
+    },
+    onRight: () => {
+      if (!anyModalOpen && fragmentRevealed && choices.length > 0) {
+        setFocusedChoiceIdx(Math.min(1, choices.length - 1));
+      }
+    },
+    onEnter: () => {
+      if (!anyModalOpen && fragmentRevealed && choices.length > 0) {
+        handleChoice(choices[focusedChoiceIdx]);
+      }
+    },
+    onEscape: () => {
+      if (showMap) setShowMap(false);
+      else if (showStats) setShowStats(false);
+      else if (showAchievements) setShowAchievements(false);
+      else if (viewingFragment) setViewingFragment(null);
+    },
+    enabled: !isGenerating,
+  });
+
+  useEffect(() => {
+    initAudio();
+    playAmbient();
+  }, []);
+
+  // Check all achievements whenever state changes
+  useEffect(() => {
+    for (const ach of ACHIEVEMENTS) {
+      if (checkedAchievements.current.has(ach.id)) continue;
+      if (ach.check(fragments, achievementMeta)) {
+        checkedAchievements.current.add(ach.id);
+        const notifItem: AchievementNotifItem = {
+          id: ach.id,
+          title: ach.title,
+          asciiIcon: ach.asciiIcon,
+          category: ach.category,
+        };
+        setTimeout(() => {
+          playAchievementSound(ach.category);
+          setNotifQueue((prev) => [...prev, notifItem]);
+        }, 1200);
+      }
     }
-    tick()
-  }, [])
+  }, [fragments, achievementMeta]);
 
-  const generateFragment = useCallback(async (choice?: string) => {
-    if (isLoading || isTyping) return
-    setIsLoading(true); setShowChoices(false); setDisplay('')
-    try {
-      const res = await fetch('/api/generate', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scene: loc.name, desc: loc.desc, history: choice ? [...history, choice] : history, fragmentNumber: fragNum, lang }),
-      })
-      const data = await res.json()
-      const raw: string = data.fragment?.text || data.fragment_text || data.fragment || 'Error.'
-      const optA = raw.match(/\[OPCI[ÓO]N A\]:\s*(.+)/i)?.[1]?.trim() || raw.match(/\[OPTION A\]:\s*(.+)/i)?.[1]?.trim() || (lang === 'es' ? 'Recordar' : 'Remember')
-      const optB = raw.match(/\[OPCI[ÓO]N B\]:\s*(.+)/i)?.[1]?.trim() || raw.match(/\[OPTION B\]:\s*(.+)/i)?.[1]?.trim() || (lang === 'es' ? 'Olvidar' : 'Forget')
-      const clean = raw.replace(/\[OPCI[ÓO]N [AB]\]:.+/gi, '').replace(/\[OPTION [AB]\]:.+/gi, '').trim()
-      setChoiceA(optA); setChoiceB(optB)
-      if (choice) setHistory(h => [...h, choice])
-      typeWriter(clean)
-    } catch { setDisplay('Error de conexión...'); setIsTyping(false) }
-    finally { setIsLoading(false) }
-  }, [isLoading, isTyping, loc, history, fragNum, lang, typeWriter])
+  // Trigger revelation at fragment 15
+  useEffect(() => {
+    if (fragments.length >= 15 && !showRevelation) {
+      setTimeout(() => setShowRevelation(true), 3000);
+    }
+  }, [fragments.length, showRevelation]);
 
-  const handleChoice = (opt: 'A' | 'B') => {
-    const chosen = opt === 'A' ? choiceA : choiceB
-    if (fragNum >= 3) {
-      const saved = JSON.parse(localStorage.getItem('mongli_visited') || '[]')
-      if (!saved.includes(locId)) localStorage.setItem('mongli_visited', JSON.stringify([...saved, locId]))
-      setDone(true)
-      setTimeout(() => router.push('/map'), 2500)
-    } else { setFragNum(n => n + 1); setShowChoices(false); generateFragment(chosen) }
-  }
+  const generateFragment = useCallback(
+    async (choiceText: string = "") => {
+      setIsGenerating(true);
+      setFragmentRevealed(false);
+      setChoices([]);
+      setError(null);
 
-  const T = { es: { investigate: 'INVESTIGAR', back: '← MAPA', loading: 'RECUPERANDO MEMORIA...', choose: '— ELIGE —', stored: 'GUARDADO EN 0G', done: 'Memoria recuperada. Volviendo al mapa...' }, en: { investigate: 'INVESTIGATE', back: '← MAP', loading: 'RECOVERING MEMORY...', choose: '— CHOOSE —', stored: 'SAVED ON 0G', done: 'Memory recovered. Returning to map...' } }[lang]
+      // Track point-of-no-return choices
+      const currentChoices = choices;
+      const chosenChoice = currentChoices.find((c) => c.text === choiceText);
+      if (chosenChoice?.isPointOfNoReturn) {
+        setAchievementMeta((prev) => ({ ...prev, pointOfNoReturnTriggered: true }));
+      }
+
+      try {
+        const response = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            scene: scene.description,
+            history: fragments,
+            choice: choiceText,
+            fragmentId: fragments.length + 1,
+          }),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => null);
+          throw new Error(errData?.error || "Error generando fragmento");
+        }
+
+        const data: GenerateResponse = await response.json();
+
+        setCurrentFragment(data.fragment);
+        setFragments((prev) => [...prev, data.fragment]);
+        setChoices(data.choices);
+        setNewlyUnlockedId(data.fragment.id);
+        playDiscovery();
+
+        if (data.fragment.toneScore >= 7) {
+          setScreenShake(true);
+          setTimeout(() => setScreenShake(false), 500);
+        }
+
+        // Sign on-chain with MetaMask if wallet connected
+        if (chainWrite.isConnected && chainWrite.hasContract && data.storageHash) {
+          const onChainTx = await chainWrite.saveFragment(data.storageHash, data.fragment.id);
+          if (onChainTx) {
+            data.fragment.txHash = onChainTx;
+            setFragments((prev) =>
+              prev.map((f) => (f.id === data.fragment.id ? { ...f, txHash: onChainTx } : f))
+            );
+          }
+        }
+
+        playChainConfirm();
+        setToast({
+          message: chainWrite.isConnected
+            ? "Fragmento firmado y grabado en cadena"
+            : "Fragmento grabado (conecta wallet para firmar on-chain)",
+          hash: data.fragment.txHash || data.storageHash,
+          visible: true,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Error desconocido";
+        setError(msg);
+        console.error(err);
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+    [fragments, scene, choices]
+  );
+
+  useEffect(() => {
+    if (fragments.length === 0 && !isGenerating) {
+      generateFragment();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleChoice = (choice: Choice) => {
+    playChoice();
+    generateFragment(choice.text);
+  };
+
+  const handleMapSelect = (id: number) => {
+    const frag = fragments.find((f) => f.id === id);
+    if (frag) handleViewFragment(frag);
+  };
+
+  const handleTimelineSelect = (id: number) => {
+    const frag = fragments.find((f) => f.id === id);
+    if (frag) handleViewFragment(frag);
+  };
+
+  const handleDismissNotif = useCallback((id: string) => {
+    setNotifQueue((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const act: 1 | 2 | 3 = fragments.length <= 5 ? 1 : fragments.length <= 12 ? 2 : 3;
+
+  // Sync audio drone with act
+  useEffect(() => {
+    setAct(showRevelation ? "revelation" : act);
+  }, [act, showRevelation]);
+  const actLabels = ["Identidad Desconocida", "Dos Caminos", "La Revelación"];
+  const actColors = [
+    "border-noir-accent/60 text-noir-accent",
+    "border-red-800/60 text-red-400",
+    "border-purple-800/60 text-purple-400",
+  ];
+  const progressPercent = (fragments.length / 15) * 100;
+  const unlockedAchCount = ACHIEVEMENTS.filter((a) =>
+    a.check(fragments, achievementMeta)
+  ).length;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', fontFamily: "'Special Elite', serif", color: '#e8d5b0', overflow: 'hidden' }}>
+    <motion.div
+      className="min-h-screen flex flex-col relative"
+      animate={screenShake ? { x: [0, -4, 4, -3, 3, 0] } : {}}
+      transition={{ duration: 0.4 }}
+    >
       <Cursor />
+      <ScanlineOverlay />
+      <AudioToggle />
 
-      {/* TOPBAR */}
-      <div style={{ flexShrink: 0, height: 48, background: '#060000', borderBottom: '1px solid #2a0000', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', gap: 12 }}>
-        <button onClick={() => router.push('/map')} style={{ background: 'transparent', border: '1px solid #2a0000', color: '#8B0000', padding: '6px 14px', fontFamily: "'Special Elite', serif", fontSize: 12, cursor: 'none', letterSpacing: 2 }}>{T.back}</button>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <span style={{ fontSize: 14, color: '#8B0000', letterSpacing: 2 }}>{loc.icon} {loc.name}</span>
-          <span style={{ fontSize: 9, color: '#C4923A', letterSpacing: 2 }}>{lang === 'es' ? 'FRAGMENTO' : 'FRAGMENT'} {fragNum}/3</span>
-        </div>
-        <span style={{ fontSize: 9, color: '#333', letterSpacing: 2, fontFamily: 'monospace' }}>0G · GALILEO</span>
-      </div>
+      <FragmentTimeline
+        fragments={fragments}
+        currentId={currentFragment?.id || 0}
+        onSelect={handleTimelineSelect}
+      />
 
-      {/* MAIN */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: isMobile ? 'column' : 'row', minHeight: 0, overflow: 'hidden' }}>
-        {/* Sidebar */}
-        {!isMobile && (
-          <div style={{ flexShrink: 0, width: 220, background: '#040000', borderRight: '1px solid #1a0000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 }}>
-            <div style={{ fontSize: 72, filter: 'drop-shadow(0 0 20px #8B0000)' }}>{loc.icon}</div>
-            <div style={{ fontSize: 14, color: '#8B0000', textAlign: 'center', letterSpacing: 2, textShadow: '0 0 8px #8B0000' }}>{loc.name}</div>
-            <div style={{ width: 40, height: 1, background: 'linear-gradient(to right, transparent, #8B0000, transparent)' }} />
-            <div style={{ fontSize: 11, color: '#555', textAlign: 'center', lineHeight: 1.6, fontStyle: 'italic' }}>{loc.desc}</div>
-            <div style={{ width: '100%', marginTop: 8 }}>
-              <div style={{ fontSize: 9, color: '#333', letterSpacing: 2, marginBottom: 6 }}>{lang === 'es' ? 'PROGRESO' : 'PROGRESS'}</div>
-              <div style={{ width: '100%', height: 2, background: '#1a0000', borderRadius: 1 }}><div style={{ width: `${((fragNum - 1) / 3) * 100}%`, height: '100%', background: '#8B0000', borderRadius: 1, transition: 'width 0.5s' }} /></div>
-            </div>
-          </div>
-        )}
+      {/* Header */}
+      <header className="flex items-center justify-between p-3 sm:p-4 border-b border-noir-border/20 relative z-50">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <motion.button
+            onClick={() => router.push("/")}
+            whileHover={{ scale: 1.05 }}
+            className="font-display text-base sm:text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent transition-colors"
+          >
+            <GlitchText text="MONGLI" intensity="low" />
+          </motion.button>
 
-        {/* Fragment */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '20px 16px' : '28px 32px' }}>
-            {!display && !isLoading && (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
-                <div style={{ fontSize: 72, marginBottom: 8, filter: 'drop-shadow(0 0 20px #8B0000)', animation: 'float 2s ease-in-out infinite' }}>{loc.icon}</div>
-                <div style={{ fontSize: 11, color: '#2a0000', letterSpacing: 4, textAlign: 'center' }}>{loc.desc}</div>
-                <button onClick={() => generateFragment()} style={{ background: 'transparent', border: '1px solid #8B0000', color: '#8B0000', padding: '14px 36px', fontFamily: "'Special Elite', serif", fontSize: 13, cursor: 'none', letterSpacing: 3, animation: 'pulse-red 2s infinite', transition: 'all 0.3s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#8B0000'; e.currentTarget.style.color = '#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B0000' }}>
-                  {T.investigate} →
-                </button>
-              </div>
-            )}
-
-            {isLoading && (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-                <div style={{ fontSize: 72, opacity: 0.3, animation: 'float 1s ease-in-out infinite' }}>{loc.icon}</div>
-                <div style={{ fontSize: 11, color: '#8B0000', letterSpacing: 4, animation: 'blink 0.8s infinite' }}>{T.loading}</div>
-              </div>
-            )}
-
-            {display && !done && (
-              <div style={{ background: '#05000a', border: '1px solid #1a0000', borderLeft: '3px solid #8B0000', padding: isMobile ? 16 : '24px 28px', borderRadius: 2 }}>
-                <div style={{ fontSize: 9, color: '#2a0000', letterSpacing: 4, marginBottom: 16, fontFamily: 'monospace' }}>[{lang === 'es' ? 'FRAGMENTO' : 'FRAGMENT'} {String(fragNum).padStart(2, '0')} / 03 · {loc.name}]</div>
-                <p style={{ fontSize: isMobile ? 14 : 16, lineHeight: 2.0, color: '#f0e0c0', margin: 0, whiteSpace: 'pre-wrap' }}>
-                  {display}{isTyping && <span style={{ color: '#8B0000', animation: 'blink 0.6s infinite' }}>▌</span>}
-                </p>
-                {!isTyping && <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #0d0000', fontSize: 10, color: '#00ff41', fontFamily: 'monospace', opacity: 0.7, textShadow: '0 0 8px #00ff41' }}>✓ {T.stored} · GALILEO TESTNET · 0x{Math.random().toString(16).slice(2, 10)}...</div>}
-              </div>
-            )}
-
-            {done && <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#8B0000', letterSpacing: 4, textAlign: 'center', animation: 'blink 1s infinite' }}>{T.done}</div>}
+          <div className="hidden sm:flex items-center gap-3 text-[10px] font-body text-noir-muted">
+            <span className={`px-2 py-0.5 border ${actColors[act - 1]}`}>
+              Acto {act}: {actLabels[act - 1]}
+            </span>
           </div>
         </div>
+
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Achievement counter */}
+          <motion.button
+            onClick={() => setShowAchievements(true)}
+            whileHover={{ scale: 1.05 }}
+            className="px-2 sm:px-3 py-1.5 text-[10px] font-body border border-noir-border text-noir-muted hover:border-noir-accent/50 hover:text-noir-accent transition-colors uxpm-press flex items-center gap-1"
+            title="Logros"
+          >
+            <span className="font-mono text-noir-accent">{unlockedAchCount}</span>
+            <span className="text-noir-muted/50">/</span>
+            <span className="text-noir-muted/50">{ACHIEVEMENTS.length}</span>
+            <span className="ml-0.5 text-[9px]">◈</span>
+          </motion.button>
+          <motion.button
+            onClick={() => setShowStats(true)}
+            whileHover={{ scale: 1.05 }}
+            className="px-2 sm:px-3 py-1.5 text-[10px] font-body border border-noir-border text-noir-muted hover:border-noir-accent/50 hover:text-noir-accent transition-colors uxpm-press hidden sm:block"
+          >
+            Perfil
+          </motion.button>
+          <motion.button
+            onClick={() => setShowMap(!showMap)}
+            whileHover={{ scale: 1.05 }}
+            className={`px-2 sm:px-3 py-1.5 text-[10px] font-body border transition-colors uxpm-press ${
+              showMap
+                ? "border-noir-accent bg-noir-accent/20 text-noir-accent"
+                : "border-noir-border text-noir-muted hover:border-noir-accent/50"
+            }`}
+          >
+            Mapa
+          </motion.button>
+          <WalletButton />
+        </div>
+      </header>
+
+      {/* Progress bar */}
+      <div className="h-[2px] bg-noir-border/20 relative">
+        <motion.div
+          className="absolute left-0 top-0 h-full bg-gradient-to-r from-noir-accent via-noir-accent to-noir-accent/30"
+          animate={{ width: `${progressPercent}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        />
+        <motion.div
+          className="absolute top-0 h-full bg-noir-accent/50 blur-sm"
+          animate={{ width: `${progressPercent}%` }}
+          transition={{ duration: 0.8 }}
+        />
       </div>
 
-      {/* CHOICES */}
-      <div style={{ flexShrink: 0, height: showChoices && !done ? (isMobile ? 120 : 108) : 0, overflow: 'hidden', transition: 'height 0.4s cubic-bezier(0.4,0,0.2,1)', background: '#030000', borderTop: showChoices ? '1px solid #1a0000' : 'none' }}>
-        <div style={{ height: isMobile ? 120 : 108, padding: isMobile ? '8px 16px' : '10px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
-          <div style={{ textAlign: 'center', fontSize: 9, color: '#2a0000', letterSpacing: 4 }}>{T.choose}</div>
-          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8 }}>
-            {[{ o: 'A' as const, l: choiceA, b: '#8B0000', h: '#8B0000' }, { o: 'B' as const, l: choiceB, b: '#222', h: '#1a0000' }].map(({ o, l, b, h }) => (
-              <button key={o} onClick={() => handleChoice(o)} style={{ flex: 1, height: isMobile ? 44 : 48, background: 'transparent', border: `1px solid ${b}`, color: '#e8d5b0', fontFamily: "'Special Elite', serif", fontSize: 12, cursor: 'none', transition: 'all 0.25s', letterSpacing: 1, padding: '0 12px' }}
-                onMouseEnter={e => { e.currentTarget.style.background = h; e.currentTarget.style.color = '#fff' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e8d5b0' }}>
-                {l}
-              </button>
-            ))}
+      {/* Main */}
+      <main className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 relative min-h-[60vh] sm:min-h-[70vh]">
+        <AnimatePresence mode="wait">
+          {showMap ? (
+            <motion.div
+              key="map"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-2xl"
+            >
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="font-display text-sm text-noir-accent tracking-[0.2em]">
+                  Mapa de Recuerdos
+                </h2>
+                <span className="font-body text-[10px] text-noir-muted">
+                  {fragments.length} de 15
+                </span>
+              </div>
+              <div className="h-[350px] sm:h-[450px] border border-noir-border/30 bg-noir-card/30 p-2 sm:p-4 relative">
+                <MemoryMap
+                  fragments={fragments}
+                  currentId={currentFragment?.id || 0}
+                  onSelect={handleMapSelect}
+                  newlyUnlockedId={newlyUnlockedId}
+                />
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="fragment"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full max-w-lg"
+            >
+              {/* Scene label */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.3 }}
+                className="text-center mb-6 sm:mb-8"
+              >
+                <span className="font-body text-[9px] text-noir-muted tracking-[0.4em] uppercase">
+                  {scene.icon} {scene.title}
+                </span>
+              </motion.div>
+
+              {/* Loading state */}
+              {isGenerating && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-12 sm:py-16"
+                >
+                  <div className="inline-flex flex-col items-center gap-6">
+                    <div className="relative w-14 h-14 sm:w-16 sm:h-16">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-0 border border-noir-accent/30 rounded-full"
+                      />
+                      <motion.div
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-2 border border-noir-accent/50 border-t-noir-accent rounded-full"
+                      />
+                      <motion.div
+                        animate={{ scale: [1, 1.3, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                        className="absolute inset-5 bg-noir-accent/20 rounded-full"
+                      />
+                    </div>
+                    <div className="space-y-2 text-center">
+                      <p className="font-display text-xs text-noir-muted tracking-wider animate-flicker">
+                        Recuperando recuerdo #{fragments.length + 1}...
+                      </p>
+                      <p className="font-body text-[9px] text-noir-muted/40">
+                        Claude genera &middot; 0G almacena &middot; Chain verifica
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Error state */}
+              {error && !isGenerating && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-12 sm:py-16"
+                >
+                  <div className="inline-flex flex-col items-center gap-4 max-w-xs">
+                    <div className="w-12 h-12 border border-red-800/50 rounded-full flex items-center justify-center">
+                      <span className="text-red-400 text-lg">!</span>
+                    </div>
+                    <p className="font-body text-red-400/80 text-xs leading-relaxed">{error}</p>
+                    <motion.button
+                      onClick={() => generateFragment()}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-5 py-2 border border-noir-accent/50 text-noir-accent text-xs font-display tracking-wider hover:bg-noir-accent/10 transition-colors uxpm-press"
+                    >
+                      Reintentar
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Fragment display */}
+              {currentFragment && !isGenerating && !error && (
+                <>
+                  <FragmentComponent
+                    fragment={currentFragment}
+                    onComplete={() => setFragmentRevealed(true)}
+                  />
+
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: fragmentRevealed ? 0.3 : 0 }}
+                    className="text-center mt-3"
+                  >
+                    <span className="font-body text-[9px] text-noir-muted tracking-[0.3em]">
+                      {currentFragment.id} / 15
+                    </span>
+                  </motion.div>
+
+                  <AnimatePresence>
+                    {fragmentRevealed && choices.length > 0 && fragments.length < 15 && (
+                      <ChoicePanel choices={choices} onChoose={handleChoice} disabled={isGenerating} />
+                    )}
+                  </AnimatePresence>
+
+                  {fragmentRevealed && fragments.length >= 15 && !showRevelation && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-center mt-8 sm:mt-10"
+                    >
+                      <p className="font-body text-[10px] text-noir-muted mb-4">
+                        15 fragmentos recopilados. La verdad espera.
+                      </p>
+                      <motion.button
+                        onClick={() => setShowRevelation(true)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-8 py-3 border border-purple-700/60 text-purple-400 font-display text-sm tracking-[0.2em] hover:bg-purple-900/20 transition-colors uxpm-press"
+                        animate={{
+                          boxShadow: [
+                            "0 0 5px rgba(147,51,234,0.2)",
+                            "0 0 20px rgba(147,51,234,0.4)",
+                            "0 0 5px rgba(147,51,234,0.2)",
+                          ],
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        Revelar la verdad
+                      </motion.button>
+                    </motion.div>
+                  )}
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+
+      {/* Modals */}
+      <PlayerStats
+        fragments={fragments}
+        achievementMeta={achievementMeta}
+        visible={showStats}
+        onClose={() => setShowStats(false)}
+      />
+      <Achievements
+        fragments={fragments}
+        meta={achievementMeta}
+        visible={showAchievements}
+        onClose={() => setShowAchievements(false)}
+      />
+      <Revelation
+        fragments={fragments}
+        achievementMeta={achievementMeta}
+        visible={showRevelation}
+        onClose={() => {
+          setShowRevelation(false);
+          router.push("/");
+        }}
+      />
+      <FragmentViewer
+        fragment={viewingFragment}
+        allFragments={fragments}
+        visible={!!viewingFragment}
+        onClose={() => setViewingFragment(null)}
+        onNavigate={(id) => {
+          const frag = fragments.find((f) => f.id === id);
+          if (frag) handleViewFragment(frag);
+        }}
+        onTxLinkClick={handleTxLinkClick}
+      />
+      <Toast
+        message={toast.message}
+        hash={toast.hash}
+        visible={toast.visible}
+        onClose={() => setToast((prev) => ({ ...prev, visible: false }))}
+      />
+      <AchievementNotification
+        queue={notifQueue}
+        onDismiss={handleDismissNotif}
+        onClickNotif={() => {
+          setNotifQueue([]);
+          setShowAchievements(true);
+        }}
+      />
+
+      {/* Mobile navigation */}
+      <MobileNav
+        onLeft={() => {
+          if (currentFragment && currentFragment.id > 1) {
+            const prev = fragments.find((f) => f.id === currentFragment.id - 1);
+            if (prev) handleViewFragment(prev);
+          }
+        }}
+        onRight={() => {
+          if (currentFragment && currentFragment.id < fragments.length) {
+            const next = fragments.find((f) => f.id === currentFragment.id + 1);
+            if (next) handleViewFragment(next);
+          }
+        }}
+        leftDisabled={!currentFragment || currentFragment.id <= 1}
+        rightDisabled={!currentFragment || currentFragment.id >= fragments.length}
+        visible={fragments.length > 1 && !anyModalOpen && !isGenerating}
+      />
+
+      {/* Footer */}
+      <footer className="p-3 border-t border-noir-border/10 uxpm-safe-bottom">
+        <div className="flex items-center justify-between text-[9px] font-body text-noir-muted/40">
+          <span>
+            {scene.icon} {scene.title}
+          </span>
+          <div className="flex items-center gap-3">
+            {/* Mobile-only stats and about buttons */}
+            <button
+              onClick={() => setShowStats(true)}
+              className="sm:hidden hover:text-noir-accent transition-colors"
+            >
+              Perfil
+            </button>
+            <button
+              onClick={() => router.push("/about")}
+              className="hover:text-noir-accent transition-colors"
+            >
+              Sobre Mongli
+            </button>
+            <span className="hidden sm:inline">
+              Acto {act} &middot; {fragments.length} fragmentos
+              {chainWrite.isConnected && " · wallet ✓"}
+              {chainWrite.isWriting && " · firmando..."}
+            </span>
           </div>
         </div>
-      </div>
-    </div>
-  )
+      </footer>
+    </motion.div>
+  );
 }
 
 export default function GamePage() {
   return (
-    <Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a0000', fontSize: 11, letterSpacing: 4, fontFamily: "'Special Elite', serif" }}>CARGANDO...</div>}>
-      <GameContent />
-    </Suspense>
-  )
+    <Providers>
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center bg-noir-bg">
+            <motion.p
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="font-display text-noir-muted text-sm tracking-wider"
+            >
+              Cargando...
+            </motion.p>
+          </div>
+        }
+      >
+        <GameContent />
+      </Suspense>
+    </Providers>
+  );
 }
