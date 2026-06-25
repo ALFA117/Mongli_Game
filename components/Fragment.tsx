@@ -51,6 +51,17 @@ function FragmentInner({ fragment, onComplete }: FragmentProps) {
     }
   }, [done, onComplete]);
 
+  // Fallback: if typewriter never fires onComplete, force it after 5s
+  useEffect(() => {
+    const fallback = setTimeout(() => {
+      if (!calledRef.current && onComplete) {
+        calledRef.current = true;
+        onComplete();
+      }
+    }, 5000);
+    return () => clearTimeout(fallback);
+  }, [fragment.id, onComplete]);
+
   useEffect(() => { calledRef.current = false; }, [fragment.id]);
 
   const toneBorder = fragment.toneScore > 7 ? "#7f1d1d" : fragment.toneScore >= 4 ? "#78350f" : "#1e3a5f";

@@ -14,7 +14,8 @@ export default function ChoicePanel({ choices, onChoose, disabled }: ChoicePanel
 
   return (
     <div style={{
-      background: "#0a0a0a", border: "2px solid #1a1a1a", borderRadius: 12, padding: 24, marginTop: 16,
+      background: "#111111", border: "2px solid #1a1a1a", borderRadius: 12, padding: 24, marginTop: 16,
+      position: "relative" as const, zIndex: 20,
     }}>
       <p style={{
         color: "#B30000", fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase" as const,
@@ -37,8 +38,8 @@ export default function ChoicePanel({ choices, onChoose, disabled }: ChoicePanel
             onMouseLeave={() => setHovered(null)}
             style={{
               display: "block", width: "100%", padding: "18px 20px", marginBottom: 10,
-              background: isHov ? (isDark ? "#2d0000" : "#00002d") : (isDark ? "#1a0000" : "#00001a"),
-              border: `2px solid ${isHov ? (isDark ? "#FF1A1A" : "#3b82f6") : (isDark ? "#B30000" : "#1a3a6b")}`,
+              background: isHov ? (isDark ? "#2d0000" : "#00002d") : (isDark ? "#2d0505" : "#050520"),
+              border: `3px solid ${isHov ? (isDark ? "#FF1A1A" : "#3b82f6") : (isDark ? "#B30000" : "#3b6fd4")}`,
               borderRadius: 8, color: "#E5DEC9", fontSize: 15, lineHeight: 1.6,
               textAlign: "left" as const, cursor: disabled ? "not-allowed" : "pointer",
               fontFamily: "'Special Elite', serif", minHeight: 72, opacity: disabled ? 0.4 : 1,

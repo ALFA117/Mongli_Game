@@ -66,7 +66,7 @@ export default function ScanlineOverlay() {
 
       {/* Scanlines with phosphor glow */}
       <div
-        className="fixed inset-0 pointer-events-none z-[9996]"
+        className="fixed inset-0 pointer-events-none z-[5]"
         style={{
           backgroundImage: `
             repeating-linear-gradient(
@@ -84,7 +84,7 @@ export default function ScanlineOverlay() {
 
       {/* Phosphor glow — green/amber tint on bright areas */}
       <div
-        className="fixed inset-0 pointer-events-none z-[9995]"
+        className="fixed inset-0 pointer-events-none z-[4]"
         style={{
           background: `
             radial-gradient(ellipse at 50% 40%, rgba(196,146,58,0.015) 0%, transparent 60%),
@@ -97,7 +97,7 @@ export default function ScanlineOverlay() {
 
       {/* CRT random flicker — entire screen brightness drop */}
       <div
-        className="fixed inset-0 pointer-events-none z-[9994] transition-opacity"
+        className="fixed inset-0 pointer-events-none z-[3] transition-opacity"
         style={{
           backgroundColor: "rgba(255,255,255,0.04)",
           opacity: crtFlicker ? 1 : 0,
@@ -107,7 +107,7 @@ export default function ScanlineOverlay() {
 
       {/* Chromatic aberration on edges */}
       <div
-        className="fixed inset-0 pointer-events-none z-[9993]"
+        className="fixed inset-0 pointer-events-none z-[2]"
         style={{
           boxShadow: `
             inset 2px 0 8px rgba(255, 50, 50, 0.03),
@@ -120,7 +120,7 @@ export default function ScanlineOverlay() {
 
       {/* Animated vignette with slow pulse */}
       <div
-        className="fixed inset-0 pointer-events-none z-[9992]"
+        className="fixed inset-0 pointer-events-none z-[1]"
         style={{
           background:
             "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 75%, rgba(0,0,0,0.85) 100%)",
@@ -130,7 +130,7 @@ export default function ScanlineOverlay() {
 
       {/* Horizontal scan beam — a bright line that sweeps down periodically */}
       <div
-        className="fixed left-0 right-0 pointer-events-none z-[9996] h-[2px]"
+        className="fixed left-0 right-0 pointer-events-none z-[5] h-[2px]"
         style={{
           background:
             "linear-gradient(90deg, transparent 0%, rgba(232,213,176,0.06) 20%, rgba(232,213,176,0.1) 50%, rgba(232,213,176,0.06) 80%, transparent 100%)",
