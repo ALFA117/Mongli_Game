@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   if (lastRequest && Date.now() - lastRequest < RATE_LIMIT_MS) {
     const retryAfter = Math.ceil((RATE_LIMIT_MS - (Date.now() - lastRequest)) / 1000);
     return NextResponse.json(
-      { error: "Espera antes del siguiente fragmento", retryAfter },
+      { error: "Los recuerdos necesitan tiempo para emerger. Espera un momento.", retryAfter },
       { status: 429 }
     );
   }

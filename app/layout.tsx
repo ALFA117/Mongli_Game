@@ -1,19 +1,38 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const SITE_URL = "https://mongli-game.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Mongli Game — Amnesia Noir",
+  title: "Mongli Game — Tu memoria vive en la blockchain",
   description:
-    "Juego narrativo de amnesia psicológica donde la IA escribe tu historia y la blockchain la guarda para siempre.",
+    "Juego noir de amnesia donde la IA escribe tu historia y 0G la guarda para siempre. Zero Cup 2026.",
+  keywords: "0G, blockchain, AI game, noir, amnesia, Zero Cup 2026, Claude, Gemini, Web3, hackathon",
+  authors: [{ name: "Edgar Lopez Baeza", url: "https://github.com/ALFA117" }],
   manifest: "/manifest.json",
-  icons: { icon: "/favicon.svg" },
+  icons: [
+    { rel: "icon", url: "/favicon.svg", type: "image/svg+xml" },
+  ],
+  openGraph: {
+    title: "Mongli Game — Tu memoria vive en la blockchain",
+    description: "Juego noir de amnesia donde la IA escribe tu historia y 0G la guarda para siempre.",
+    url: SITE_URL,
+    siteName: "Mongli Game",
+    images: [{ url: `${SITE_URL}/api/og`, width: 1200, height: 630, alt: "Mongli Game — Amnesia Noir" }],
+    type: "website",
+    locale: "es_MX",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mongli Game — Tu memoria vive en la blockchain",
+    description: "Juego noir de amnesia. La IA escribe. La blockchain recuerda.",
+    images: [`${SITE_URL}/api/og`],
+  },
+  robots: { index: true, follow: true },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Mongli Game",
-  },
-  other: {
-    "theme-color": "#0a0a0a",
   },
 };
 
