@@ -194,6 +194,14 @@ function HistoryContent() {
                   {actsPlayed > 0 ? "Continuar partida" : "Nueva partida"}
                 </motion.button>
               )}
+              {actsPlayed > 0 && address && (
+                <motion.button
+                  onClick={() => router.push(`/replay?wallet=${address}`)}
+                  whileHover={{ scale: 1.05 }}
+                  className="px-6 py-2.5 border border-noir-accent/50 text-noir-accent font-display text-xs tracking-wider hover:bg-noir-accent/10 uxpm-press">
+                  ▶ Reproducir mi historia
+                </motion.button>
+              )}
               <motion.button
                 onClick={() => router.push("/")}
                 whileHover={{ scale: 1.05 }}

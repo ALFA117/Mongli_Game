@@ -12,19 +12,21 @@ import Toast from "@/components/Toast";
 import ScanlineOverlay from "@/components/ScanlineOverlay";
 import AudioToggle from "@/components/AudioToggle";
 import GlitchText from "@/components/GlitchText";
-import { initAudio, playChainConfirm, playChoice, playDiscovery, setAct as setAudioAct, startAudioOnFirstInteraction } from "@/lib/audio";
+import { initAudio, playChainConfirm, playChoice, playDiscovery, setAct as setAudioAct, startAudioOnFirstInteraction, startMelodicLayer, stopMelodicLayer, setTensionLevel, updateMusicWithTone } from "@/lib/audio";
 import { useChainWrite } from "@/lib/useChainWrite";
 import { ACTS } from "@/lib/types";
 import type { Fragment, ActRecord, GenerateResponse } from "@/lib/types";
 import { useAccount } from "wagmi";
+import type { GameSaveState } from "@/lib/types";
+import { buildPlayerProfile } from "@/lib/types";
 
 const Skull3D = dynamic(() => import("@/components/Skull3D"), { ssr: false });
 
-type GamePhase = "transition" | "fragments" | "decision" | "revelation";
+type GamePhase = "loading-save" | "found-save" | "transition" | "fragments" | "decision" | "revelation";
 
 function GameContent() {
   const router = useRouter();
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const chainWrite = useChainWrite();
 
   // Core game state
@@ -42,6 +44,8 @@ function GameContent() {
     message: "", visible: false,
   });
   const [storageFallback, setStorageFallback] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [savedState, setSavedState] = useState<GameSaveState | null>(null);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const act = ACTS[currentActIdx];
@@ -51,7 +55,7 @@ function GameContent() {
   // Audio init on first interaction
   useEffect(() => {
     initAudio();
-    const start = () => startAudioOnFirstInteraction();
+    const start = () => { startAudioOnFirstInteraction(); setTimeout(startMelodicLayer, 3000); };
     document.addEventListener("click", start, { once: true });
     document.addEventListener("touchstart", start, { once: true });
     return () => { document.removeEventListener("click", start); document.removeEventListener("touchstart", start); };
@@ -66,16 +70,87 @@ function GameContent() {
   useEffect(() => {
     const audioAct = currentActIdx < 2 ? 1 : currentActIdx < 4 ? 2 : 3;
     setAudioAct(phase === "revelation" ? "revelation" : audioAct as 1 | 2 | 3);
+    setTensionLevel(currentActIdx + 1);
+    if (phase === "revelation") stopMelodicLayer();
   }, [currentActIdx, phase]);
 
-  // Auto-start first act transition
+  // Load save on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPhase("transition");
-      setTimeout(() => startActFragments(), 2500);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!address) return;
+    setPhase("loading-save");
+    fetch(`/api/save?wallet=${address}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.exists && data.currentAct > 0) {
+          setSavedState(data as GameSaveState);
+          setPhase("found-save");
+        } else {
+          setPhase("transition");
+          setTimeout(() => startActFragments(), 2500);
+        }
+      })
+      .catch(() => {
+        setPhase("transition");
+        setTimeout(() => startActFragments(), 2500);
+      });
+  }, [address]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save after each completed act
+  const saveProgress = useCallback(async () => {
+    if (!address) return;
+    setSaveStatus("saving");
+    try {
+      const state: GameSaveState = {
+        version: "1.0",
+        walletAddress: address,
+        currentAct: currentActIdx + 1,
+        completedActs: actRecords,
+        playerProfile: buildPlayerProfile(allFragments),
+        unlockedAchievements: [],
+        totalFragments: allFragments.length,
+        aiModel: aiModel as "claude" | "gemini" | "demo",
+        startedAt: actRecords[0]?.timestamp ? new Date(actRecords[0].timestamp).toISOString() : new Date().toISOString(),
+        lastPlayedAt: new Date().toISOString(),
+      };
+      await fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress: address, gameState: state }),
+      });
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch {
+      setSaveStatus("error");
+    }
+  }, [address, currentActIdx, actRecords, allFragments, aiModel]);
+
+  // Restore from save
+  const restoreSave = useCallback(() => {
+    if (!savedState) return;
+    setCurrentActIdx(savedState.currentAct);
+    setActRecords(savedState.completedActs);
+    setAllFragments(savedState.completedActs.flatMap((a) => a.fragments));
+    setAiModel(savedState.aiModel);
+    setPhase("transition");
+    setTimeout(() => startActFragments(), 2500);
+  }, [savedState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // New game (delete save)
+  const startNewGame = useCallback(async () => {
+    if (address) await fetch(`/api/save?wallet=${address}`, { method: "DELETE" }).catch(() => {});
+    setSavedState(null);
+    setPhase("transition");
+  }, [address]);
+
+  // When phase becomes "transition" (from restore/new), auto-start fragments
+  const transitionCount = useRef(0);
+  useEffect(() => {
+    if (phase !== "transition") return;
+    transitionCount.current++;
+    if (transitionCount.current <= 1) return; // Skip first (handled by load save)
+    const t = setTimeout(() => startActFragments(), 2500);
+    return () => clearTimeout(t);
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Generate one fragment from the API
   const generateOneFragment = useCallback(async (fragmentNum: number, choiceText: string = ""): Promise<Fragment | null> => {
@@ -133,6 +208,7 @@ function GameContent() {
           setIsGenerating(false);
         }
         playDiscovery();
+        if (frag) updateMusicWithTone(frag.toneScore);
       } else {
         // Use a placeholder if generation fails
         frags.push({
@@ -235,6 +311,7 @@ function GameContent() {
     // Save records and advance
     setActRecords((prev) => [...prev, record]);
     setAllFragments((prev) => [...prev, ...actFragments]);
+    setTimeout(() => saveProgress(), 500);
 
     // Transition to next act
     if (currentActIdx < 4) {
@@ -294,6 +371,15 @@ function GameContent() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Save indicator */}
+          <span className={`text-[8px] font-body px-1.5 py-0.5 border ${
+            saveStatus === "saving" ? "text-noir-muted border-noir-border/40 animate-pulse" :
+            saveStatus === "saved" ? "text-green-500 border-green-800/40" :
+            saveStatus === "error" ? "text-red-400 border-red-800/40" :
+            "text-noir-muted/30 border-noir-border/20"
+          }`}>
+            {saveStatus === "saving" ? "☁ ..." : saveStatus === "saved" ? "☁✓" : saveStatus === "error" ? "☁✗" : "☁"}
+          </span>
           {storageFallback && (
             <span className="text-[8px] font-body text-yellow-500 border border-yellow-600/40 px-1.5 py-0.5">
               ⚠ local
@@ -340,6 +426,45 @@ function GameContent() {
         {/* Right: Fragments & Decisions */}
         <div className="lg:w-[60%] flex flex-col justify-center p-4 sm:p-8 lg:pr-12">
           <AnimatePresence mode="wait">
+            {/* ═══ LOADING SAVE ═══ */}
+            {phase === "loading-save" && (
+              <motion.div key="load" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="text-center py-16">
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="w-8 h-8 border border-noir-accent/40 border-t-noir-accent rounded-full mx-auto mb-4" />
+                <p className="font-display text-xs text-noir-muted">Buscando tus recuerdos...</p>
+              </motion.div>
+            )}
+
+            {/* ═══ FOUND SAVE ═══ */}
+            {phase === "found-save" && savedState && (
+              <motion.div key="found" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="text-center py-8 max-w-sm mx-auto">
+                <p className="font-body text-[9px] text-noir-muted tracking-[0.4em] uppercase mb-4">
+                  Partida encontrada
+                </p>
+                <h3 className="font-display text-lg text-noir-accent mb-2">
+                  Acto {savedState.currentAct} de 5
+                </h3>
+                <p className="font-body text-xs text-noir-muted mb-1">
+                  {savedState.totalFragments} fragmentos · {savedState.completedActs.length} actos completados
+                </p>
+                <p className="font-body text-[9px] text-noir-muted/50 mb-6">
+                  Último acceso: {new Date(savedState.lastPlayedAt).toLocaleDateString("es-MX")}
+                </p>
+                <div className="flex flex-col gap-3">
+                  <motion.button onClick={restoreSave} whileHover={{ scale: 1.03 }}
+                    className="px-8 py-3 border-2 border-noir-accent text-noir-accent font-display text-sm tracking-wider hover:bg-noir-accent/10 uxpm-press">
+                    CONTINUAR
+                  </motion.button>
+                  <motion.button onClick={startNewGame} whileHover={{ scale: 1.03 }}
+                    className="px-8 py-2.5 border border-noir-border text-noir-muted font-display text-xs tracking-wider hover:text-red-400 hover:border-red-800/50 uxpm-press">
+                    Nueva partida
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+
             {/* ═══ TRANSITION SCREEN ═══ */}
             {phase === "transition" && (
               <motion.div key="trans" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
