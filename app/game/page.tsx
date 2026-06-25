@@ -22,7 +22,7 @@ import type { AchievementMeta } from "@/components/Achievements";
 import AchievementNotification from "@/components/AchievementNotification";
 import type { AchievementNotifItem } from "@/components/AchievementNotification";
 import MobileNav from "@/components/MobileNav";
-import { initAudio, playAmbient, playChainConfirm, playChoice, playAchievementSound, playDiscovery, setAct } from "@/lib/audio";
+import { initAudio, playChainConfirm, playChoice, playAchievementSound, playDiscovery, setAct, startAudioOnFirstInteraction } from "@/lib/audio";
 import { useKeyboardNav } from "@/lib/useKeyboardNav";
 import { useChainWrite } from "@/lib/useChainWrite";
 import { INITIAL_SCENES } from "@/lib/types";
@@ -113,7 +113,14 @@ function GameContent() {
 
   useEffect(() => {
     initAudio();
-    playAmbient();
+    // Audio starts on first user interaction (browser autoplay policy)
+    const start = () => startAudioOnFirstInteraction();
+    document.addEventListener("click", start, { once: true });
+    document.addEventListener("touchstart", start, { once: true });
+    return () => {
+      document.removeEventListener("click", start);
+      document.removeEventListener("touchstart", start);
+    };
   }, []);
 
   // Check all achievements whenever state changes

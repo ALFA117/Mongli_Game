@@ -45,7 +45,7 @@ const BOOT_SEQUENCE: TerminalLine[] = [
   { type: "output", text: '  "storage":   "0G Storage (descentralizado)",', color: "#c4923a" },
   { type: "output", text: '  "chain":     "0G Chain (Galileo Testnet, EVM)",', color: "#c4923a" },
   { type: "output", text: '  "wallet":    "RainbowKit + wagmi + viem",', color: "#c4923a" },
-  { type: "output", text: '  "audio":     "Howler.js (procedural)",', color: "#c4923a" },
+  { type: "output", text: '  "audio":     "Web Audio API (procedural)",', color: "#c4923a" },
   { type: "output", text: '  "contract":  "MongliMemory.sol (Solidity)"', color: "#c4923a" },
   { type: "output", text: "}", color: "#c4923a" },
   { type: "blank", text: "" },
