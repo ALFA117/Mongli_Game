@@ -167,10 +167,11 @@ export default function JudgesPage() {
           </div>
           <div className="flex flex-wrap justify-center gap-4 text-center">
             {[
-              { num: "50+", label: "files" },
-              { num: "14", label: "routes" },
+              { num: "70+", label: "files" },
+              { num: "22", label: "routes" },
               { num: "1", label: "smart contract" },
-              { num: "11", label: "dev blocks" },
+              { num: "5", label: "game modes" },
+              { num: "20", label: "features" },
             ].map((s) => (
               <div key={s.label}>
                 <p className="font-display text-xl text-noir-accent">{s.num}</p>

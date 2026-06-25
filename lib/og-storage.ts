@@ -209,3 +209,31 @@ export async function getWeeklyVotingCandidates(): Promise<VoteCandidate[]> {
   cache.set("vote-candidates", { data: entries, cachedAt: Date.now() });
   return entries;
 }
+
+// ─── World Activity ───
+interface PlayerActivity { wallet: string; region: string; lastActive: number }
+const activityStore = new Map<string, PlayerActivity>();
+
+const REGIONS = ["NA", "EU", "LATAM", "ASIA", "OTHER"];
+function randomRegion(): string { return REGIONS[Math.floor(Math.random() * REGIONS.length)]; }
+
+export function registerPlayerActivity(wallet: string): void {
+  activityStore.set(wallet.toLowerCase(), { wallet, region: randomRegion(), lastActive: Date.now() });
+}
+
+export interface WorldActivity {
+  totalActive: number;
+  regions: { name: string; count: number }[];
+  lastActivityMinutesAgo: number;
+}
+
+export function getWorldActivity(): WorldActivity {
+  const now = Date.now();
+  const activeThreshold = 30 * 60 * 1000;
+  const active = Array.from(activityStore.values()).filter(a => now - a.lastActive < activeThreshold);
+  const regionCounts: Record<string, number> = {};
+  for (const a of active) regionCounts[a.region] = (regionCounts[a.region] || 0) + 1;
+  const regions = Object.entries(regionCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  const lastActivity = active.length > 0 ? Math.min(...active.map(a => now - a.lastActive)) : 0;
+  return { totalActive: active.length, regions, lastActivityMinutesAgo: Math.floor(lastActivity / 60000) };
+}

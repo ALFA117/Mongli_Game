@@ -10,6 +10,7 @@ import GlitchText from "@/components/GlitchText";
 import LoadingScreen from "@/components/LoadingScreen";
 import ScanlineOverlay from "@/components/ScanlineOverlay";
 import AudioToggle from "@/components/AudioToggle";
+import OnboardingModal from "@/components/OnboardingModal";
 import { playChoice, startAudioOnFirstInteraction } from "@/lib/audio";
 import { switchToGalileo } from "@/lib/og-chain";
 import { useRouter } from "next/navigation";
@@ -34,6 +35,7 @@ function LandingContent() {
       <Cursor />
       <ScanlineOverlay />
       <AudioToggle />
+      <OnboardingModal />
 
       {/* Header */}
       <header className="flex items-center justify-between p-4 sm:p-6 relative z-50">
@@ -102,6 +104,7 @@ function LandingContent() {
           <div className="flex items-center gap-4 mt-3">
             <button onClick={() => router.push("/speedrun")} className="font-body text-[10px] text-red-400/60 hover:text-red-400 transition-colors">⚡ Modo Speedrun</button>
             <button onClick={() => router.push("/trailer")} className="font-body text-[10px] text-noir-muted/50 hover:text-noir-accent transition-colors">Ver trailer →</button>
+            <button onClick={() => router.push("/world")} className="font-body text-[10px] text-noir-muted/50 hover:text-noir-accent transition-colors">Mapa global →</button>
           </div>
         </motion.div>
       </section>
@@ -178,6 +181,8 @@ function LandingContent() {
               <button onClick={() => router.push("/about")} className="hover:text-noir-accent transition-colors">About</button>
               <button onClick={() => router.push("/gallery")} className="hover:text-noir-accent transition-colors">Archivo</button>
               <button onClick={() => router.push("/vote")} className="hover:text-noir-accent transition-colors">Votos</button>
+              <button onClick={() => router.push("/nightmare")} className="hover:text-noir-accent transition-colors opacity-30 hover:opacity-60">▓ Pesadilla</button>
+              <button onClick={() => router.push("/silent")} className="hover:text-noir-accent transition-colors opacity-30 hover:opacity-60">◌ Silencioso</button>
               <button onClick={() => router.push("/judges")} className="hover:text-noir-accent transition-colors opacity-40">Judges</button>
             </div>
           </div>
