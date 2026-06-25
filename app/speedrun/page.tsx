@@ -103,6 +103,13 @@ function SpeedrunContent() {
     }, 1000);
   }, [fragIdx]);
 
+  // Auto-advance fragments after 3s
+  useEffect(() => {
+    if (phase !== "fragments" || !actFragments[fragIdx]) return;
+    const t = setTimeout(() => handleFragDone(), 3000);
+    return () => clearTimeout(t);
+  }, [phase, fragIdx, actFragments, handleFragDone]);
+
   // Decision countdown
   useEffect(() => {
     if (phase !== "decision") return;
@@ -198,7 +205,7 @@ function SpeedrunContent() {
             {phase === "fragments" && actFragments[fragIdx] && (
               <motion.div key={`f-${actIdx}-${fragIdx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div className="flex gap-1 mb-3">{[0,1,2].map(i => <div key={i} className={`h-[2px] flex-1 ${i <= fragIdx ? "bg-red-500" : "bg-noir-border/30"}`} />)}</div>
-                <FragmentComponent fragment={actFragments[fragIdx]} onComplete={handleFragDone} />
+                <FragmentComponent text={actFragments[fragIdx]?.text || ""} toneScore={actFragments[fragIdx]?.toneScore} fragmentId={actFragments[fragIdx]?.id} />
               </motion.div>
             )}
 
