@@ -10,12 +10,19 @@ const config: Config = {
     extend: {
       colors: {
         noir: {
-          bg: "#0a0a0a",
-          text: "#f0e4c8",
-          accent: "#d4a244",
-          border: "#333333",
-          card: "#141414",
-          muted: "#9a8a6a",
+          bg: "#000000",
+          text: "#E5DEC9",
+          accent: "#B30000",
+          border: "#1a1a1a",
+          card: "#0d0d0d",
+          muted: "#8C8275",
+        },
+        mongli: {
+          red: "#B30000",
+          glow: "#FF1A1A",
+          bone: "#E5DEC9",
+          shadow: "#8C8275",
+          surface: "#0d0d0d",
         },
       },
       fontFamily: {

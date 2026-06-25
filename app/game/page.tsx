@@ -49,6 +49,7 @@ function GameContent() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [savedState, setSavedState] = useState<GameSaveState | null>(null);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
+  const generatingGuard = useRef(false);
 
   const act = ACTS[currentActIdx];
   const totalActs = ACTS.length;
@@ -192,6 +193,8 @@ function GameContent() {
 
   // Start generating the 3 fragments for current act
   const startActFragments = useCallback(async () => {
+    if (generatingGuard.current) return;
+    generatingGuard.current = true;
     setPhase("fragments");
     setActFragments([]);
     setFragIdx(0);
@@ -224,6 +227,7 @@ function GameContent() {
         if (i === 0) { setFragIdx(0); setIsGenerating(false); }
       }
     }
+    generatingGuard.current = false;
   }, [generateOneFragment, allFragments.length]);
 
   // When typewriter finishes a fragment, auto-advance after 2s

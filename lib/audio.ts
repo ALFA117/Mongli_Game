@@ -39,6 +39,15 @@ export function initAudio() {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
   ensureCtx();
+
+  // Auto-start on first user interaction anywhere
+  const startOnClick = () => {
+    startAudioOnFirstInteraction();
+    window.removeEventListener("click", startOnClick);
+    window.removeEventListener("touchstart", startOnClick);
+  };
+  window.addEventListener("click", startOnClick, { once: true });
+  window.addEventListener("touchstart", startOnClick, { once: true });
 }
 
 // ─── Start audio on first user interaction ───

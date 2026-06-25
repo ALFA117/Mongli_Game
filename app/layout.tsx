@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AudioInit } from "@/components/AudioInit";
 
 const SITE_URL = "https://mongli-game.vercel.app";
 
@@ -57,7 +58,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Special+Elite&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap"
         />
       </head>
-      <body className="grain vignette antialiased min-h-screen">{children}</body>
+      <body className="grain vignette antialiased min-h-screen">
+        <AudioInit />
+        {children}
+      </body>
     </html>
   );
 }
