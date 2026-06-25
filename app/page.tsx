@@ -171,9 +171,9 @@ function LandingContent() {
                 target="_blank" rel="noopener noreferrer" className="hover:text-noir-accent transition-colors">
                 Contrato: 0x81B6...E9f8
               </a>
-              <button onClick={() => router.push("/about")} className="hover:text-noir-accent transition-colors">
-                About
-              </button>
+              <button onClick={() => router.push("/about")} className="hover:text-noir-accent transition-colors">About</button>
+              <button onClick={() => router.push("/gallery")} className="hover:text-noir-accent transition-colors">Archivo</button>
+              <button onClick={() => router.push("/judges")} className="hover:text-noir-accent transition-colors opacity-40">Judges</button>
             </div>
           </div>
           {!audioStarted && (

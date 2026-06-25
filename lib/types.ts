@@ -37,6 +37,33 @@ export interface ActRecord {
   toneAverage: number;
 }
 
+// ─── Save/Load state ───
+export interface GameSaveState {
+  version: string;
+  walletAddress: string;
+  currentAct: number;
+  completedActs: ActRecord[];
+  playerProfile: PlayerProfile;
+  unlockedAchievements: string[];
+  totalFragments: number;
+  aiModel: "claude" | "gemini" | "demo";
+  startedAt: string;
+  lastPlayedAt: string;
+  saveHash?: string;
+}
+
+// ─── Gallery ───
+export interface GalleryEntry {
+  walletAddress: string;
+  identity: "arquitecto" | "testigo" | "espejo";
+  toneAverage: number;
+  totalDecisions: number;
+  darkDecisions: number;
+  lightDecisions: number;
+  completedAt: string;
+  shareText: string;
+}
+
 export const ACTS: ActDefinition[] = [
   {
     id: 1,

@@ -277,3 +277,100 @@ export function playAchievementSound(category: AchievementCategory) {
 export function setAmbientVolume(vol: number) {
   setGlobalVolume(vol);
 }
+
+// ─── Generative Melodic Layer ───
+let melodicTimer: ReturnType<typeof setTimeout> | null = null;
+let melodicActive = false;
+let currentToneAvg = 5;
+
+const DARK_SCALE = [220, 246, 261, 293, 329];
+const LIGHT_SCALE = [220, 261, 294, 330, 392];
+
+function playMelodicNote() {
+  if (!melodicActive || !audioStarted) return;
+  const scale = currentToneAvg > 6 ? DARK_SCALE : LIGHT_SCALE;
+  const freq = scale[Math.floor(Math.random() * scale.length)];
+  const dur = 0.8 + Math.random() * 0.7;
+  playTone(freq, dur, "sine", 0.05);
+  const nextDelay = 3000 + Math.random() * 4000;
+  melodicTimer = setTimeout(playMelodicNote, nextDelay);
+}
+
+export function startMelodicLayer() {
+  if (melodicActive) return;
+  melodicActive = true;
+  melodicTimer = setTimeout(playMelodicNote, 2000);
+}
+
+export function stopMelodicLayer() {
+  melodicActive = false;
+  if (melodicTimer) { clearTimeout(melodicTimer); melodicTimer = null; }
+}
+
+// ─── Tension layer ───
+let tensionOsc: OscillatorNode | null = null;
+let tensionGain: GainNode | null = null;
+
+export function setTensionLevel(act: number) {
+  if (!ctx || !masterGain || !audioStarted) return;
+  const levels: Record<number, number> = { 1: 0, 2: 0.02, 3: 0.04, 4: 0.07, 5: 0.01 };
+  const gain = levels[act] ?? 0;
+
+  if (gain === 0) {
+    if (tensionGain) tensionGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+    return;
+  }
+
+  if (!tensionOsc) {
+    tensionOsc = ctx.createOscillator();
+    tensionGain = ctx.createGain();
+    tensionOsc.type = "sawtooth";
+    tensionOsc.frequency.value = 80;
+    tensionGain.gain.value = 0;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 200;
+    tensionOsc.connect(filter);
+    filter.connect(tensionGain);
+    tensionGain.connect(masterGain);
+    tensionOsc.start();
+  }
+  if (tensionGain) {
+    tensionGain.gain.linearRampToValueAtTime(gain * globalVolume, ctx.currentTime + 2);
+  }
+}
+
+// ─── Response to game events ───
+export function updateMusicWithTone(toneScore: number) {
+  currentToneAvg = toneScore;
+  if (!ctx || !droneOsc || !audioStarted) return;
+  // Shift drone pitch based on tone
+  if (toneScore > 7) {
+    droneOsc.frequency.linearRampToValueAtTime(droneOsc.frequency.value - 5, ctx.currentTime + 1);
+    setTimeout(() => {
+      if (droneOsc && ctx) droneOsc.frequency.linearRampToValueAtTime(droneOsc.frequency.value + 5, ctx.currentTime + 2);
+    }, 3000);
+  } else if (toneScore < 4) {
+    droneOsc.frequency.linearRampToValueAtTime(droneOsc.frequency.value + 5, ctx.currentTime + 1);
+    setTimeout(() => {
+      if (droneOsc && ctx) droneOsc.frequency.linearRampToValueAtTime(droneOsc.frequency.value - 5, ctx.currentTime + 2);
+    }, 3000);
+  }
+}
+
+// ─── Analyser for visualizer ───
+let analyser: AnalyserNode | null = null;
+
+export function getAnalyserData(): Uint8Array | null {
+  if (!analyser || !ctx) {
+    if (ctx && masterGain) {
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 32;
+      masterGain.connect(analyser);
+    }
+    return null;
+  }
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  return data;
+}
