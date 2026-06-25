@@ -27,14 +27,17 @@ import { useKeyboardNav } from "@/lib/useKeyboardNav";
 import { useChainWrite } from "@/lib/useChainWrite";
 import { INITIAL_SCENES } from "@/lib/types";
 import type { Fragment, Choice, GenerateResponse } from "@/lib/types";
+import { useAccount } from "wagmi";
 
 function GameContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { isConnected } = useAccount();
   const sceneId = searchParams.get("scene") || "hotel";
   const scene = INITIAL_SCENES.find((s) => s.id === sceneId) || INITIAL_SCENES[0];
 
   const chainWrite = useChainWrite();
+  const [aiModel, setAiModel] = useState<string>("demo");
   const [fragments, setFragments] = useState<Fragment[]>([]);
   const [currentFragment, setCurrentFragment] = useState<Fragment | null>(null);
   const [choices, setChoices] = useState<Choice[]>([]);
@@ -123,6 +126,13 @@ function GameContent() {
     };
   }, []);
 
+  // Redirect if wallet not connected on mount
+  useEffect(() => {
+    if (!isConnected && fragments.length === 0) {
+      router.push("/");
+    }
+  }, [isConnected, fragments.length, router]);
+
   // Check all achievements whenever state changes
   useEffect(() => {
     for (const ach of ACHIEVEMENTS) {
@@ -181,8 +191,9 @@ function GameContent() {
           throw new Error(errData?.error || "Error generando fragmento");
         }
 
-        const data: GenerateResponse = await response.json();
+        const data = await response.json() as GenerateResponse & { aiModel?: string };
 
+        setAiModel(data.aiModel || "demo");
         setCurrentFragment(data.fragment);
         setFragments((prev) => [...prev, data.fragment]);
         setChoices(data.choices);
@@ -296,6 +307,13 @@ function GameContent() {
           <div className="hidden sm:flex items-center gap-3 text-[10px] font-body text-noir-muted">
             <span className={`px-2 py-0.5 border ${actColors[act - 1]}`}>
               Acto {act}: {actLabels[act - 1]}
+            </span>
+            <span className={`px-1.5 py-0.5 text-[8px] font-mono tracking-wider border ${
+              aiModel === "claude" ? "text-noir-accent border-noir-accent/40" :
+              aiModel === "gemini" ? "text-blue-400 border-blue-400/40" :
+              "text-noir-muted border-noir-border/40"
+            }`}>
+              ✦ {aiModel === "claude" ? "Claude" : aiModel === "gemini" ? "Gemini" : "Demo"}
             </span>
           </div>
         </div>
@@ -514,6 +532,19 @@ function GameContent() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Wallet disconnect overlay */}
+      {!isConnected && fragments.length > 0 && (
+        <div className="fixed inset-0 z-[10000] bg-black/90 flex items-center justify-center p-6">
+          <div className="uxpm-glass p-8 max-w-sm w-full text-center">
+            <p className="font-display text-lg text-red-400 mb-3">Wallet desconectada</p>
+            <p className="font-body text-xs text-noir-muted mb-6">
+              Tus {fragments.length} fragmentos están guardados. Reconecta para continuar.
+            </p>
+            <WalletButton />
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <PlayerStats

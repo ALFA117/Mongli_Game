@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       choices,
       storageHash,
       txHash,
+      aiModel: claudeResponse.aiModel || "demo",
     });
   } catch (error) {
     console.error("[API] Generate error:", error);
