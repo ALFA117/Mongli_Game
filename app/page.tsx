@@ -185,10 +185,10 @@ function LandingContent() {
                     onMouseLeave={() => setHoveredScene(null)}
                     whileHover={{ y: -5 }}
                     whileTap={{ scale: 0.97 }}
-                    className={`p-4 sm:p-6 bg-noir-card border text-left transition-all duration-500 group relative overflow-hidden uxpm-press uxpm-tap-highlight ${
+                    className={`p-4 sm:p-6 bg-noir-card border-2 text-left transition-all duration-500 group relative overflow-hidden uxpm-press uxpm-tap-highlight ${
                       selectedSceneIdx === i && showScenes
-                        ? "border-noir-accent/60 ring-1 ring-noir-accent/30"
-                        : "border-noir-border hover:border-noir-accent/40"
+                        ? "border-noir-accent ring-2 ring-noir-accent/40 shadow-[0_0_20px_rgba(212,162,68,0.2)]"
+                        : "border-noir-border hover:border-noir-accent/70 hover:shadow-[0_0_15px_rgba(212,162,68,0.15)]"
                     }`}
                   >
                     {/* Background glow on hover */}
@@ -207,10 +207,10 @@ function LandingContent() {
                       <span className="text-2xl mb-4 block filter grayscale group-hover:grayscale-0 transition-all duration-500">
                         {scene.icon}
                       </span>
-                      <h3 className="font-display text-noir-text text-sm mb-2 tracking-wider group-hover:text-noir-accent transition-colors duration-300">
+                      <h3 className="font-display text-noir-text text-sm sm:text-base mb-2 tracking-wider group-hover:text-noir-accent transition-colors duration-300">
                         {scene.title}
                       </h3>
-                      <p className="font-body text-noir-muted text-[11px] leading-relaxed">
+                      <p className="font-body text-noir-text/60 text-xs leading-relaxed">
                         {scene.description}
                       </p>
                     </div>

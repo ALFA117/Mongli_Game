@@ -2,90 +2,80 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { ClaudeResponse, Fragment, PlayerProfile } from "./types";
 import { buildPlayerProfile } from "./types";
 
+// ─── Fallback fragments for when API is unavailable ───
+const FALLBACK_FRAGMENTS: Record<number, ClaudeResponse> = {
+  1: {
+    fragment_text: "Los ojos se abren. No hay techo, solo oscuridad líquida que gotea hacia adentro. Mis manos no son mías — demasiado limpias para lo que siento por dentro. Hay un olor: tabaco viejo, tinta fresca, algo metálico que no quiero nombrar. Una maleta abierta. Ropa que no reconozco pero que huele a mí. En el bolsillo del abrigo, una nota doblada tres veces: 'No confíes en lo que recuerdes primero.' La letra es mía. ¿Por qué me advertiría a mí mismo?",
+    tone_score: 6,
+    tags: ["identidad", "confusión", "advertencia"],
+    traces: ["nota doblada tres veces", "olor a tinta fresca"],
+  },
+  2: {
+    fragment_text: "El pasillo se estira como una garganta. Cada puerta cerrada guarda un eco que no puedo descifrar. Camino sin saber hacia dónde, pero mis pies conocen el camino — músculo memoria de noches que mi mente borró. Un espejo roto al final del corredor. En cada fragmento veo un rostro distinto: uno sonríe, otro llora, el tercero mira con una calma que hiela. ¿Cuál de ellos soy? El cristal cruje bajo mis zapatos. Alguien estuvo aquí antes que yo. O fui yo, en otra vida.",
+    tone_score: 7,
+    tags: ["espejo", "identidad fragmentada", "memoria corporal"],
+    traces: ["espejo roto en el corredor", "tres rostros distintos"],
+  },
+  3: {
+    fragment_text: "Hay una fotografía en el suelo. Boca abajo, como si alguien la hubiera dejado caer con prisa. La levanto: dos figuras en un muelle, atardecer cobrizo, una de ellas soy yo. La otra tiene el rostro borrado — no por el tiempo, sino con intención. Alguien raspó la emulsión con una moneda o una uña. Mi sonrisa en la foto es auténtica. Eso es lo que más me perturba. ¿Cómo puedo sonreír así junto a alguien cuyo rostro necesitó ser destruido?",
+    tone_score: 8,
+    tags: ["fotografía", "relación borrada", "culpa"],
+    traces: ["fotografía del muelle", "rostro borrado deliberadamente"],
+  },
+  4: {
+    fragment_text: "El teléfono suena. Lo tomo sin pensar — el gesto es automático, un reflejo que sobrevivió al olvido. Silencio al otro lado. No, no silencio: respiración contenida, el tipo de respiración de quien quiere ser escuchado sin hablar. Dejo que el tiempo se espese entre nosotros. Luego, una sola palabra, susurrada con la urgencia de quien sabe que la línea no es segura: mi nombre. Un nombre que no reconozco. Pero mi corazón se acelera como si lo hubiera esperado toda la vida.",
+    tone_score: 7,
+    tags: ["teléfono", "nombre desconocido", "reconocimiento"],
+    traces: ["llamada anónima", "nombre susurrado"],
+  },
+  5: {
+    fragment_text: "Bajo las escaleras hacia el sótano. No porque quiera — porque algo en mí sabe que es necesario. El aire cambia: más frío, más honesto. Las paredes de concreto guardan marcas de conteo. Alguien estuvo encerrado aquí. Los trazos son regulares, disciplinados — no desesperación sino rutina. Cuento: trescientos doce días. En la esquina, grabado con algo afilado, un mapa. Calles que conozco. Un punto marcado con una X y una fecha. La fecha es mañana.",
+    tone_score: 9,
+    tags: ["sótano", "cautiverio", "mapa oculto"],
+    traces: ["312 días de cautiverio", "mapa grabado con fecha de mañana"],
+  },
+};
+
+function getFallbackFragment(fragmentId: number, choice: string): ClaudeResponse {
+  const base = FALLBACK_FRAGMENTS[Math.min(fragmentId, 5)] || FALLBACK_FRAGMENTS[1];
+  return {
+    ...base,
+    tone_score: base.tone_score + Math.floor(Math.random() * 3 - 1),
+    tags: [...base.tags, fragmentId > 5 ? "acto-ii" : "acto-i"],
+  };
+}
+
+// ─── Prompt builders ───
+
 function getActInstructions(fragmentId: number): string {
   if (fragmentId <= 5) {
-    return `RITMO NARRATIVO — ACTO I (Identidad Desconocida):
-Escribe lento, confuso, desorientado. El personaje apenas percibe su entorno. Las frases deben ser fragmentadas, como pensamientos que se disuelven antes de completarse. Usa mucho sensorial: olores, texturas, sonidos distorsionados. No des pistas claras de identidad — solo impresiones vagas y perturbadoras.`;
+    return `RITMO — ACTO I: Lento, confuso, desorientado. Frases fragmentadas. Mucho sensorial.`;
   }
   if (fragmentId <= 12) {
-    return `RITMO NARRATIVO — ACTO II (Dos Caminos):
-Escribe tenso, urgente, con frases que aceleran. Dos identidades posibles emergen: ¿fue el personaje héroe o villano? Introduce contradicciones deliberadas con fragmentos anteriores. Momentos de lucidez mezclados con confusión. El tono debe oscilar entre miedo y determinación.`;
+    return `RITMO — ACTO II: Tenso, urgente, frases que aceleran. Contradicciones con fragmentos anteriores.`;
   }
-  return `RITMO NARRATIVO — ACTO III (La Revelación):
-Escribe con claridad terrible. Las frases son directas, sin adornos. El personaje empieza a recordar con nitidez y cada palabra pesa. Conecta explícitamente con los fragmentos anteriores. Sintetiza el historial para construir la revelación. La verdad es irrevocable.`;
+  return `RITMO — ACTO III: Claridad terrible. Frases directas. Conecta con fragmentos anteriores.`;
 }
 
 function getProfileContext(profile: PlayerProfile): string {
-  const { ratio, darkChoices, lightChoices, tendency } = profile;
-
-  let tendencyDesc: string;
-  if (tendency === "shadow") {
-    tendencyDesc = `El jugador tiene una fuerte tendencia hacia la SOMBRA (${darkChoices} oscuras vs ${lightChoices} luminosas, ratio ${(ratio * 100).toFixed(0)}% oscuridad). Intensifica el tono oscuro. Haz que los recuerdos reflejen culpa, agresividad o manipulación.`;
-  } else if (tendency === "light") {
-    tendencyDesc = `El jugador busca la LUZ (${lightChoices} luminosas vs ${darkChoices} oscuras, ratio ${((1 - ratio) * 100).toFixed(0)}% luz). Los recuerdos deben reflejar remordimiento constructivo, víctima inocente, o testigo que quiso ayudar pero no pudo.`;
-  } else {
-    tendencyDesc = `El jugador está EQUILIBRADO entre luz y sombra (${darkChoices} oscuras, ${lightChoices} luminosas). Los recuerdos deben ser profundamente ambiguos — el personaje no es ni bueno ni malo, o es ambos simultáneamente.`;
+  if (profile.tendency === "shadow") {
+    return `PERFIL: Tendencia SOMBRA (${profile.darkChoices} oscuras vs ${profile.lightChoices} luz). Intensifica el tono oscuro.`;
   }
-
-  return `PERFIL PSICOLÓGICO DEL JUGADOR:
-${tendencyDesc}`;
+  if (profile.tendency === "light") {
+    return `PERFIL: Tendencia LUZ (${profile.lightChoices} luz vs ${profile.darkChoices} oscuras). Refleja remordimiento constructivo.`;
+  }
+  return `PERFIL: EQUILIBRADO (${profile.darkChoices} oscuras, ${profile.lightChoices} luz). Los recuerdos deben ser ambiguos.`;
 }
 
 const SYSTEM_PROMPT_BASE = `Eres el narrador de Mongli Game, un juego noir de amnesia psicológica.
-
-REGLAS ABSOLUTAS:
-- Escribe en primera persona del personaje (sin nombre propio jamás).
-- Tono: oscuro, poético, perturbador. Frases cortas. Años 40 digitales.
-- El personaje no sabe quién es. Cada fragmento revela una pieza de su identidad.
-- Mantén coherencia ESTRICTA con el historial de fragmentos recibido.
-- Longitud: exactamente 80-120 palabras. Ni una más, ni una menos.
-- La ÚLTIMA FRASE de cada fragmento DEBE dejar al lector en suspenso — una pregunta sin respuesta, una imagen perturbadora, o una revelación parcial que genera más preguntas.
-- No repitas estructuras, inicios ni imágenes de fragmentos anteriores.
-- Las "traces" son pistas concretas sobre la identidad: nombres, lugares, objetos, fechas. Genera 1-2 por fragmento.
-- Los "tags" son etiquetas temáticas: culpa, miedo, identidad, violencia, ternura, etc. Genera 2-3 por fragmento.
-
-FORMATO DE RESPUESTA:
-Responde SOLO en JSON válido, sin markdown, sin bloques de código:
-{ "fragment_text": "...", "tone_score": 0-10, "tags": ["..."], "traces": ["..."] }
-
-El tone_score refleja la oscuridad: 0 = esperanza pura, 5 = neutro, 10 = horror absoluto.`;
-
-function buildSystemPrompt(fragmentId: number, profile: PlayerProfile): string {
-  return `${SYSTEM_PROMPT_BASE}
-
-${getActInstructions(fragmentId)}
-
-${getProfileContext(profile)}`;
-}
+Escribe en primera persona (sin nombre). Tono: oscuro, poético, perturbador. Frases cortas.
+80-120 palabras exactas. La ÚLTIMA FRASE debe crear suspenso.
+Responde SOLO en JSON: { "fragment_text": "...", "tone_score": 0-10, "tags": ["..."], "traces": ["..."] }`;
 
 function tryParseJSON(text: string): ClaudeResponse | null {
-  // Try direct parse
-  try {
-    return JSON.parse(text) as ClaudeResponse;
-  } catch {
-    // noop
-  }
-
-  // Try extracting JSON from markdown code blocks
-  const codeBlockMatch = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-  if (codeBlockMatch) {
-    try {
-      return JSON.parse(codeBlockMatch[1]) as ClaudeResponse;
-    } catch {
-      // noop
-    }
-  }
-
-  // Try finding first { ... } in the text
-  const braceMatch = text.match(/\{[\s\S]*\}/);
-  if (braceMatch) {
-    try {
-      return JSON.parse(braceMatch[0]) as ClaudeResponse;
-    } catch {
-      // noop
-    }
-  }
-
+  try { return JSON.parse(text) as ClaudeResponse; } catch { /* */ }
+  const match = text.match(/\{[\s\S]*\}/);
+  if (match) { try { return JSON.parse(match[0]) as ClaudeResponse; } catch { /* */ } }
   return null;
 }
 
@@ -94,113 +84,66 @@ export async function generateFragment(
   history: Fragment[],
   choice: string
 ): Promise<ClaudeResponse> {
-  const client = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  });
+  const apiKey = process.env.ANTHROPIC_API_KEY;
 
+  // If no API key or it's empty, use fallback
+  if (!apiKey || apiKey === "sk-ant-..." || apiKey.length < 20) {
+    console.log("[Claude] No valid API key — using demo mode");
+    return getFallbackFragment(history.length + 1, choice);
+  }
+
+  const client = new Anthropic({ apiKey });
   const profile = buildPlayerProfile(history);
   const fragmentId = history.length + 1;
-  const systemPrompt = buildSystemPrompt(fragmentId, profile);
 
-  const historyContext =
-    history.length > 0
-      ? history
-          .slice(-3)
-          .map(
-            (f) =>
-              `[Fragmento ${f.id} | tono: ${f.toneScore}/10 | tags: ${f.tags.join(", ")}]: ${f.text}`
-          )
-          .join("\n\n")
-      : "Sin historial previo — este es el primer recuerdo. El personaje acaba de despertar.";
+  const systemPrompt = `${SYSTEM_PROMPT_BASE}\n${getActInstructions(fragmentId)}\n${getProfileContext(profile)}`;
 
-  const userMessage = `CONTEXTO (últimos fragmentos desde 0G Storage):
-${historyContext}
+  const historyContext = history.length > 0
+    ? history.slice(-3).map((f) => `[#${f.id} tono:${f.toneScore}]: ${f.text}`).join("\n")
+    : "Sin historial — primer recuerdo.";
 
-Escena actual: ${scene}
-Decisión anterior del jugador: ${choice || "Inicio — el personaje acaba de despertar"}
-Número de fragmento: ${fragmentId} de 15
+  const userMessage = `CONTEXTO:\n${historyContext}\n\nEscena: ${scene}\nDecisión: ${choice || "Inicio"}\nFragmento ${fragmentId}/15.`;
 
-Genera el siguiente fragmento de memoria. Recuerda: la última frase DEBE crear suspenso.`;
+  // Try multiple models in order of preference
+  const MODELS = [
+    "claude-sonnet-4-20250514",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-haiku-20240307",
+  ];
 
-  const MAX_RETRIES = 3;
-  const TIMEOUT_MS = 30000;
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+  for (const model of MODELS) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
 
       const response = await client.messages.create(
-        {
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 500,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userMessage }],
-        },
+        { model, max_tokens: 400, system: systemPrompt, messages: [{ role: "user", content: userMessage }] },
         { signal: controller.signal }
       );
-
       clearTimeout(timeoutId);
 
-      const text =
-        response.content[0].type === "text" ? response.content[0].text : "";
-
+      const text = response.content[0].type === "text" ? response.content[0].text : "";
       const parsed = tryParseJSON(text);
-      if (parsed && parsed.fragment_text && typeof parsed.tone_score === "number") {
+      if (parsed?.fragment_text) {
+        console.log(`[Claude] Success with model: ${model}`);
         return {
           fragment_text: parsed.fragment_text,
-          tone_score: Math.min(10, Math.max(0, parsed.tone_score)),
+          tone_score: Math.min(10, Math.max(0, parsed.tone_score ?? 5)),
           tags: Array.isArray(parsed.tags) ? parsed.tags : [],
           traces: Array.isArray(parsed.traces) ? parsed.traces : [],
         };
       }
-
-      // JSON was malformed — retry if attempts remain
-      if (attempt < MAX_RETRIES) {
-        console.warn(
-          `[Claude] Attempt ${attempt}: malformed JSON, retrying...`,
-          text.slice(0, 100)
-        );
-        continue;
-      }
-
-      // Last attempt — return best-effort
-      console.error("[Claude] All retries exhausted, returning raw text");
-      return {
-        fragment_text:
-          parsed?.fragment_text ||
-          text.replace(/[{}"]/g, "").trim() ||
-          "Los recuerdos se resisten. La niebla es demasiado densa para ver.",
-        tone_score: parsed?.tone_score ?? 5,
-        tags: parsed?.tags ?? ["niebla"],
-        traces: parsed?.traces ?? [],
-      };
-    } catch (error) {
-      const isTimeout =
-        error instanceof Error &&
-        (error.name === "AbortError" || error.message.includes("abort"));
-
-      if (isTimeout) {
-        console.error(`[Claude] Attempt ${attempt}: timeout after ${TIMEOUT_MS}ms`);
-        if (attempt === MAX_RETRIES) {
-          return {
-            fragment_text:
-              "El silencio se espesa. Algo intentó abrirse paso pero la conexión se cortó antes de completarse. Como un recuerdo a medio formar, la imagen se disuelve en estática.",
-            tone_score: 4,
-            tags: ["timeout", "estática"],
-            traces: [],
-          };
-        }
-        continue;
-      }
-
-      console.error(`[Claude] Attempt ${attempt} error:`, error);
-      if (attempt === MAX_RETRIES) {
-        throw error;
-      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[Claude] Model ${model} failed: ${msg.slice(0, 80)}`);
+      // If it's a 404 (model not found), try next model
+      if (msg.includes("404") || msg.includes("not_found")) continue;
+      // For other errors (timeout, rate limit), also try next
+      continue;
     }
   }
 
-  // Should never reach here, but TypeScript needs it
-  throw new Error("All retry attempts exhausted");
+  // All models failed — use fallback
+  console.log("[Claude] All models failed — using demo fallback");
+  return getFallbackFragment(fragmentId, choice);
 }
