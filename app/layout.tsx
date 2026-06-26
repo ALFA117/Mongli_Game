@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AudioInit } from "@/components/AudioInit";
+import Cursor from "@/components/Cursor";
 
 const SITE_URL = "https://mongli-game.vercel.app";
 
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="grain vignette antialiased min-h-screen">
         <AudioInit />
+        <Cursor />
         {children}
       </body>
     </html>
