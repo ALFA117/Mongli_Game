@@ -49,11 +49,21 @@ export function GameEngine() {
   const introTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const [collectedTexts, setCollectedTexts] = useState<string[]>([]);
   const [stompCount, setStompCount] = useState(0);
+  const [cutscene, setCutscene] = useState<"none" | "fadeout" | "text" | "fadein">("none");
+  const [cutsceneText, setCutsceneText] = useState("");
+  const [activePowerUp, setActivePowerUp] = useState<{ type: string; timer: number } | null>(null);
+  const [isHiding, setIsHiding] = useState(false);
+  const [totalScore, setTotalScore] = useState(0);
+  const shakeRef = useRef({ intensity: 0, duration: 0 });
   const levelStartRef = useRef(Date.now());
   const footstepTimerRef = useRef(0);
   const prevVelYRef = useRef(0);
   const prevEnemyStates = useRef<Record<string, string>>({});
   const twRef = useRef<ReturnType<typeof setInterval>>();
+
+  const triggerShake = (intensity: number, duration: number) => {
+    shakeRef.current = { intensity, duration };
+  };
 
   const notify = useCallback((text: string) => {
     setNotification(text);
@@ -235,6 +245,69 @@ export function GameEngine() {
           }
         }
 
+        // Boss update (level 5)
+        if (levelData.boss && updated.x > 3000) {
+          const b = levelData.boss;
+          if (!b.active) { b.active = true; notify("LA FIGURA DESPIERTA"); }
+          if (b.active && b.state !== "dead") {
+            if (b.state === "stunned") { b.stunnedTimer -= dt; if (b.stunnedTimer <= 0) b.state = "idle"; }
+            else {
+              b.attackTimer -= dt;
+              const dist = updated.x - b.x;
+              b.direction = dist > 0 ? 1 : -1;
+              const speed = b.phase === 1 ? 100 : b.phase === 2 ? 160 : 220;
+              b.velocityX = b.direction * speed;
+              b.x += b.velocityX * dt;
+              b.velocityY += 900 * dt; b.y += b.velocityY * dt;
+              if (b.y + b.height >= levelData.groundY) { b.y = levelData.groundY - b.height; b.velocityY = 0; }
+              // Stomp check
+              if (updated.y + updated.height > b.y && updated.y + updated.height < b.y + 30 && updated.velocityY > 80) {
+                b.currentHealth -= 20; b.state = "stunned"; b.stunnedTimer = 2;
+                updated.velocityY = -500;
+                spawnFX(b.x + 30, b.y, "spark", 10);
+                triggerShake(10, 0.4);
+                b.phase = b.currentHealth <= 33 ? 3 : b.currentHealth <= 66 ? 2 : 1;
+                if (b.currentHealth <= 0) { b.state = "dead"; spawnFX(b.x + 30, b.y + 45, "spark", 30); notify("LA FIGURA HA CAÍDO"); triggerShake(15, 0.8); }
+              } else if (Math.abs(updated.x - b.x) < b.width && Math.abs(updated.y - b.y) < b.height && !updated.isInvincible && b.state !== "stunned") {
+                updated.health -= 30; updated.isInvincible = true; updated.invincibleTimer = 1.5;
+                updated.velocityX = updated.x > b.x ? 300 : -300; updated.velocityY = -200;
+                damageSound(); triggerShake(10, 0.3);
+                if (updated.health <= 0) { updated.health = 0; updated.isDead = true; }
+              }
+            }
+          }
+        }
+
+        // Power-up collection
+        if (levelData.powerUps) {
+          for (const pu of levelData.powerUps) {
+            if (pu.collected) continue;
+            if (Math.abs(updated.x - pu.x) < 30 && Math.abs(updated.y - pu.y) < 30) {
+              pu.collected = true; collectSound();
+              setActivePowerUp({ type: pu.type, timer: pu.duration });
+              spawnFX(pu.x + 8, pu.y + 8, "collect", 8);
+              notify(`Power-up: ${pu.type.toUpperCase()}`);
+            }
+          }
+        }
+
+        // Active power-up countdown
+        if (activePowerUp) {
+          setActivePowerUp(prev => prev && prev.timer > dt ? { ...prev, timer: prev.timer - dt } : null);
+        }
+
+        // Hide spot detection
+        if (levelData.hideSpots && Math.abs(updated.velocityX) < 10) {
+          const hiding = levelData.hideSpots.some(hs => updated.x > hs.x && updated.x < hs.x + hs.width && updated.y > hs.y && updated.y < hs.y + hs.height);
+          setIsHiding(hiding);
+          if (hiding) {
+            for (const en of levelData.enemies) { if (en.state === "chase") en.state = "patrol"; }
+          }
+        } else { setIsHiding(false); }
+
+        // Screen shake update
+        if (shakeRef.current.duration > 0) shakeRef.current.duration -= dt;
+
         // Camera follow with bounds
         const targetX = updated.x - canvas.width / 2 + 100;
         const targetY = updated.y - canvas.height / 2 + 50;
@@ -257,7 +330,14 @@ export function GameEngine() {
       // Render
       const nearObj = findNearbyObject(playerRef.current, levelData.objects);
       const nearNPC = findNearbyNPC(playerRef.current, levelData.npcs);
+      // Screen shake
+      ctx.save();
+      if (shakeRef.current.duration > 0) {
+        const s = shakeRef.current.intensity;
+        ctx.translate((Math.random() - 0.5) * s * 2, (Math.random() - 0.5) * s * 2);
+      }
       render(ctx, levelData, playerRef.current, camRef.current, timeRef.current, nearObj, nearNPC, collectedRef.current);
+      ctx.restore();
 
       // Damage flash overlay
       if (playerRef.current.isInvincible) {
@@ -316,7 +396,13 @@ export function GameEngine() {
     } catch { setIsSigned(true); }
     setIsSigning(false);
   };
+  const timeBonus = Math.max(0, 500 - levelTime * 2);
+  const deathPenalty = deaths * 100;
+  const stompBonus = stompCount * 50;
+  const levelScore = 1000 + timeBonus - deathPenalty + stompBonus + 600;
+
   const handleNextLevel = () => {
+    setTotalScore(prev => prev + levelScore);
     const nextDoor = levelData.doors[0];
     if (nextDoor) loadLevel(nextDoor.leadsToLevel - 1);
     else setGameComplete(true);
@@ -334,6 +420,17 @@ export function GameEngine() {
           {collectedTexts.map((t, i) => (
             <div key={i} style={{ color: "#8C8275", fontSize: 12, lineHeight: 1.5, marginBottom: 8, paddingLeft: 12, borderLeft: "2px solid #B30000" }}>{t.slice(0, 80)}...</div>
           ))}
+        </div>
+        {/* Score */}
+        <div className="uxpm-surface" style={{ borderRadius: 8, padding: 16, marginBottom: 20, maxWidth: 300, width: "90%" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, fontSize: 11, fontFamily: "monospace" }}>
+            <span style={{ color: "#555" }}>BASE</span><span style={{ color: "#E5DEC9", textAlign: "right" }}>1000</span>
+            <span style={{ color: "#555" }}>TIEMPO</span><span style={{ color: "#4CAF50", textAlign: "right" }}>+{timeBonus}</span>
+            <span style={{ color: "#555" }}>MUERTES</span><span style={{ color: "#FF4444", textAlign: "right" }}>-{deathPenalty}</span>
+            <span style={{ color: "#555" }}>STOMPS</span><span style={{ color: "#FF6600", textAlign: "right" }}>+{stompBonus}</span>
+            <span style={{ color: "#555" }}>FRAGMENTOS</span><span style={{ color: "#c4923a", textAlign: "right" }}>+600</span>
+          </div>
+          <div style={{ borderTop: "1px solid #2a2a2a", marginTop: 10, paddingTop: 10, textAlign: "center", color: "#E5DEC9", fontSize: 20, letterSpacing: "0.1em" }}>TOTAL: {levelScore}</div>
         </div>
         {!isSigning && !isSigned && chainWrite.isConnected && chainWrite.hasContract && (
           <button onClick={handleSign} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", letterSpacing: "0.2em", boxShadow: "0 0 20px rgba(179,0,0,0.3)", marginBottom: 12 }}>⛓ GRABAR EN 0G CHAIN</button>
@@ -361,7 +458,7 @@ export function GameEngine() {
   const levelCollected = levelData.objects.filter((o: InteractiveObject) => o.collected || collectedRef.current.has(o.id)).length;
 
   return (
-    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", background: "#000", cursor: "crosshair" }}>
+    <div className="game-page" style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", background: "#000", cursor: "crosshair" }}>
       <canvas ref={canvasRef} style={{ display: "block" }} />
 
       {/* Intro overlay */}
@@ -401,6 +498,30 @@ export function GameEngine() {
           }} />
         ))}
       </div>
+
+      {/* Boss HP bar */}
+      {levelData.boss?.active && levelData.boss.state !== "dead" && (
+        <div className="uxpm-glass" style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", width: 300, padding: "12px 16px", textAlign: "center", cursor: "crosshair", zIndex: 20 }}>
+          <div style={{ color: "#FF1A1A", fontSize: 11, letterSpacing: "0.2em", marginBottom: 6 }}>LA FIGURA</div>
+          <div style={{ background: "#111", height: 6, borderRadius: 3 }}>
+            <div style={{ width: `${(levelData.boss.currentHealth / levelData.boss.maxHealth) * 100}%`, height: "100%", background: "linear-gradient(90deg, #7a0000, #FF1A1A)", boxShadow: "0 0 8px #FF1A1A", borderRadius: 3, transition: "width 0.3s" }} />
+          </div>
+        </div>
+      )}
+
+      {/* Power-up indicator */}
+      {activePowerUp && (
+        <div style={{ position: "absolute", top: 100, left: 20, zIndex: 10, background: "rgba(0,0,0,0.7)", border: "1px solid #2a2a2a", borderRadius: 4, padding: "4px 10px", fontSize: 10, color: "#E5DEC9", fontFamily: "monospace" }}>
+          {activePowerUp.type.toUpperCase()} {Math.ceil(activePowerUp.timer)}s
+        </div>
+      )}
+
+      {/* Hidden indicator */}
+      {isHiding && (
+        <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, color: "#4444ff", fontSize: 11, fontFamily: "monospace", letterSpacing: "0.15em" }}>
+          OCULTO
+        </div>
+      )}
 
       {/* Mini map */}
       <div style={{ position: "absolute", top: 56, right: 20, zIndex: 10 }}>
