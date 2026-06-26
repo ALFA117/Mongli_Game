@@ -130,41 +130,63 @@ function LandingContent() {
         </div>
       </motion.section>
 
-      {/* ═══ WALLET SETUP ═══ */}
-      {!isConnected && (
-        <motion.section initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-          className="px-4 sm:px-8 py-10 max-w-2xl mx-auto w-full">
-          <h2 className="font-display text-sm text-noir-accent tracking-[0.2em] text-center mb-6">
-            Cómo empezar
-          </h2>
-          <div className="space-y-3">
-            {[
-              { step: "1", text: "Instala MetaMask", sub: "metamask.io — extensión de navegador" },
-              { step: "2", text: "Añade 0G Galileo Testnet", sub: "Click aquí para añadirlo automáticamente", action: true },
-              { step: "3", text: "Obtén tokens gratis", sub: "faucet.0g.ai — tokens de prueba A0GI" },
-              { step: "4", text: "Conecta y despierta", sub: "El botón de arriba te conecta en segundos" },
-            ].map((item) => (
-              <motion.div key={item.step} whileHover={{ x: 3 }}
-                className="flex items-center gap-4 p-3 border border-noir-border/30 hover:border-noir-accent/30 transition-colors">
-                <span className="w-7 h-7 border border-noir-accent/50 flex items-center justify-center text-noir-accent font-mono text-xs shrink-0">
-                  {item.step}
-                </span>
-                <div>
-                  <p className="font-display text-xs text-noir-text">{item.text}</p>
-                  {item.action ? (
-                    <button onClick={() => switchToGalileo()}
-                      className="font-body text-[10px] text-noir-accent hover:underline">
-                      {item.sub}
-                    </button>
-                  ) : (
+      {/* ═══ WALLET SETUP — siempre visible ═══ */}
+      <motion.section initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+        className="px-4 sm:px-8 py-10 max-w-2xl mx-auto w-full">
+        <h2 className="font-display text-sm text-noir-accent tracking-[0.2em] text-center mb-6">
+          {isConnected ? "Links útiles" : "Cómo empezar"}
+        </h2>
+
+        {/* Links directos siempre visibles */}
+        <div className="flex flex-wrap justify-center gap-3 mb-6">
+          <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2.5 border-2 border-noir-accent/60 hover:border-noir-accent hover:bg-noir-accent/10 transition-all text-noir-accent font-display text-xs tracking-wider">
+            🦊 Instalar MetaMask
+          </a>
+          <a href="https://faucet.0g.ai" target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2.5 border-2 border-green-700/60 hover:border-green-500 hover:bg-green-900/10 transition-all text-green-400 font-display text-xs tracking-wider">
+            💰 Obtener A0GI gratis
+          </a>
+          <button onClick={() => switchToGalileo()}
+            className="flex items-center gap-2 px-4 py-2.5 border-2 border-blue-700/60 hover:border-blue-400 hover:bg-blue-900/10 transition-all text-blue-400 font-display text-xs tracking-wider">
+            ⛓ Añadir red 0G
+          </button>
+        </div>
+
+        {!isConnected && (
+        <div className="space-y-3">
+          {[
+            { step: "1", text: "Instala MetaMask", sub: "metamask.io — extensión de navegador", href: "https://metamask.io/download/" },
+            { step: "2", text: "Añade 0G Galileo Testnet", sub: "Click aquí para añadirlo automáticamente", action: true },
+            { step: "3", text: "Obtén tokens gratis", sub: "faucet.0g.ai — tokens de prueba A0GI", href: "https://faucet.0g.ai" },
+            { step: "4", text: "Conecta y despierta", sub: "El botón de arriba te conecta en segundos" },
+          ].map((item) => (
+            <motion.div key={item.step} whileHover={{ x: 3 }}
+              className="flex items-center gap-4 p-3 border border-noir-border/30 hover:border-noir-accent/30 transition-colors">
+              <span className="w-7 h-7 border border-noir-accent/50 flex items-center justify-center text-noir-accent font-mono text-xs shrink-0">
+                {item.step}
+              </span>
+              <div>
+                <p className="font-display text-xs text-noir-text">{item.text}</p>
+                {item.action ? (
+                  <button onClick={() => switchToGalileo()}
+                    className="font-body text-[10px] text-noir-accent hover:underline">
+                    {item.sub}
+                  </button>
+                ) : item.href ? (
+                  <a href={item.href} target="_blank" rel="noopener noreferrer"
+                    className="font-body text-[10px] text-noir-accent hover:underline">
+                    {item.sub}
+                  </a>
+                ) : (
                     <p className="font-body text-[10px] text-noir-muted">{item.sub}</p>
                   )}
                 </div>
               </motion.div>
             ))}
           </div>
-        </motion.section>
-      )}
+        )}
+      </motion.section>
 
       {/* ═══ FOOTER ═══ */}
       <footer className="p-6 sm:p-8 border-t border-noir-border/10">
