@@ -3,60 +3,55 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { Player, InputState, InteractiveObject, NPC } from "@/lib/game/gameTypes";
 import { LEVELS } from "@/lib/game/levels";
-import { updatePlayer, findNearbyObject, findNearbyNPC, checkDoor } from "@/lib/game/physics";
+import { updatePlayer, findNearbyObject, findNearbyNPC, checkDoor, respawnPlayer, updateCheckpoints } from "@/lib/game/physics";
 import { render, resetParticles } from "@/lib/game/renderer";
+
+function deepCopy<T>(obj: T): T { return JSON.parse(JSON.stringify(obj)); }
 
 export function GameEngine() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<InputState>({ left: false, right: false, jump: false, interact: false });
-  const playerRef = useRef<Player>({
-    x: 50, y: 400, width: 32, height: 50, velocityX: 0, velocityY: 0,
-    isOnGround: false, facingRight: true, state: "idle", memoryFragments: 0, blinkTimer: 3,
-  });
   const camRef = useRef({ x: 0, y: 0 });
-  const levelRef = useRef(0);
-  const collectedRef = useRef(new Set<string>());
-  const timeRef = useRef(0);
   const rafRef = useRef(0);
   const lastTimeRef = useRef(0);
+  const timeRef = useRef(0);
 
+  const [levelIdx, setLevelIdx] = useState(0);
+  const [levelData, setLevelData] = useState(() => deepCopy(LEVELS[0]));
+  const [player, setPlayer] = useState<Player>({
+    x: 100, y: 460, width: 32, height: 50, velocityX: 0, velocityY: 0,
+    isOnGround: false, facingRight: true, state: "idle", memoryFragments: 0, blinkTimer: 3,
+    health: 100, maxHealth: 100, isInvincible: false, invincibleTimer: 0, isDead: false,
+  });
+  const playerRef = useRef(player);
+  playerRef.current = player;
+
+  const collectedRef = useRef(new Set<string>());
+  const [collected, setCollected] = useState(0);
+  const [deaths, setDeaths] = useState(0);
+  const [gameComplete, setGameComplete] = useState(false);
+
+  // Dialog state
   const [dialogActive, setDialogActive] = useState(false);
-  const [dialogText, setDialogText] = useState("");
   const [dialogSpeaker, setDialogSpeaker] = useState("");
   const [dialogDisplay, setDialogDisplay] = useState("");
   const [dialogDone, setDialogDone] = useState(false);
   const [notification, setNotification] = useState("");
-  const [levelName, setLevelName] = useState(LEVELS[0].name);
-  const [collected, setCollected] = useState(0);
-  const [levelIdx, setLevelIdx] = useState(0);
-  const [gameComplete, setGameComplete] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const twRef = useRef<ReturnType<typeof setInterval>>();
 
-  // Current level
-  const getLevel = useCallback(() => {
-    const idx = Math.min(levelRef.current, LEVELS.length - 1);
-    return JSON.parse(JSON.stringify(LEVELS[idx]));
-  }, []);
-
-  const [levelData, setLevelData] = useState(getLevel);
-
-  // Show notification
   const notify = useCallback((text: string) => {
     setNotification(text);
     setTimeout(() => setNotification(""), 3000);
   }, []);
 
-  // Start typewriter for dialog
   const startDialog = useCallback((speaker: string, text: string) => {
     setDialogActive(true);
     setDialogSpeaker(speaker);
-    setDialogText(text);
     setDialogDisplay("");
     setDialogDone(false);
-    let i = 0;
     if (twRef.current) clearInterval(twRef.current);
+    let i = 0;
     twRef.current = setInterval(() => {
       i++;
       setDialogDisplay(text.slice(0, i));
@@ -67,95 +62,61 @@ export function GameEngine() {
   const closeDialog = useCallback(() => {
     if (twRef.current) clearInterval(twRef.current);
     setDialogActive(false);
-    setDialogText("");
-    setDialogDisplay("");
   }, []);
 
-  // Interact with object (calls AI API)
   const interactObject = useCallback(async (obj: InteractiveObject) => {
     obj.collected = true;
     collectedRef.current.add(obj.id);
-    playerRef.current.memoryFragments++;
     setCollected(collectedRef.current.size);
-
     startDialog(obj.label, "RECUPERANDO MEMORIA...");
     setLoading(true);
-
     try {
       const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          scene: `${obj.label} en ${LEVELS[levelRef.current]?.name || ""}`,
-          history: [],
-          choice: "",
-          fragmentId: obj.fragmentId,
-        }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scene: `${obj.label} en ${LEVELS[levelIdx]?.name}`, history: [], choice: "", fragmentId: obj.fragmentId }),
       });
       const data = await res.json();
-      const text = data.fragment?.text || "La memoria se resiste a emerger...";
+      const text = data.fragment?.text || "La memoria se resiste...";
       if (twRef.current) clearInterval(twRef.current);
-      setDialogDisplay("");
-      setDialogDone(false);
+      setDialogDisplay(""); setDialogDone(false);
       let i = 0;
-      twRef.current = setInterval(() => {
-        i++;
-        setDialogDisplay(text.slice(0, i));
-        if (i >= text.length) { clearInterval(twRef.current); setDialogDone(true); }
-      }, 30);
+      twRef.current = setInterval(() => { i++; setDialogDisplay(text.slice(0, i)); if (i >= text.length) { clearInterval(twRef.current); setDialogDone(true); } }, 30);
     } catch {
       if (twRef.current) clearInterval(twRef.current);
-      setDialogDisplay("La memoria parpadea y se desvanece...");
-      setDialogDone(true);
-    } finally {
-      setLoading(false);
-    }
-
+      setDialogDisplay("La memoria parpadea..."); setDialogDone(true);
+    } finally { setLoading(false); }
     notify("Fragmento grabado en 0G ✓");
-  }, [startDialog, notify]);
+  }, [startDialog, notify, levelIdx]);
 
-  // Interact with NPC
   const interactNPC = useCallback((npc: NPC) => {
-    const text = npc.dialogues[npc.currentDialogue] || npc.dialogues[0];
-    startDialog(npc.name, text);
+    startDialog(npc.name, npc.dialogues[npc.currentDialogue] || npc.dialogues[0]);
     npc.currentDialogue = Math.min(npc.currentDialogue + 1, npc.dialogues.length - 1);
   }, [startDialog]);
 
-  // Load next level
   const loadLevel = useCallback((idx: number) => {
     if (idx >= LEVELS.length) { setGameComplete(true); return; }
-    levelRef.current = idx;
     setLevelIdx(idx);
-    setLevelName(LEVELS[idx].name);
     resetParticles();
-    const newLevel = JSON.parse(JSON.stringify(LEVELS[idx]));
+    const newLevel = deepCopy(LEVELS[idx]);
     setLevelData(newLevel);
-    playerRef.current.x = 50;
-    playerRef.current.y = 400;
-    playerRef.current.velocityX = 0;
-    playerRef.current.velocityY = 0;
-    playerRef.current.memoryFragments = 0;
-    // Keep global collected set — don't reset
+    setPlayer(p => ({ ...p, x: 100, y: newLevel.groundY - 60, velocityX: 0, velocityY: 0, memoryFragments: 0, health: p.maxHealth, isDead: false, isInvincible: false }));
+    camRef.current = { x: 0, y: 0 };
   }, []);
 
-  // Handle interaction key
+  const restartLevel = useCallback(() => {
+    setDeaths(d => d + 1);
+    loadLevel(levelIdx);
+  }, [loadLevel, levelIdx]);
+
   const handleInteract = useCallback(() => {
     if (dialogActive) { closeDialog(); return; }
-
-    const level = levelData;
-    const obj = findNearbyObject(playerRef.current, level.objects);
+    if (playerRef.current.isDead) return;
+    const obj = findNearbyObject(playerRef.current, levelData.objects);
     if (obj && !obj.collected) { interactObject(obj); return; }
-
-    const npc = findNearbyNPC(playerRef.current, level.npcs);
+    const npc = findNearbyNPC(playerRef.current, levelData.npcs);
     if (npc) { interactNPC(npc); return; }
-
-    // Check door
-    const door = checkDoor(playerRef.current, level.doors, collectedRef.current);
-    if (door && !door.locked) {
-      notify(`Entrando al Acto ${door.leadsToLevel}...`);
-      setTimeout(() => loadLevel(door.leadsToLevel - 1), 1500);
-      return;
-    }
+    const door = checkDoor(playerRef.current, levelData.doors, collectedRef.current);
+    if (door && !door.locked) { notify(`Entrando al Acto ${door.leadsToLevel}...`); setTimeout(() => loadLevel(door.leadsToLevel - 1), 1200); }
   }, [dialogActive, closeDialog, levelData, interactObject, interactNPC, loadLevel, notify]);
 
   // Keyboard
@@ -192,31 +153,57 @@ export function GameEngine() {
       lastTimeRef.current = timestamp;
       timeRef.current += dt;
 
-      if (!dialogActive) {
-        updatePlayer(playerRef.current, inputRef.current, levelData.platforms, dt, timeRef.current);
+      if (!dialogActive && !playerRef.current.isDead) {
+        const inp = inputRef.current;
+        const updated = updatePlayer(
+          playerRef.current, inp.left, inp.right, inp.jump,
+          levelData.platforms, dt, timeRef.current, canvas.height
+        );
 
-        // Camera follow
-        camRef.current.x += (playerRef.current.x - camRef.current.x - canvas.width / 2 + 100) * 0.08;
-        camRef.current.y += (playerRef.current.y - camRef.current.y - canvas.height / 2 + 50) * 0.05;
-        if (camRef.current.x < 0) camRef.current.x = 0;
+        // Check if fell off
+        if (updated.y > canvas.height + 100) {
+          const respawned = respawnPlayer(updated, levelData.checkpoints);
+          if (updated.isDead) {
+            setPlayer({ ...respawned, isDead: true, health: 0 });
+          } else {
+            setPlayer(respawned);
+            notify("Has caído... -25 vida");
+          }
+        } else {
+          setPlayer(updated);
+        }
+
+        // Update checkpoints
+        updateCheckpoints(updated, levelData.checkpoints);
+
+        // Camera follow with bounds
+        const targetX = updated.x - canvas.width / 2 + 100;
+        const targetY = updated.y - canvas.height / 2 + 50;
+        camRef.current.x += (targetX - camRef.current.x) * 0.1;
+        camRef.current.y += (targetY - camRef.current.y) * 0.08;
+        camRef.current.x = Math.max(0, Math.min(camRef.current.x, levelData.levelWidth - canvas.width));
+        camRef.current.y = Math.max(-100, Math.min(camRef.current.y, 200));
+
+        // Door lock check
+        for (const door of levelData.doors) {
+          door.locked = !door.requiredObjects.every((id: string) => collectedRef.current.has(id));
+        }
+
+        // Level 5 completion
+        if (levelIdx === 4 && levelData.objects.every((o: InteractiveObject) => o.collected || collectedRef.current.has(o.id))) {
+          if (!gameComplete) setGameComplete(true);
+        }
       }
 
+      // Render
       const nearObj = findNearbyObject(playerRef.current, levelData.objects);
       const nearNPC = findNearbyNPC(playerRef.current, levelData.npcs);
-
       render(ctx, levelData, playerRef.current, camRef.current, timeRef.current, nearObj, nearNPC, collectedRef.current);
 
-      // Check if all level objects collected — update door state
-      for (const door of levelData.doors) {
-        door.locked = !door.requiredObjects.every((id: string) => collectedRef.current.has(id));
-      }
-
-      // Auto-complete level 5 when all objects collected
-      if (levelRef.current === 4) {
-        const allDone = levelData.objects.every((o: InteractiveObject) => o.collected || collectedRef.current.has(o.id));
-        if (allDone && !gameComplete) {
-          setGameComplete(true);
-        }
+      // Damage flash overlay
+      if (playerRef.current.isInvincible) {
+        ctx.fillStyle = "rgba(179, 0, 0, 0.12)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
       rafRef.current = requestAnimationFrame(loop);
@@ -224,28 +211,32 @@ export function GameEngine() {
 
     rafRef.current = requestAnimationFrame(loop);
     return () => { cancelAnimationFrame(rafRef.current); window.removeEventListener("resize", resize); };
-  }, [dialogActive, levelData, gameComplete]);
+  }, [dialogActive, levelData, levelIdx, gameComplete]);
 
-  // Game complete
+  // Completion screen
   if (gameComplete) {
     return (
-      <div style={{
-        width: "100vw", height: "100vh", background: "#000", display: "flex",
-        flexDirection: "column", alignItems: "center", justifyContent: "center",
-        fontFamily: "'Special Elite', serif",
-      }}>
+      <div style={{ width: "100vw", height: "100vh", background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif" }}>
         <div style={{ color: "#FF1A1A", fontSize: 12, letterSpacing: "0.3em", marginBottom: 24 }}>MEMORIA COMPLETA</div>
         <div style={{ color: "#E5DEC9", fontSize: 28, marginBottom: 16 }}>Has recordado todo</div>
-        <div style={{ color: "#8C8275", fontSize: 14, marginBottom: 40, textAlign: "center", maxWidth: 400 }}>
-          15 fragmentos de memoria recuperados. Tu identidad ha sido grabada permanentemente en 0G Chain.
-        </div>
-        <button onClick={() => window.location.href = "/"}
-          style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", letterSpacing: "0.15em" }}>
-          VOLVER AL INICIO
-        </button>
+        <div style={{ color: "#8C8275", fontSize: 14, marginBottom: 8 }}>15 fragmentos · {deaths} muertes</div>
+        <button onClick={() => window.location.href = "/"} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", marginTop: 24 }}>VOLVER</button>
       </div>
     );
   }
+
+  // Death screen
+  if (player.isDead) {
+    return (
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", zIndex: 100 }}>
+        <div style={{ color: "#FF1A1A", fontSize: 48, textShadow: "0 0 20px #FF1A1A", marginBottom: 16 }}>MEMORIA PERDIDA</div>
+        <div style={{ color: "#8C8275", fontSize: 14, marginBottom: 32 }}>Muertes: {deaths + 1}</div>
+        <button onClick={restartLevel} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "12px 32px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", letterSpacing: "0.15em" }}>RECORDAR DE NUEVO</button>
+      </div>
+    );
+  }
+
+  const levelCollected = levelData.objects.filter((o: InteractiveObject) => o.collected || collectedRef.current.has(o.id)).length;
 
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", background: "#000" }}>
@@ -254,83 +245,55 @@ export function GameEngine() {
       {/* HUD */}
       <div style={{ position: "absolute", top: 16, left: 20, zIndex: 10 }}>
         <div style={{ color: "#B30000", fontSize: 18, letterSpacing: "0.2em", textShadow: "0 0 10px #FF1A1A", fontFamily: "'Special Elite', serif" }}>MONGLI</div>
-        <div style={{ color: "#555", fontSize: 11, letterSpacing: "0.1em", marginTop: 4, fontFamily: "monospace" }}>
-          ACTO {levelIdx + 1} · {levelName}
+        <div style={{ color: "#555", fontSize: 11, letterSpacing: "0.1em", marginTop: 4, fontFamily: "monospace" }}>ACTO {levelIdx + 1} · {levelData.name}</div>
+        {/* Health bar */}
+        <div style={{ width: 120, height: 6, background: "#1a1a1a", borderRadius: 3, marginTop: 6, overflow: "hidden" }}>
+          <div style={{ width: `${player.health}%`, height: "100%", background: player.health > 50 ? "#B30000" : player.health > 25 ? "#ff6600" : "#ff0000", boxShadow: `0 0 6px ${player.health > 50 ? "#B30000" : "#ff0000"}`, transition: "width 0.3s" }} />
         </div>
+        <div style={{ color: "#333", fontSize: 10, letterSpacing: "0.1em", marginTop: 4, fontFamily: "monospace" }}>{player.health}/100 · MUERTES: {deaths}</div>
       </div>
 
+      {/* Memory counter */}
       <div style={{ position: "absolute", top: 16, right: 20, zIndex: 10, display: "flex", gap: 6, alignItems: "center" }}>
         <span style={{ color: "#555", fontSize: 11, marginRight: 8, fontFamily: "monospace" }}>MEMORIA</span>
         {[0, 1, 2].map(i => (
           <div key={i} style={{
             width: 10, height: 10, borderRadius: "50%",
-            border: `1px solid ${i < (collected % 3 || (collected > 0 && collected % 3 === 0 ? 3 : 0)) ? "#FF1A1A" : "#333"}`,
-            background: i < (collected % 3 || (collected > 0 && collected % 3 === 0 ? 3 : 0)) ? "#FF1A1A" : "transparent",
-            boxShadow: i < (collected % 3 || (collected > 0 && collected % 3 === 0 ? 3 : 0)) ? "0 0 6px #FF1A1A" : "none",
+            border: `1px solid ${i < levelCollected ? "#FF1A1A" : "#333"}`,
+            background: i < levelCollected ? "#FF1A1A" : "transparent",
+            boxShadow: i < levelCollected ? "0 0 6px #FF1A1A" : "none",
           }} />
         ))}
       </div>
 
-      {/* Notification */}
       {notification && (
-        <div style={{
-          position: "absolute", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 20,
-          background: "rgba(0,0,0,0.9)", border: "1px solid #333", borderRadius: 4,
-          padding: "8px 20px", color: "#E5DEC9", fontSize: 12, fontFamily: "monospace",
-        }}>{notification}</div>
+        <div style={{ position: "absolute", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 20, background: "rgba(0,0,0,0.9)", border: "1px solid #333", borderRadius: 4, padding: "8px 20px", color: "#E5DEC9", fontSize: 12, fontFamily: "monospace" }}>{notification}</div>
       )}
 
-      {/* Dialog Box */}
+      {/* Dialog */}
       {dialogActive && (
-        <div style={{
-          position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)",
-          width: "80%", maxWidth: 600, zIndex: 30,
-          background: "rgba(0,0,0,0.95)", border: "1px solid #B30000", borderRadius: 4,
-          padding: "20px 24px", fontFamily: "'Special Elite', serif",
-          boxShadow: "0 0 30px rgba(179,0,0,0.3)",
-        }}>
-          <div style={{ color: "#B30000", fontSize: 11, letterSpacing: "0.2em", marginBottom: 12 }}>
-            {dialogSpeaker} {loading && <span style={{ color: "#555" }}>...</span>}
-          </div>
+        <div style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", width: "80%", maxWidth: 600, zIndex: 30, background: "rgba(0,0,0,0.95)", border: "1px solid #B30000", borderRadius: 4, padding: "20px 24px", fontFamily: "'Special Elite', serif", boxShadow: "0 0 30px rgba(179,0,0,0.3)" }}>
+          <div style={{ color: "#B30000", fontSize: 11, letterSpacing: "0.2em", marginBottom: 12 }}>{dialogSpeaker} {loading && "..."}</div>
           <p style={{ color: "#E5DEC9", fontSize: 15, lineHeight: 1.8, margin: 0 }}>
             {dialogDisplay}
             {!dialogDone && <span style={{ animation: "blink 1s infinite" }}>|</span>}
           </p>
-          {dialogDone && (
-            <div style={{ color: "#444", fontSize: 11, marginTop: 12, textAlign: "right", animation: "pulse 1.5s infinite" }}>
-              [E] CONTINUAR
-            </div>
-          )}
+          {dialogDone && <div style={{ color: "#444", fontSize: 11, marginTop: 12, textAlign: "right", animation: "pulse 1.5s infinite" }}>[E] CONTINUAR</div>}
         </div>
       )}
 
       {/* Mobile controls */}
-      <div style={{
-        position: "absolute", bottom: 16, left: 16, zIndex: 20, display: "flex", gap: 8,
-      }} className="sm:hidden">
-        {[
-          { label: "←", action: () => { inputRef.current.left = true; setTimeout(() => inputRef.current.left = false, 150); } },
-          { label: "→", action: () => { inputRef.current.right = true; setTimeout(() => inputRef.current.right = false, 150); } },
-        ].map(btn => (
-          <button key={btn.label}
-            onTouchStart={() => { if (btn.label === "←") inputRef.current.left = true; else inputRef.current.right = true; }}
-            onTouchEnd={() => { if (btn.label === "←") inputRef.current.left = false; else inputRef.current.right = false; }}
-            style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#E5DEC9", fontSize: 20, cursor: "pointer" }}>
-            {btn.label}
-          </button>
-        ))}
+      <div style={{ position: "absolute", bottom: 16, left: 16, zIndex: 20, display: "flex", gap: 8 }} className="sm:hidden">
+        <button onTouchStart={() => inputRef.current.left = true} onTouchEnd={() => inputRef.current.left = false}
+          style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#E5DEC9", fontSize: 20 }}>←</button>
+        <button onTouchStart={() => inputRef.current.right = true} onTouchEnd={() => inputRef.current.right = false}
+          style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#E5DEC9", fontSize: 20 }}>→</button>
       </div>
       <div style={{ position: "absolute", bottom: 16, right: 16, zIndex: 20, display: "flex", gap: 8 }} className="sm:hidden">
-        <button
-          onTouchStart={() => inputRef.current.jump = true}
-          onTouchEnd={() => inputRef.current.jump = false}
-          style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#E5DEC9", fontSize: 20, cursor: "pointer" }}>
-          ↑
-        </button>
+        <button onTouchStart={() => inputRef.current.jump = true} onTouchEnd={() => inputRef.current.jump = false}
+          style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#E5DEC9", fontSize: 20 }}>↑</button>
         <button onClick={handleInteract}
-          style={{ width: 56, height: 56, background: "rgba(179,0,0,0.2)", border: "1px solid #B30000", borderRadius: 8, color: "#FF1A1A", fontSize: 16, cursor: "pointer" }}>
-          ⚡
-        </button>
+          style={{ width: 56, height: 56, background: "rgba(179,0,0,0.2)", border: "1px solid #B30000", borderRadius: 8, color: "#FF1A1A", fontSize: 16 }}>⚡</button>
       </div>
 
       <style>{`
