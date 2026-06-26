@@ -22,7 +22,7 @@ export function GameEngine() {
   const [levelIdx, setLevelIdx] = useState(0);
   const [levelData, setLevelData] = useState(() => deepCopy(LEVELS[0]));
   const [player, setPlayer] = useState<Player>({
-    x: 100, y: 460, width: 32, height: 50, velocityX: 0, velocityY: 0,
+    x: 100, y: 360, width: 32, height: 50, velocityX: 0, velocityY: 0,
     isOnGround: false, facingRight: true, state: "idle", memoryFragments: 0, blinkTimer: 3,
     health: 100, maxHealth: 100, isInvincible: false, invincibleTimer: 0, isDead: false,
   });
@@ -372,11 +372,11 @@ export function GameEngine() {
   // Completion screen
   if (gameComplete) {
     return (
-      <div style={{ width: "100vw", height: "100vh", background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif" }}>
+      <div className="game-page" style={{ width: "100vw", height: "100vh", background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", cursor: "crosshair" }}>
         <div style={{ color: "#FF1A1A", fontSize: 12, letterSpacing: "0.3em", marginBottom: 24 }}>MEMORIA COMPLETA</div>
         <div style={{ color: "#E5DEC9", fontSize: 28, marginBottom: 16 }}>Has recordado todo</div>
         <div style={{ color: "#8C8275", fontSize: 14, marginBottom: 8 }}>15 fragmentos · {deaths} muertes</div>
-        <button onClick={() => window.location.href = "/"} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", marginTop: 24 }}>VOLVER</button>
+        <button onClick={() => window.location.href = "/"} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "crosshair", fontFamily: "'Special Elite', serif", marginTop: 24 }}>VOLVER</button>
       </div>
     );
   }
@@ -411,7 +411,7 @@ export function GameEngine() {
   if (showCompletion) {
     const fmt = `${Math.floor(levelTime / 60)}:${String(levelTime % 60).padStart(2, "0")}`;
     return (
-      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", zIndex: 100 }}>
+      <div className="game-page" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", zIndex: 100, cursor: "crosshair", overflowY: "auto", padding: "20px" }}>
         <div style={{ color: "#B30000", fontSize: 11, letterSpacing: "0.3em", marginBottom: 8 }}>NIVEL {levelIdx + 1} COMPLETADO</div>
         <div style={{ color: "#E5DEC9", fontSize: 28, marginBottom: 4 }}>{levelData.name}</div>
         <div style={{ color: "#555", fontSize: 13, marginBottom: 28 }}>{fmt} · {deaths} muertes · {stompCount} aturdidos</div>
@@ -433,11 +433,11 @@ export function GameEngine() {
           <div style={{ borderTop: "1px solid #2a2a2a", marginTop: 10, paddingTop: 10, textAlign: "center", color: "#E5DEC9", fontSize: 20, letterSpacing: "0.1em" }}>TOTAL: {levelScore}</div>
         </div>
         {!isSigning && !isSigned && chainWrite.isConnected && chainWrite.hasContract && (
-          <button onClick={handleSign} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", letterSpacing: "0.2em", boxShadow: "0 0 20px rgba(179,0,0,0.3)", marginBottom: 12 }}>⛓ GRABAR EN 0G CHAIN</button>
+          <button onClick={handleSign} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "crosshair", fontFamily: "'Special Elite', serif", letterSpacing: "0.2em", boxShadow: "0 0 20px rgba(179,0,0,0.3)", marginBottom: 12 }}>⛓ GRABAR EN 0G CHAIN</button>
         )}
         {isSigning && <div style={{ color: "#B30000", fontSize: 13, letterSpacing: "0.15em", animation: "pulse 1s infinite" }}>FIRMANDO EN METAMASK...</div>}
         {isSigned && signTxHash && <div style={{ color: "#4CAF50", fontSize: 13, marginBottom: 16 }}>✓ GRABADO EN 0G · {signTxHash.slice(0, 10)}...</div>}
-        <button onClick={handleNextLevel} style={{ background: isSigned || !chainWrite.isConnected ? "#B30000" : "none", border: isSigned || !chainWrite.isConnected ? "none" : "none", color: isSigned || !chainWrite.isConnected ? "#E5DEC9" : "#333", padding: "14px 36px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", letterSpacing: "0.2em", marginTop: isSigned ? 0 : 16 }}>
+        <button onClick={handleNextLevel} style={{ background: isSigned || !chainWrite.isConnected ? "#B30000" : "none", border: isSigned || !chainWrite.isConnected ? "none" : "none", color: isSigned || !chainWrite.isConnected ? "#E5DEC9" : "#333", padding: "14px 36px", fontSize: 14, cursor: "crosshair", fontFamily: "'Special Elite', serif", letterSpacing: "0.2em", marginTop: isSigned ? 0 : 16 }}>
           {isSigned || !chainWrite.isConnected ? "SIGUIENTE ACTO →" : "continuar sin firmar →"}
         </button>
       </div>
@@ -447,10 +447,10 @@ export function GameEngine() {
   // Death screen
   if (player.isDead) {
     return (
-      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", zIndex: 100 }}>
+      <div className="game-page" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", zIndex: 100, cursor: "crosshair" }}>
         <div style={{ color: "#FF1A1A", fontSize: 48, textShadow: "0 0 20px #FF1A1A", marginBottom: 16 }}>MEMORIA PERDIDA</div>
         <div style={{ color: "#8C8275", fontSize: 14, marginBottom: 32 }}>Muertes: {deaths + 1}</div>
-        <button onClick={restartLevel} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "12px 32px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", letterSpacing: "0.15em" }}>RECORDAR DE NUEVO</button>
+        <button onClick={restartLevel} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "12px 32px", fontSize: 14, cursor: "crosshair", fontFamily: "'Special Elite', serif", letterSpacing: "0.15em" }}>RECORDAR DE NUEVO</button>
       </div>
     );
   }
