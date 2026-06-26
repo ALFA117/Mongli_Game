@@ -135,6 +135,14 @@ export interface Enemy {
   stunnedTimer: number;
 }
 
+export interface LevelCompletion {
+  levelId: number;
+  fragmentsCollected: string[];
+  enemiesStomped: number;
+  deaths: number;
+  timeSeconds: number;
+}
+
 export const GRAVITY = 900;
 export const MAX_FALL_SPEED = 600;
 export const MOVE_SPEED = 200;

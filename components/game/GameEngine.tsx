@@ -5,6 +5,8 @@ import type { Player, InputState, InteractiveObject, NPC, Enemy } from "@/lib/ga
 import { LEVELS } from "@/lib/game/levels";
 import { updatePlayer, findNearbyObject, findNearbyNPC, checkDoor, respawnPlayer, updateCheckpoints, updateEnemy, checkPlayerEnemyCollision } from "@/lib/game/physics";
 import { render, resetParticles, spawnFX } from "@/lib/game/renderer";
+import { initGameAudio, jumpSound, landSound, footstepSound, damageSound, collectSound, checkpointSound, enemyDetectSound, startGameMusic, stopGameMusic } from "@/lib/game/gameAudio";
+import { useChainWrite } from "@/lib/useChainWrite";
 
 function deepCopy<T>(obj: T): T { return JSON.parse(JSON.stringify(obj)); }
 
@@ -13,6 +15,7 @@ export function GameEngine() {
   const inputRef = useRef<InputState>({ left: false, right: false, jump: false, interact: false });
   const camRef = useRef({ x: 0, y: 0 });
   const rafRef = useRef(0);
+  const chainWrite = useChainWrite();
   const lastTimeRef = useRef(0);
   const timeRef = useRef(0);
 
@@ -38,6 +41,18 @@ export function GameEngine() {
   const [dialogDone, setDialogDone] = useState(false);
   const [notification, setNotification] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
+  const [isSigned, setIsSigned] = useState(false);
+  const [signTxHash, setSignTxHash] = useState("");
+  const [introPhase, setIntroPhase] = useState(0); // 0=title, 1=fadein, 2=drop, 3=mission, 4=play
+  const [introActive, setIntroActive] = useState(true);
+  const [collectedTexts, setCollectedTexts] = useState<string[]>([]);
+  const [stompCount, setStompCount] = useState(0);
+  const levelStartRef = useRef(Date.now());
+  const footstepTimerRef = useRef(0);
+  const prevVelYRef = useRef(0);
+  const prevEnemyStates = useRef<Record<string, string>>({});
   const twRef = useRef<ReturnType<typeof setInterval>>();
 
   const notify = useCallback((text: string) => {
@@ -77,6 +92,7 @@ export function GameEngine() {
       });
       const data = await res.json();
       const text = data.fragment?.text || "La memoria se resiste...";
+      setCollectedTexts(prev => [...prev, text]);
       if (twRef.current) clearInterval(twRef.current);
       setDialogDisplay(""); setDialogDone(false);
       let i = 0;
@@ -84,8 +100,9 @@ export function GameEngine() {
     } catch {
       if (twRef.current) clearInterval(twRef.current);
       setDialogDisplay("La memoria parpadea..."); setDialogDone(true);
+      setCollectedTexts(prev => [...prev, "La memoria parpadea..."]);
     } finally { setLoading(false); }
-    notify("Fragmento grabado en 0G ✓");
+    collectSound(); notify("Fragmento grabado en 0G ✓");
   }, [startDialog, notify, levelIdx]);
 
   const interactNPC = useCallback((npc: NPC) => {
@@ -94,13 +111,22 @@ export function GameEngine() {
   }, [startDialog]);
 
   const loadLevel = useCallback((idx: number) => {
-    if (idx >= LEVELS.length) { setGameComplete(true); return; }
+    if (idx >= LEVELS.length) { setGameComplete(true); stopGameMusic(); return; }
     setLevelIdx(idx);
     resetParticles();
     const newLevel = deepCopy(LEVELS[idx]);
     setLevelData(newLevel);
     setPlayer(p => ({ ...p, x: 100, y: newLevel.groundY - 60, velocityX: 0, velocityY: 0, memoryFragments: 0, health: p.maxHealth, isDead: false, isInvincible: false }));
     camRef.current = { x: 0, y: 0 };
+    setShowCompletion(false); setIsSigning(false); setIsSigned(false); setSignTxHash("");
+    setCollectedTexts([]); setStompCount(0);
+    levelStartRef.current = Date.now();
+    setIntroActive(true); setIntroPhase(0);
+    setTimeout(() => setIntroPhase(1), 1200);
+    setTimeout(() => setIntroPhase(2), 2200);
+    setTimeout(() => setIntroPhase(3), 3200);
+    setTimeout(() => { setIntroPhase(4); setIntroActive(false); }, 4500);
+    startGameMusic(idx + 1);
   }, []);
 
   const restartLevel = useCallback(() => {
@@ -116,7 +142,7 @@ export function GameEngine() {
     const npc = findNearbyNPC(playerRef.current, levelData.npcs);
     if (npc) { interactNPC(npc); return; }
     const door = checkDoor(playerRef.current, levelData.doors, collectedRef.current);
-    if (door && !door.locked) { notify(`Entrando al Acto ${door.leadsToLevel}...`); setTimeout(() => loadLevel(door.leadsToLevel - 1), 1200); }
+    if (door && !door.locked) { setShowCompletion(true); }
   }, [dialogActive, closeDialog, levelData, interactObject, interactNPC, loadLevel, notify]);
 
   // Keyboard
@@ -124,7 +150,7 @@ export function GameEngine() {
     const down = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft" || e.key === "a") inputRef.current.left = true;
       if (e.key === "ArrowRight" || e.key === "d") inputRef.current.right = true;
-      if (e.key === "ArrowUp" || e.key === "w" || e.key === " ") { inputRef.current.jump = true; e.preventDefault(); }
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === " ") { inputRef.current.jump = true; jumpSound(); e.preventDefault(); }
       if (e.key === "e" || e.key === "Enter") handleInteract();
     };
     const up = (e: KeyboardEvent) => {
@@ -132,6 +158,7 @@ export function GameEngine() {
       if (e.key === "ArrowRight" || e.key === "d") inputRef.current.right = false;
       if (e.key === "ArrowUp" || e.key === "w" || e.key === " ") inputRef.current.jump = false;
     };
+    initGameAudio();
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
@@ -174,7 +201,21 @@ export function GameEngine() {
         }
 
         // Update checkpoints
+        // Landing sound
+        if (prevVelYRef.current > 150 && updated.isOnGround) landSound();
+        prevVelYRef.current = updated.velocityY;
+
+        // Footstep sound
+        if (updated.state === "walking" && updated.isOnGround) {
+          footstepTimerRef.current -= dt;
+          if (footstepTimerRef.current <= 0) { footstepSound(); footstepTimerRef.current = 0.3; }
+        }
+
+        // Checkpoint activation sound
+        const prevActivated = levelData.checkpoints.filter((c: { activated: boolean }) => c.activated).length;
         updateCheckpoints(updated, levelData.checkpoints);
+        const nowActivated = levelData.checkpoints.filter((c: { activated: boolean }) => c.activated).length;
+        if (nowActivated > prevActivated) checkpointSound();
 
         // Update enemies
         for (let i = 0; i < levelData.enemies.length; i++) {
@@ -184,14 +225,14 @@ export function GameEngine() {
             levelData.enemies[i] = { ...levelData.enemies[i], state: "stunned", stunnedTimer: 3, velocityX: 0 };
             updated.velocityY = -350;
             spawnFX(levelData.enemies[i].x + 14, levelData.enemies[i].y, "spark", 6);
-            notify("Enemigo aturdido");
+            notify("Enemigo aturdido"); jumpSound(); setStompCount(s => s + 1);
           } else if (col.hit) {
             updated.health -= levelData.enemies[i].damage;
             updated.isInvincible = true;
             updated.invincibleTimer = 1.5;
             updated.velocityX = updated.x > levelData.enemies[i].x ? 200 : -200;
             updated.velocityY = -200;
-            spawnFX(updated.x + 16, updated.y + 25, "blood", 4);
+            spawnFX(updated.x + 16, updated.y + 25, "blood", 4); damageSound();
             if (updated.health <= 0) { updated.health = 0; updated.isDead = true; }
           }
         }
@@ -226,6 +267,35 @@ export function GameEngine() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
+      // Danger border (enemy chasing nearby)
+      let minDist = 9999;
+      for (const en of levelData.enemies) {
+        if (en.state === "chase") {
+          const d = Math.sqrt(Math.pow(en.x - playerRef.current.x, 2) + Math.pow(en.y - playerRef.current.y, 2));
+          if (d < minDist) minDist = d;
+        }
+      }
+      if (minDist < 300) {
+        const danger = Math.max(0, 1 - minDist / 300);
+        ctx.strokeStyle = `rgba(255, 26, 26, ${danger * 0.6})`;
+        ctx.lineWidth = 4;
+        ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+      }
+
+      // Intro overlay
+      if (introActive) {
+        ctx.fillStyle = `rgba(0,0,0,${introPhase < 2 ? 0.9 : 0.5 - introPhase * 0.1})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (introPhase <= 1) {
+          ctx.fillStyle = "#B30000"; ctx.font = "14px monospace"; ctx.textAlign = "center";
+          ctx.fillText(`ACTO ${levelIdx + 1} · ${levelData.name}`, canvas.width / 2, canvas.height / 2);
+        }
+        if (introPhase === 3) {
+          ctx.fillStyle = "#8C8275"; ctx.font = "12px monospace"; ctx.textAlign = "center";
+          ctx.fillText("Encuentra los fragmentos de tu memoria", canvas.width / 2, canvas.height / 2 + 30);
+        }
+      }
+
       rafRef.current = requestAnimationFrame(loop);
     };
 
@@ -241,6 +311,52 @@ export function GameEngine() {
         <div style={{ color: "#E5DEC9", fontSize: 28, marginBottom: 16 }}>Has recordado todo</div>
         <div style={{ color: "#8C8275", fontSize: 14, marginBottom: 8 }}>15 fragmentos · {deaths} muertes</div>
         <button onClick={() => window.location.href = "/"} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", marginTop: 24 }}>VOLVER</button>
+      </div>
+    );
+  }
+
+  // Level completion signing screen
+  const levelTime = Math.floor((Date.now() - levelStartRef.current) / 1000);
+  const handleSign = async () => {
+    setIsSigning(true);
+    try {
+      const data = JSON.stringify({ levelId: levelIdx + 1, deaths, time: levelTime });
+      const encoder = new TextEncoder();
+      const hashBuf = await crypto.subtle.digest("SHA-256", encoder.encode(data));
+      const hash = "0x" + Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+      const tx = await chainWrite.saveFragment(hash, (levelIdx + 1) * 100);
+      if (tx) setSignTxHash(tx);
+      setIsSigned(true);
+    } catch { setIsSigned(true); }
+    setIsSigning(false);
+  };
+  const handleNextLevel = () => {
+    const nextDoor = levelData.doors[0];
+    if (nextDoor) loadLevel(nextDoor.leadsToLevel - 1);
+    else setGameComplete(true);
+  };
+
+  if (showCompletion) {
+    const fmt = `${Math.floor(levelTime / 60)}:${String(levelTime % 60).padStart(2, "0")}`;
+    return (
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", zIndex: 100 }}>
+        <div style={{ color: "#B30000", fontSize: 11, letterSpacing: "0.3em", marginBottom: 8 }}>NIVEL {levelIdx + 1} COMPLETADO</div>
+        <div style={{ color: "#E5DEC9", fontSize: 28, marginBottom: 4 }}>{levelData.name}</div>
+        <div style={{ color: "#555", fontSize: 13, marginBottom: 28 }}>{fmt} · {deaths} muertes · {stompCount} aturdidos</div>
+        <div style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 8, padding: 20, marginBottom: 24, maxWidth: 400, width: "90%" }}>
+          <div style={{ color: "#444", fontSize: 10, letterSpacing: "0.2em", marginBottom: 12 }}>FRAGMENTOS RECUPERADOS</div>
+          {collectedTexts.map((t, i) => (
+            <div key={i} style={{ color: "#8C8275", fontSize: 12, lineHeight: 1.5, marginBottom: 8, paddingLeft: 12, borderLeft: "2px solid #B30000" }}>{t.slice(0, 80)}...</div>
+          ))}
+        </div>
+        {!isSigning && !isSigned && chainWrite.isConnected && chainWrite.hasContract && (
+          <button onClick={handleSign} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", letterSpacing: "0.2em", boxShadow: "0 0 20px rgba(179,0,0,0.3)", marginBottom: 12 }}>⛓ GRABAR EN 0G CHAIN</button>
+        )}
+        {isSigning && <div style={{ color: "#B30000", fontSize: 13, letterSpacing: "0.15em", animation: "pulse 1s infinite" }}>FIRMANDO EN METAMASK...</div>}
+        {isSigned && signTxHash && <div style={{ color: "#4CAF50", fontSize: 13, marginBottom: 16 }}>✓ GRABADO EN 0G · {signTxHash.slice(0, 10)}...</div>}
+        <button onClick={handleNextLevel} style={{ background: isSigned || !chainWrite.isConnected ? "#B30000" : "none", border: isSigned || !chainWrite.isConnected ? "none" : "none", color: isSigned || !chainWrite.isConnected ? "#E5DEC9" : "#333", padding: "14px 36px", fontSize: 14, cursor: "pointer", fontFamily: "'Special Elite', serif", letterSpacing: "0.2em", marginTop: isSigned ? 0 : 16 }}>
+          {isSigned || !chainWrite.isConnected ? "SIGUIENTE ACTO →" : "continuar sin firmar →"}
+        </button>
       </div>
     );
   }
@@ -284,6 +400,22 @@ export function GameEngine() {
             boxShadow: i < levelCollected ? "0 0 6px #FF1A1A" : "none",
           }} />
         ))}
+      </div>
+
+      {/* Mini map */}
+      <div style={{ position: "absolute", top: 56, right: 20, zIndex: 10 }}>
+        <div style={{ width: 150, height: 30, background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 4, position: "relative", overflow: "hidden" }}>
+          {/* Player dot */}
+          <div style={{ position: "absolute", left: `${(player.x / levelData.levelWidth) * 100}%`, top: "50%", transform: "translateY(-50%)", width: 4, height: 4, borderRadius: "50%", background: "#FF1A1A", boxShadow: "0 0 4px #FF1A1A" }} />
+          {/* Object dots */}
+          {levelData.objects.filter((o: InteractiveObject) => !o.collected && !collectedRef.current.has(o.id)).map((o: InteractiveObject) => (
+            <div key={o.id} style={{ position: "absolute", left: `${(o.x / levelData.levelWidth) * 100}%`, top: "50%", transform: "translateY(-50%)", width: 3, height: 3, borderRadius: "50%", background: "#E5DEC9" }} />
+          ))}
+          {/* Enemy dots */}
+          {levelData.enemies.filter((en: Enemy) => en.state !== "dead").map((en: Enemy) => (
+            <div key={en.id} style={{ position: "absolute", left: `${(en.x / levelData.levelWidth) * 100}%`, top: "50%", transform: "translateY(-50%)", width: 3, height: 3, borderRadius: "50%", background: en.state === "chase" ? "#ff4444" : "#ff8800" }} />
+          ))}
+        </div>
       </div>
 
       {notification && (

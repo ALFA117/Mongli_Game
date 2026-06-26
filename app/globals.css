@@ -291,6 +291,13 @@ body {
     }
   }
 
+  /* ══════════ Game page cursor override ══════════ */
+  .game-page,
+  .game-page *,
+  .game-page canvas {
+    cursor: crosshair !important;
+  }
+
   /* ══════════ Accessibility ══════════ */
   .focus-visible-amber:focus-visible {
     outline: 2px solid #d4a244;
