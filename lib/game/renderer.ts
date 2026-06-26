@@ -54,6 +54,9 @@ export function render(
   // Parallax
   for (const layer of level.bgLayers) drawBgLayer(ctx, layer, cam);
 
+  // Level-specific visual details
+  drawLevelDetails(ctx, level, cam, time, W, H);
+
   // Ambient particles
   if (!ambientInit) initAmbient(level.ambientParticles, W);
   drawAmbientParticles(ctx, level.ambientParticles, cam, H);
@@ -442,4 +445,194 @@ function drawNPC(ctx: CanvasRenderingContext2D, npc: NPC, time: number) {
 function drawHint(ctx: CanvasRenderingContext2D, x: number, y: number, text: string) {
   ctx.fillStyle = "#B30000"; ctx.font = "11px monospace"; ctx.textAlign = "center";
   ctx.shadowBlur = 6; ctx.shadowColor = "#FF1A1A"; ctx.fillText(text, x, y); ctx.shadowBlur = 0;
+}
+
+// ─── Level-specific visual details ───
+function drawLevelDetails(ctx: CanvasRenderingContext2D, level: Level, cam: Camera, time: number, W: number, H: number) {
+  if (level.id === 1) drawHotelDetails(ctx, level, cam, time, W, H);
+  else if (level.id === 2) drawAlleyDetails(ctx, level, cam, time, W, H);
+}
+
+function drawHotelDetails(ctx: CanvasRenderingContext2D, level: Level, cam: Camera, time: number, W: number, H: number) {
+  const G = level.groundY;
+
+  // Moon
+  ctx.fillStyle = "#f0e8c0";
+  ctx.globalAlpha = 0.4;
+  ctx.beginPath(); ctx.arc(200 - cam.x * 0.02, 60, 18, 0, Math.PI * 2); ctx.fill();
+  const halo = ctx.createRadialGradient(200 - cam.x * 0.02, 60, 10, 200 - cam.x * 0.02, 60, 70);
+  halo.addColorStop(0, "rgba(240,232,192,0.06)"); halo.addColorStop(1, "transparent");
+  ctx.fillStyle = halo; ctx.globalAlpha = 1;
+  ctx.fillRect(130 - cam.x * 0.02, 0, 140, 140);
+
+  // Stars
+  ctx.fillStyle = "#E5DEC9";
+  for (let i = 0; i < 40; i++) {
+    const sx = ((i * 137 + 50) % 1200) - cam.x * 0.01;
+    const sy = ((i * 97 + 30) % 200);
+    ctx.globalAlpha = 0.2 + Math.sin(time * 1.5 + i * 0.7) * 0.15;
+    ctx.fillRect(sx, sy, 1.5, 1.5);
+  }
+  ctx.globalAlpha = 1;
+
+  // Candelabros (lobby lights)
+  const lampXs = [300, 600, 900];
+  for (const lx of lampXs) {
+    const sx = lx - cam.x;
+    if (sx < -100 || sx > W + 100) continue;
+    // Chain
+    ctx.strokeStyle = "#2a2520"; ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, 150); ctx.stroke();
+    ctx.setLineDash([]);
+    // Light fixture
+    ctx.fillStyle = "#3a2a18"; ctx.fillRect(sx - 8, 148, 16, 6);
+    // Light cone
+    const lightG = ctx.createRadialGradient(sx, 160, 5, sx, 160, 80);
+    lightG.addColorStop(0, `rgba(255,200,80,${0.1 + Math.sin(time * 2 + lx * 0.01) * 0.03})`);
+    lightG.addColorStop(1, "transparent");
+    ctx.fillStyle = lightG; ctx.fillRect(sx - 80, 130, 160, 160);
+  }
+
+  // Wall paintings in pasillo
+  const paintings = [{ x: 1100, y: 200 }, { x: 1400, y: 220 }, { x: 1700, y: 210 }];
+  for (const p of paintings) {
+    const px = p.x - cam.x;
+    if (px < -60 || px > W + 60) continue;
+    ctx.fillStyle = "#3a2a10"; ctx.fillRect(px - 22, p.y - 17, 44, 34);
+    ctx.fillStyle = "#0f0a1a"; ctx.fillRect(px - 18, p.y - 13, 36, 26);
+    // Spot light above painting
+    const spotG = ctx.createLinearGradient(px, p.y - 30, px, p.y + 20);
+    spotG.addColorStop(0, "rgba(255,200,100,0.06)"); spotG.addColorStop(1, "transparent");
+    ctx.fillStyle = spotG; ctx.fillRect(px - 15, p.y - 30, 30, 50);
+  }
+
+  // Carpet in pasillo
+  ctx.fillStyle = "#1a0808";
+  ctx.fillRect(800 - cam.x, G - 6 - cam.y, 1200, 6);
+  ctx.strokeStyle = "#2a1010"; ctx.lineWidth = 0.5;
+  for (let cx = 800; cx < 2000; cx += 30) {
+    const sx = cx - cam.x;
+    ctx.beginPath(); ctx.moveTo(sx, G - 6 - cam.y); ctx.lineTo(sx, G - cam.y); ctx.stroke();
+  }
+
+  // Door light under doors in pasillo
+  for (const dx of [1000, 1150, 1300]) {
+    const sx = dx - cam.x;
+    if (sx < -50 || sx > W + 50) continue;
+    const dg = ctx.createLinearGradient(sx, G - cam.y, sx, G - 30 - cam.y);
+    dg.addColorStop(0, "rgba(255,200,100,0.06)"); dg.addColorStop(1, "transparent");
+    ctx.fillStyle = dg; ctx.fillRect(sx - 15, G - 30 - cam.y, 30, 30);
+  }
+
+  // Dust motes in light beams
+  ctx.fillStyle = "rgba(229,222,201,0.06)";
+  for (let i = 0; i < 25; i++) {
+    const dx = ((i * 197 + time * 15) % 1000) + 200 - cam.x;
+    const dy = 150 + Math.sin(time * 0.3 + i * 1.3) * 40;
+    ctx.fillRect(dx, dy, 2, 2);
+  }
+}
+
+function drawAlleyDetails(ctx: CanvasRenderingContext2D, level: Level, cam: Camera, time: number, W: number, H: number) {
+  const G = level.groundY;
+
+  // Storm clouds
+  ctx.globalAlpha = 0.08;
+  for (let i = 0; i < 4; i++) {
+    const cx = ((i * 400 + time * 5) % 2000) - cam.x * 0.03;
+    const cy = 40 + i * 25;
+    ctx.fillStyle = "#0a0f18";
+    ctx.beginPath();
+    ctx.arc(cx, cy, 60 + i * 15, 0, Math.PI * 2); ctx.fill();
+    ctx.arc(cx + 40, cy - 10, 40 + i * 10, 0, Math.PI * 2); ctx.fill();
+    ctx.arc(cx - 30, cy + 5, 45 + i * 8, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Distant lightning flash (random)
+  if (Math.sin(time * 0.7) > 0.995) {
+    ctx.fillStyle = "rgba(180,200,255,0.04)";
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Gas lamps
+  const lampPositions = [300, 700, 1100, 1500, 1900, 2300, 2700, 3100, 3500, 3900, 4300];
+  for (const lx of lampPositions) {
+    const sx = lx - cam.x;
+    if (sx < -100 || sx > W + 100) continue;
+    // Post
+    ctx.fillStyle = "#1a1828"; ctx.fillRect(sx - 3, G - 80 - cam.y, 6, 80);
+    // Arm
+    ctx.strokeStyle = "#1a1828"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(sx, G - 78 - cam.y);
+    ctx.quadraticCurveTo(sx + 12, G - 85 - cam.y, sx + 15, G - 75 - cam.y); ctx.stroke();
+    // Globe
+    ctx.fillStyle = "#2a2830";
+    ctx.beginPath(); ctx.arc(sx + 15, G - 72 - cam.y, 6, 0, Math.PI * 2); ctx.fill();
+    // Light
+    const flicker = 0.12 + Math.sin(time * 3 + lx * 0.02) * 0.04;
+    const lampG = ctx.createRadialGradient(sx + 15, G - 72 - cam.y, 3, sx + 15, G - 72 - cam.y, 80);
+    lampG.addColorStop(0, `rgba(255,140,40,${flicker})`); lampG.addColorStop(1, "transparent");
+    ctx.fillStyle = lampG; ctx.fillRect(sx - 65, G - 152 - cam.y, 160, 160);
+    // Ground projection
+    ctx.fillStyle = `rgba(255,140,40,${flicker * 0.3})`;
+    ctx.beginPath(); ctx.ellipse(sx + 15, G - cam.y, 40, 4, 0, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Broken neon sign
+  const neonOn = Math.sin(time * 8) > 0;
+  const nx = 500 - cam.x;
+  if (nx > -100 && nx < W + 100) {
+    ctx.fillStyle = neonOn ? "#ff2020" : "#1a0505";
+    ctx.font = "18px monospace";
+    ctx.textAlign = "left";
+    if (neonOn) { ctx.shadowBlur = 15; ctx.shadowColor = "#ff2020"; }
+    ctx.fillText("HOTEL", nx, 250);
+    ctx.shadowBlur = 0;
+  }
+
+  // Graffiti
+  ctx.save(); ctx.globalAlpha = 0.12; ctx.fillStyle = "#B30000";
+  ctx.font = "24px 'Special Elite', serif";
+  ctx.fillText("RECUERDA", 300 - cam.x * 0.3, 260);
+  ctx.fillText("QUIÉN ERES", 800 - cam.x * 0.3, 300);
+  ctx.restore();
+
+  // Puddles with reflection
+  const puddles = [400, 900, 1600, 2400, 3200, 4000];
+  for (const px of puddles) {
+    const sx = px - cam.x;
+    if (sx < -80 || sx > W + 80) continue;
+    ctx.fillStyle = "#0a1525";
+    ctx.beginPath(); ctx.ellipse(sx, G - cam.y + 2, 45, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(100,120,180,0.1)";
+    ctx.beginPath(); ctx.ellipse(sx, G - cam.y + 2, 25, 3, 0, 0, Math.PI * 2); ctx.fill();
+    // Ripple
+    const ripR = ((time * 2 + px * 0.1) % 2) * 15;
+    ctx.strokeStyle = `rgba(100,120,180,${0.15 - ripR * 0.01})`;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.ellipse(sx, G - cam.y + 2, ripR, ripR * 0.3, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  // Cables between buildings
+  ctx.strokeStyle = "#0d0d0d"; ctx.lineWidth = 1.5;
+  const cables = [{ x1: 1500, x2: 1900, y: 160 }, { x1: 2100, x2: 2500, y: 180 }, { x1: 3000, x2: 3400, y: 170 }];
+  for (const c of cables) {
+    const s1 = c.x1 - cam.x, s2 = c.x2 - cam.x;
+    if (s2 < -50 || s1 > W + 50) continue;
+    ctx.beginPath(); ctx.moveTo(s1, c.y);
+    ctx.quadraticCurveTo((s1 + s2) / 2, c.y + 25, s2, c.y); ctx.stroke();
+  }
+
+  // Steam from grates
+  ctx.fillStyle = "rgba(200,200,220,0.04)";
+  for (const sx of [600, 1200, 1800, 2400, 3600]) {
+    const x = sx - cam.x;
+    if (x < -30 || x > W + 30) continue;
+    for (let j = 0; j < 6; j++) {
+      const sy = G - cam.y - 10 - j * 12 - ((time * 30 + j * 20) % 80);
+      const sw = 4 + Math.sin(time + j) * 2;
+      ctx.beginPath(); ctx.arc(x + Math.sin(time * 0.5 + j) * 5, sy, sw, 0, Math.PI * 2); ctx.fill();
+    }
+  }
 }

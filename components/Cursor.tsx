@@ -1,187 +1,88 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
-
-interface TrailPoint {
-  x: number;
-  y: number;
-  opacity: number;
-  id: number;
-}
+import { useEffect, useRef, useState } from "react";
 
 export default function Cursor() {
-  const posRef = useRef({ x: -100, y: -100 });
-  const clickingRef = useRef(false);
+  const [pos, setPos] = useState({ x: -100, y: -100 });
   const [visible, setVisible] = useState(false);
-  const [trail, setTrail] = useState<TrailPoint[]>([]);
-  const [hoverState, setHoverState] = useState<"default" | "locked" | "choice-dark" | "choice-light">("default");
-  const trailIdRef = useRef(0);
-  const outerRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  const frameRef = useRef<number>(0);
-  const trailUpdateRef = useRef(0);
+  const [clicking, setClicking] = useState(false);
+  const timeRef = useRef(0);
+  const rafRef = useRef(0);
+  const [tick, setTick] = useState(0);
 
-  const updateCursorElements = useCallback(() => {
-    if (outerRef.current) {
-      outerRef.current.style.left = `${posRef.current.x - 16}px`;
-      outerRef.current.style.top = `${posRef.current.y - 16}px`;
-      outerRef.current.style.transform = `scale(${clickingRef.current ? 0.8 : 1})`;
-    }
-    if (innerRef.current) {
-      innerRef.current.style.left = `${posRef.current.x - 3}px`;
-      innerRef.current.style.top = `${posRef.current.y - 3}px`;
-      innerRef.current.style.transform = `scale(${clickingRef.current ? 1.5 : 1})`;
-    }
-    frameRef.current = requestAnimationFrame(updateCursorElements);
-  }, []);
+  const particles = useRef(
+    Array.from({ length: 5 }, (_, i) => ({
+      angle: (i / 5) * Math.PI * 2,
+      dist: 12 + Math.random() * 6,
+      size: 1 + Math.random() * 1.5,
+    }))
+  );
 
   useEffect(() => {
-    const move = (e: MouseEvent) => {
-      posRef.current = { x: e.clientX, y: e.clientY };
-      if (!visible) setVisible(true);
+    const onMove = (e: MouseEvent) => { setPos({ x: e.clientX, y: e.clientY }); setVisible(true); };
+    const onLeave = () => setVisible(false);
+    const onEnter = () => setVisible(true);
+    const onDown = () => setClicking(true);
+    const onUp = () => setClicking(false);
 
-      // Trail update — throttled
-      const now = Date.now();
-      if (now - trailUpdateRef.current > 50) {
-        trailUpdateRef.current = now;
-        trailIdRef.current++;
-        setTrail((prev) => {
-          const next = [
-            ...prev,
-            { x: e.clientX, y: e.clientY, opacity: 0.6, id: trailIdRef.current },
-          ].slice(-5);
-          return next;
-        });
-      }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseleave", onLeave);
+    document.addEventListener("mouseenter", onEnter);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("mouseup", onUp);
 
-      // Detect hover targets
-      const target = e.target as HTMLElement;
-      const closestButton = target.closest("button, a, [role='button']");
-      if (target.closest("[data-locked]") || (closestButton?.hasAttribute("disabled") && closestButton?.textContent?.includes("?"))) {
-        setHoverState("locked");
-      } else if (closestButton?.closest("[data-choice-dark]")) {
-        setHoverState("choice-dark");
-      } else if (closestButton?.closest("[data-choice-light]")) {
-        setHoverState("choice-light");
-      } else {
-        setHoverState("default");
-      }
+    const animate = () => {
+      timeRef.current += 0.03;
+      particles.current.forEach((p, i) => { p.angle += 0.04 + i * 0.008; });
+      setTick(t => t + 1);
+      rafRef.current = requestAnimationFrame(animate);
     };
-
-    const down = () => { clickingRef.current = true; };
-    const up = () => { clickingRef.current = false; };
-    const leave = () => setVisible(false);
-    const enter = () => setVisible(true);
-
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mousedown", down);
-    window.addEventListener("mouseup", up);
-    document.addEventListener("mouseleave", leave);
-    document.addEventListener("mouseenter", enter);
-
-    frameRef.current = requestAnimationFrame(updateCursorElements);
+    rafRef.current = requestAnimationFrame(animate);
 
     return () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mousedown", down);
-      window.removeEventListener("mouseup", up);
-      document.removeEventListener("mouseleave", leave);
-      document.removeEventListener("mouseenter", enter);
-      cancelAnimationFrame(frameRef.current);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseleave", onLeave);
+      document.removeEventListener("mouseenter", onEnter);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("mouseup", onUp);
+      cancelAnimationFrame(rafRef.current);
     };
-  }, [visible, updateCursorElements]);
-
-  // Fade out trail points
-  useEffect(() => {
-    if (trail.length === 0) return;
-    const timeout = setTimeout(() => {
-      setTrail((prev) => prev.filter((p) => p.opacity > 0.05).map((p) => ({ ...p, opacity: p.opacity * 0.6 })));
-    }, 80);
-    return () => clearTimeout(timeout);
-  }, [trail]);
+  }, []);
 
   if (!visible) return null;
 
-  const borderColor =
-    hoverState === "locked"
-      ? "rgba(120,120,120,0.8)"
-      : hoverState === "choice-dark"
-      ? "rgba(220,50,50,0.7)"
-      : hoverState === "choice-light"
-      ? "rgba(196,146,58,0.9)"
-      : "rgba(196,146,58,0.8)";
-
-  const dotColor =
-    hoverState === "locked"
-      ? "#888"
-      : hoverState === "choice-dark"
-      ? "#dc3232"
-      : "#c4923a";
-
-  const pulseAnim =
-    hoverState === "choice-dark" || hoverState === "choice-light"
-      ? "cursor-pulse 1.2s ease-in-out infinite"
-      : "none";
+  const sz = clicking ? 10 : 16;
+  const glow = clicking ? 8 : 4;
 
   return (
-    <>
-      {/* Trail points */}
-      {trail.map((point) => (
-        <div
-          key={point.id}
-          className="fixed pointer-events-none z-[2147483647] rounded-full bg-noir-accent"
-          style={{
-            left: point.x - 2,
-            top: point.y - 2,
-            width: 4,
-            height: 4,
-            opacity: point.opacity,
-            transition: "opacity 0.1s",
-          }}
-        />
+    <div style={{
+      position: "fixed", left: pos.x, top: pos.y, pointerEvents: "none",
+      zIndex: 2147483647, transform: "translate(-50%, -50%)", willChange: "transform",
+    }}>
+      {particles.current.map((p, i) => (
+        <div key={i} style={{
+          position: "absolute",
+          left: Math.cos(p.angle) * p.dist,
+          top: Math.sin(p.angle) * p.dist,
+          width: p.size, height: p.size, borderRadius: "50%",
+          background: "#c4923a",
+          opacity: 0.4 + Math.sin(p.angle + timeRef.current) * 0.3,
+          transform: "translate(-50%, -50%)", filter: "blur(0.5px)",
+        }} />
       ))}
-
-      {/* Outer ring */}
-      <div
-        ref={outerRef}
-        className="fixed pointer-events-none z-[2147483647] rounded-full"
-        style={{
-          width: 32,
-          height: 32,
-          border: `1px solid ${borderColor}`,
-          transition: "border-color 0.2s, transform 0.15s",
-          animation: pulseAnim,
-        }}
-      />
-
-      {/* Inner dot or lock icon */}
-      <div
-        ref={innerRef}
-        className="fixed pointer-events-none z-[2147483647] flex items-center justify-center"
-        style={{
-          width: 6,
-          height: 6,
-          transition: "transform 0.1s",
-        }}
-      >
-        {hoverState === "locked" ? (
-          <span className="text-[8px] -ml-[1px] -mt-[1px] select-none" style={{ color: "#888" }}>
-            &#128274;
-          </span>
-        ) : (
-          <div
-            className="w-full h-full rounded-full"
-            style={{ backgroundColor: dotColor }}
-          />
-        )}
-      </div>
-
-      <style jsx>{`
-        @keyframes cursor-pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.15); }
-        }
-      `}</style>
-    </>
+      <div style={{
+        position: "absolute", width: sz, height: sz,
+        border: "1.5px solid #c4923a", borderRadius: "50%",
+        transform: "translate(-50%, -50%)",
+        filter: `drop-shadow(0 0 ${glow}px #c4923a)`,
+        transition: "width 0.1s, height 0.1s", opacity: 0.9,
+      }} />
+      <div style={{
+        position: "absolute", width: 3, height: 3,
+        background: "#c4923a", borderRadius: "50%",
+        transform: "translate(-50%, -50%)",
+        boxShadow: "0 0 4px #c4923a",
+      }} />
+    </div>
   );
 }
