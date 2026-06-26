@@ -45,8 +45,8 @@ export function GameEngine() {
   const [isSigning, setIsSigning] = useState(false);
   const [isSigned, setIsSigned] = useState(false);
   const [signTxHash, setSignTxHash] = useState("");
-  const [introPhase, setIntroPhase] = useState(0); // 0=title, 1=fadein, 2=drop, 3=mission, 4=play
-  const [introActive, setIntroActive] = useState(true);
+  const [showIntro, setShowIntro] = useState(true);
+  const introTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const [collectedTexts, setCollectedTexts] = useState<string[]>([]);
   const [stompCount, setStompCount] = useState(0);
   const levelStartRef = useRef(Date.now());
@@ -121,11 +121,9 @@ export function GameEngine() {
     setShowCompletion(false); setIsSigning(false); setIsSigned(false); setSignTxHash("");
     setCollectedTexts([]); setStompCount(0);
     levelStartRef.current = Date.now();
-    setIntroActive(true); setIntroPhase(0);
-    setTimeout(() => setIntroPhase(1), 1200);
-    setTimeout(() => setIntroPhase(2), 2200);
-    setTimeout(() => setIntroPhase(3), 3200);
-    setTimeout(() => { setIntroPhase(4); setIntroActive(false); }, 4500);
+    setShowIntro(true);
+    if (introTimerRef.current) clearTimeout(introTimerRef.current);
+    introTimerRef.current = setTimeout(() => setShowIntro(false), 3000);
     startGameMusic(idx + 1);
   }, []);
 
@@ -282,19 +280,7 @@ export function GameEngine() {
         ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
       }
 
-      // Intro overlay
-      if (introActive) {
-        ctx.fillStyle = `rgba(0,0,0,${introPhase < 2 ? 0.9 : 0.5 - introPhase * 0.1})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        if (introPhase <= 1) {
-          ctx.fillStyle = "#B30000"; ctx.font = "14px monospace"; ctx.textAlign = "center";
-          ctx.fillText(`ACTO ${levelIdx + 1} · ${levelData.name}`, canvas.width / 2, canvas.height / 2);
-        }
-        if (introPhase === 3) {
-          ctx.fillStyle = "#8C8275"; ctx.font = "12px monospace"; ctx.textAlign = "center";
-          ctx.fillText("Encuentra los fragmentos de tu memoria", canvas.width / 2, canvas.height / 2 + 30);
-        }
-      }
+      // (intro is now HTML overlay, not canvas)
 
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -377,6 +363,20 @@ export function GameEngine() {
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", background: "#000", cursor: "crosshair" }}>
       <canvas ref={canvasRef} style={{ display: "block" }} />
+
+      {/* Intro overlay */}
+      {showIntro && (
+        <div onClick={() => setShowIntro(false)} style={{
+          position: "absolute", inset: 0, background: "rgba(0,0,0,0.88)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          zIndex: 50, cursor: "crosshair", fontFamily: "'Special Elite', serif",
+        }}>
+          <div style={{ color: "#555", fontSize: 11, letterSpacing: "0.4em", marginBottom: 12 }}>ACTO {levelIdx + 1}</div>
+          <div style={{ color: "#E5DEC9", fontSize: 32, letterSpacing: "0.1em", marginBottom: 8, textShadow: "0 0 20px rgba(179,0,0,0.5)" }}>{levelData.name}</div>
+          <div style={{ color: "#444", fontSize: 13, marginBottom: 32 }}>Encuentra los fragmentos de tu memoria</div>
+          <div style={{ color: "#333", fontSize: 11, letterSpacing: "0.2em", animation: "pulse 1.5s infinite" }}>CLICK PARA COMENZAR</div>
+        </div>
+      )}
 
       {/* HUD */}
       <div style={{ position: "absolute", top: 16, left: 20, zIndex: 10 }}>

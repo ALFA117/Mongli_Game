@@ -40,7 +40,15 @@ export function render(
   const W = ctx.canvas.width, H = ctx.canvas.height;
 
   // Background
-  ctx.fillStyle = level.backgroundColor;
+  // Level-specific background gradient
+  const bgColors: Record<number, [string, string]> = {
+    1: ["#0a0514", "#14082a"], 2: ["#050a14", "#0a1428"],
+    3: ["#050a05", "#0a140a"], 4: ["#000000", "#050005"], 5: ["#14050a", "#1a0810"],
+  };
+  const [bgTop, bgBot] = bgColors[level.id] || ["#050505", "#0a0a0a"];
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, bgTop); bgGrad.addColorStop(1, bgBot);
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
   // Parallax
@@ -54,7 +62,7 @@ export function render(
   ctx.translate(-cam.x, -cam.y);
 
   // Platforms
-  for (const p of level.platforms) drawPlatform(ctx, p, time);
+  for (const p of level.platforms) drawPlatform(ctx, p, time, level.id);
 
   // Doors
   for (const d of level.doors) drawDoor(ctx, d, d.requiredObjects.every(id => collectedIds.has(id)), time);
@@ -135,9 +143,21 @@ export function render(
 
   ctx.restore();
 
+  // Darkness vignette (flashlight effect)
+  const lightRadius: Record<number, number> = { 1: 80, 2: 60, 3: 70, 4: 40, 5: 50 };
+  const innerR = lightRadius[level.id] || 70;
+  const screenPx = player.x - cam.x + player.width / 2;
+  const screenPy = player.y - cam.y + player.height / 2;
+  const dark = ctx.createRadialGradient(screenPx, screenPy, innerR, screenPx, screenPy, 350);
+  dark.addColorStop(0, "rgba(0,0,0,0)");
+  dark.addColorStop(0.4, "rgba(0,0,0,0.3)");
+  dark.addColorStop(1, "rgba(0,0,0,0.82)");
+  ctx.fillStyle = dark;
+  ctx.fillRect(0, 0, W, H);
+
   // Damage flash
   if (player.isInvincible) {
-    ctx.fillStyle = "rgba(179,0,0,0.1)";
+    ctx.fillStyle = "rgba(179,0,0,0.15)";
     ctx.fillRect(0, 0, W, H);
   }
 }
@@ -275,54 +295,103 @@ function updateAndDrawFX(ctx: CanvasRenderingContext2D, dt: number) {
   }
 }
 
-function drawPlatform(ctx: CanvasRenderingContext2D, plat: Platform, time: number) {
+function drawPlatform(ctx: CanvasRenderingContext2D, plat: Platform, time: number, levelId: number) {
   if (plat.type === "flickering") {
     const vis = Math.sin(time * 2 + plat.x * 0.01) > -0.3;
-    ctx.globalAlpha = vis ? 0.4 + Math.sin(time * 3) * 0.2 : 0.05;
+    if (!vis) { ctx.globalAlpha = 0.05; ctx.fillStyle = "#300000"; ctx.fillRect(plat.x, plat.y, plat.width, plat.height); ctx.globalAlpha = 1; return; }
+    ctx.globalAlpha = 0.6 + Math.sin(time * 3) * 0.2;
+    ctx.fillStyle = "rgba(100,0,0,0.5)";
+    ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+    ctx.strokeStyle = "#FF1A1A"; ctx.lineWidth = 1;
+    ctx.strokeRect(plat.x, plat.y, plat.width, plat.height);
+    ctx.globalAlpha = 1;
+    return;
   }
-  ctx.fillStyle = plat.y >= 510 ? "#0a0a0a" : "#1a1a1a";
-  ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
-  ctx.fillStyle = "#2a2a2a";
-  ctx.fillRect(plat.x, plat.y, plat.width, 2);
-  ctx.globalAlpha = 1;
+  const isGround = plat.height >= 40;
+  if (isGround) {
+    ctx.fillStyle = "#1a1a2e";
+    ctx.fillRect(plat.x, plat.y, plat.width, plat.height + 100);
+    ctx.fillStyle = "#3a3a6e";
+    ctx.fillRect(plat.x, plat.y, plat.width, 3);
+  } else {
+    const platColors: Record<number, [string, string]> = {
+      1: ["#3d2810", "#5a3a18"], 2: ["#1a2030", "#2a3448"],
+      3: ["#1a1a10", "#2a2a20"], 4: ["#2d0000", "#5a1a1a"], 5: ["#1a0030", "#3a1a5a"],
+    };
+    const [base, top] = platColors[levelId] || ["#2d1a1a", "#5a3a3a"];
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.fillRect(plat.x + 3, plat.y + plat.height, plat.width - 3, 4);
+    ctx.fillStyle = base;
+    ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+    ctx.fillStyle = top;
+    ctx.fillRect(plat.x, plat.y, plat.width, 2);
+  }
 }
 
 function drawDoor(ctx: CanvasRenderingContext2D, door: Door, unlocked: boolean, time: number) {
-  ctx.fillStyle = "#0a0a0a";
-  ctx.fillRect(door.x, door.y, door.width, door.height);
-  ctx.strokeStyle = unlocked ? "#E5DEC9" : "#B30000";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(door.x, door.y, door.width, door.height);
   if (unlocked) {
-    ctx.shadowBlur = 10 + Math.sin(time * 3) * 5; ctx.shadowColor = "#E5DEC9";
-    ctx.fillStyle = "#E5DEC9"; ctx.font = "10px monospace"; ctx.textAlign = "center";
-    ctx.fillText("SALIDA →", door.x + door.width / 2, door.y - 8); ctx.shadowBlur = 0;
+    ctx.fillStyle = "#051a05";
+    ctx.fillRect(door.x, door.y, door.width, door.height);
+    ctx.strokeStyle = "#00B300"; ctx.lineWidth = 2;
+    ctx.shadowBlur = 10 + Math.sin(time * 3) * 8; ctx.shadowColor = "#00FF00";
+    ctx.strokeRect(door.x, door.y, door.width, door.height);
+    ctx.fillStyle = "#00FF00"; ctx.font = "11px monospace"; ctx.textAlign = "center";
+    ctx.fillText("SALIDA →", door.x + door.width / 2, door.y - 10);
+    ctx.shadowBlur = 0;
   } else {
+    ctx.fillStyle = "#1a0505";
+    ctx.fillRect(door.x, door.y, door.width, door.height);
+    ctx.strokeStyle = "#5a0000"; ctx.lineWidth = 2;
+    ctx.strokeRect(door.x, door.y, door.width, door.height);
+    // Padlock
     ctx.fillStyle = "#B30000"; ctx.shadowBlur = 8; ctx.shadowColor = "#FF1A1A";
-    ctx.beginPath(); ctx.arc(door.x + door.width / 2, door.y + door.height / 2, 6, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(door.x + door.width / 2, door.y + door.height / 2 - 5, 7, Math.PI, 0); ctx.stroke();
+    ctx.fillRect(door.x + door.width / 2 - 6, door.y + door.height / 2 - 2, 12, 10);
+    ctx.fillStyle = "#FF1A1A"; ctx.font = "8px monospace"; ctx.textAlign = "center";
+    ctx.fillText("BLOQUEADA", door.x + door.width / 2, door.y - 6);
+    ctx.shadowBlur = 0;
   }
 }
 
 function drawObject(ctx: CanvasRenderingContext2D, obj: InteractiveObject, player: Player, time: number) {
   const dx = (player.x + player.width / 2) - (obj.x + obj.width / 2);
   const dy = (player.y + player.height / 2) - (obj.y + obj.height / 2);
-  const near = Math.sqrt(dx * dx + dy * dy) < INTERACT_RANGE;
-  if (near || obj.glowing) { ctx.shadowBlur = 12 + Math.sin(time * 4) * 4; ctx.shadowColor = "#FF1A1A"; }
-  ctx.fillStyle = obj.type === "light" ? "#FF1A1A" : "#E5DEC9";
-  ctx.globalAlpha = near ? 0.9 : 0.4;
-  if (obj.type === "light") { ctx.beginPath(); ctx.arc(obj.x + obj.width / 2, obj.y + obj.height / 2, obj.width / 2, 0, Math.PI * 2); ctx.fill(); }
-  else ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const near = dist < INTERACT_RANGE;
+  const visible = dist < 300;
+
+  if (near) { ctx.shadowBlur = 20 + Math.sin(time * 4) * 6; ctx.shadowColor = "#FF1A1A"; }
+  else if (visible) { ctx.shadowBlur = 6; ctx.shadowColor = "#FF1A1A"; }
+
+  if (obj.type === "light") {
+    ctx.fillStyle = "#FF1A1A";
+    ctx.globalAlpha = near ? 1 : 0.6;
+    ctx.beginPath(); ctx.arc(obj.x + obj.width / 2, obj.y + obj.height / 2, obj.width / 2 + (near ? 3 : 0), 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.fillStyle = near ? "#8a3030" : visible ? "#4a2020" : "#2a1515";
+    ctx.globalAlpha = near ? 1 : visible ? 0.7 : 0.35;
+    ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+    ctx.strokeStyle = near ? "#FF1A1A" : "#5a3030";
+    ctx.lineWidth = near ? 2 : 1;
+    ctx.strokeRect(obj.x, obj.y, obj.width, obj.height);
+  }
+
   ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 }
 
 function drawNPC(ctx: CanvasRenderingContext2D, npc: NPC, time: number) {
-  ctx.fillStyle = npc.type === "reflection" ? "#3060a0" : "#E5DEC9";
-  ctx.globalAlpha = npc.type === "figure" ? 0.5 : 0.8;
+  ctx.fillStyle = npc.type === "reflection" ? "#3060a0" : npc.type === "hooded" ? "#1a0a0a" : "#E5DEC9";
+  ctx.globalAlpha = npc.type === "figure" ? 0.5 : 0.85;
+  // Outline for visibility
+  ctx.strokeStyle = npc.type === "reflection" ? "#6090d0" : "#3a1a1a";
+  ctx.lineWidth = 1;
   ctx.fillRect(npc.x + 8, npc.y + 16, 16, 28);
-  ctx.beginPath(); ctx.arc(npc.x + 16, npc.y + 10, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeRect(npc.x + 8, npc.y + 16, 16, 28);
+  ctx.beginPath(); ctx.arc(npc.x + 16, npc.y + 10, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
   if (npc.type === "hooded") { ctx.fillStyle = "#0a0a0a"; ctx.beginPath(); ctx.arc(npc.x + 16, npc.y + 8, 12, Math.PI, Math.PI * 2); ctx.fill(); }
-  ctx.fillStyle = "#FF1A1A"; ctx.globalAlpha = 0.8;
-  ctx.fillRect(npc.x + 12, npc.y + 9, 2, 2); ctx.fillRect(npc.x + 18, npc.y + 9, 2, 2);
+  // Single white eye for NPCs (different from player's red eyes)
+  ctx.fillStyle = "#ffffff"; ctx.globalAlpha = 0.9;
+  ctx.fillRect(npc.x + 14, npc.y + 9, 4, 3);
   ctx.globalAlpha = 1;
 }
 
