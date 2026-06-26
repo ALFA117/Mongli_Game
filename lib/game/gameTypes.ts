@@ -10,6 +10,11 @@ export interface Player {
   state: "idle" | "walking" | "jumping" | "interacting";
   memoryFragments: number;
   blinkTimer: number;
+  health: number;
+  maxHealth: number;
+  isInvincible: boolean;
+  invincibleTimer: number;
+  isDead: boolean;
 }
 
 export interface Platform {
@@ -18,6 +23,12 @@ export interface Platform {
   width: number;
   height: number;
   type?: "solid" | "flickering";
+}
+
+export interface Checkpoint {
+  x: number;
+  y: number;
+  activated: boolean;
 }
 
 export interface InteractiveObject {
@@ -73,10 +84,12 @@ export interface Level {
   objects: InteractiveObject[];
   npcs: NPC[];
   doors: Door[];
+  checkpoints: Checkpoint[];
   ambientParticles: ParticleConfig;
   bgLayers: BackgroundLayer[];
   exitX: number;
   groundY: number;
+  levelWidth: number;
 }
 
 export interface GameState {
@@ -91,6 +104,7 @@ export interface GameState {
   notifications: { text: string; timer: number }[];
   totalCollected: number;
   gameComplete: boolean;
+  deaths: number;
 }
 
 export interface InputState {
@@ -100,8 +114,9 @@ export interface InputState {
   interact: boolean;
 }
 
-export const GRAVITY = 800;
+export const GRAVITY = 900;
+export const MAX_FALL_SPEED = 600;
 export const MOVE_SPEED = 200;
 export const JUMP_FORCE = -450;
-export const FRICTION = 0.85;
+export const FRICTION = 0.80;
 export const INTERACT_RANGE = 80;

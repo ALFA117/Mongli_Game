@@ -1,63 +1,135 @@
-import type { Player, Platform, InputState, InteractiveObject, NPC, Door } from "./gameTypes";
-import { GRAVITY, MOVE_SPEED, JUMP_FORCE, FRICTION, INTERACT_RANGE } from "./gameTypes";
+import type { Player, Platform, InteractiveObject, NPC, Door, Checkpoint } from "./gameTypes";
+import { GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_FORCE, FRICTION, INTERACT_RANGE } from "./gameTypes";
 
-export function updatePlayer(player: Player, input: InputState, platforms: Platform[], dt: number, time: number): void {
+export function updatePlayer(
+  player: Player,
+  left: boolean,
+  right: boolean,
+  jumpPressed: boolean,
+  platforms: Platform[],
+  dt: number,
+  time: number,
+  canvasHeight: number
+): Player {
+  const p = { ...player };
+
+  if (p.isDead) return p;
+
+  // Invincibility timer
+  if (p.isInvincible) {
+    p.invincibleTimer -= dt;
+    if (p.invincibleTimer <= 0) {
+      p.isInvincible = false;
+      p.invincibleTimer = 0;
+    }
+  }
+
   // Horizontal movement
-  if (input.left) {
-    player.velocityX = -MOVE_SPEED;
-    player.facingRight = false;
-    player.state = "walking";
-  } else if (input.right) {
-    player.velocityX = MOVE_SPEED;
-    player.facingRight = true;
-    player.state = "walking";
+  if (left) {
+    p.velocityX = -MOVE_SPEED;
+    p.facingRight = false;
+    p.state = "walking";
+  } else if (right) {
+    p.velocityX = MOVE_SPEED;
+    p.facingRight = true;
+    p.state = "walking";
   } else {
-    player.state = player.isOnGround ? "idle" : "jumping";
+    p.state = p.isOnGround ? "idle" : "jumping";
   }
 
   // Jump
-  if (input.jump && player.isOnGround) {
-    player.velocityY = JUMP_FORCE;
-    player.isOnGround = false;
-    player.state = "jumping";
+  if (jumpPressed && p.isOnGround) {
+    p.velocityY = JUMP_FORCE;
+    p.isOnGround = false;
+    p.state = "jumping";
   }
 
-  // Gravity
-  player.velocityY += GRAVITY * dt;
+  // Gravity — only if not on ground
+  if (!p.isOnGround) {
+    p.velocityY += GRAVITY * dt;
+    if (p.velocityY > MAX_FALL_SPEED) p.velocityY = MAX_FALL_SPEED;
+  }
+
+  // Store previous bottom position for one-way platform detection
+  const prevBottom = p.y + p.height;
 
   // Apply velocity
-  player.x += player.velocityX * dt;
-  player.y += player.velocityY * dt;
+  p.x += p.velocityX * dt;
+  p.y += p.velocityY * dt;
 
   // Friction
-  player.velocityX *= FRICTION;
+  p.velocityX *= FRICTION;
+  if (Math.abs(p.velocityX) < 1) p.velocityX = 0;
 
   // Blink timer
-  player.blinkTimer -= dt;
-  if (player.blinkTimer <= 0) player.blinkTimer = 3 + Math.random() * 2;
+  p.blinkTimer -= dt;
+  if (p.blinkTimer <= 0) p.blinkTimer = 3 + Math.random() * 2;
 
-  // Platform collision
-  player.isOnGround = false;
+  // Reset ground state before checking collisions
+  p.isOnGround = false;
+
+  // Platform collision (top-down only — player lands on top)
+  const currBottom = p.y + p.height;
+
   for (const plat of platforms) {
     // Skip flickering platforms that are "off"
     if (plat.type === "flickering" && Math.sin(time * 2 + plat.x * 0.01) < -0.3) continue;
 
-    if (
-      player.x + player.width > plat.x &&
-      player.x < plat.x + plat.width &&
-      player.y + player.height > plat.y &&
-      player.y + player.height < plat.y + plat.height + 20 &&
-      player.velocityY >= 0
-    ) {
-      player.y = plat.y - player.height;
-      player.velocityY = 0;
-      player.isOnGround = true;
+    const overlapX = p.x + p.width > plat.x && p.x < plat.x + plat.width;
+    const wasAbove = prevBottom <= plat.y + 4;
+    const isNowBelow = currBottom >= plat.y;
+    const fallingDown = p.velocityY >= 0;
+
+    if (overlapX && wasAbove && isNowBelow && fallingDown) {
+      p.y = plat.y - p.height;
+      p.velocityY = 0;
+      p.isOnGround = true;
+      break;
     }
   }
 
-  // Clamp to world
-  if (player.x < 0) player.x = 0;
-  if (player.y > 600) { player.y = 400; player.velocityY = 0; }
+  // Left boundary
+  if (p.x < 0) p.x = 0;
+
+  // Fell off the world — take damage
+  if (p.y > canvasHeight + 100) {
+    p.health -= 25;
+    if (p.health <= 0) {
+      p.health = 0;
+      p.isDead = true;
+    }
+    // Will be respawned by caller
+  }
+
+  return p;
+}
+
+export function respawnPlayer(player: Player, checkpoints: Checkpoint[]): Player {
+  const lastCheckpoint = [...checkpoints].reverse().find((cp) => cp.activated);
+  const spawnX = lastCheckpoint?.x ?? 100;
+  const spawnY = lastCheckpoint?.y ?? 460;
+
+  return {
+    ...player,
+    x: spawnX,
+    y: spawnY - player.height,
+    velocityX: 0,
+    velocityY: 0,
+    isOnGround: false,
+    isInvincible: true,
+    invincibleTimer: 1.5,
+    health: player.isDead ? player.maxHealth : player.health,
+    isDead: false,
+    state: "idle",
+  };
+}
+
+export function updateCheckpoints(player: Player, checkpoints: Checkpoint[]): void {
+  for (const cp of checkpoints) {
+    if (!cp.activated && player.x >= cp.x - 20) {
+      cp.activated = true;
+    }
+  }
 }
 
 export function findNearbyObject(player: Player, objects: InteractiveObject[]): InteractiveObject | null {
@@ -82,7 +154,7 @@ export function findNearbyNPC(player: Player, npcs: NPC[]): NPC | null {
 export function checkDoor(player: Player, doors: Door[], collectedIds: Set<string>): Door | null {
   for (const door of doors) {
     if (player.x + player.width > door.x && player.x < door.x + door.width) {
-      const allCollected = door.requiredObjects.every(id => collectedIds.has(id));
+      const allCollected = door.requiredObjects.every((id) => collectedIds.has(id));
       if (allCollected) { door.locked = false; return door; }
     }
   }
