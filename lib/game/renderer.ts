@@ -108,6 +108,50 @@ export function render(
     drawPlayerDetailed(ctx, player, time);
   }
 
+  // Power-ups
+  if (level.powerUps) {
+    for (const pu of level.powerUps) {
+      if (pu.collected) continue;
+      const puColors = { speed: "#ff8800", jump: "#4488ff", shield: "#ffffff", vision: "#c4923a" };
+      const c = puColors[pu.type] || "#fff";
+      ctx.save();
+      ctx.translate(pu.x + 8, pu.y + 8);
+      ctx.rotate(time * 2);
+      ctx.fillStyle = c; ctx.globalAlpha = 0.8;
+      ctx.shadowColor = c; ctx.shadowBlur = 12;
+      ctx.fillRect(-6, -6, 12, 12);
+      ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+  }
+
+  // Boss
+  if (level.boss && level.boss.active && level.boss.state !== "dead") {
+    const b = level.boss;
+    ctx.fillStyle = "#050505";
+    ctx.strokeStyle = "#FF1A1A"; ctx.lineWidth = 2;
+    ctx.shadowColor = "#FF1A1A"; ctx.shadowBlur = b.phase >= 3 ? 15 : 6;
+    ctx.fillRect(b.x, b.y, b.width, b.height);
+    ctx.strokeRect(b.x, b.y, b.width, b.height);
+    // Eyes
+    ctx.fillStyle = "#FF1A1A";
+    ctx.beginPath(); ctx.ellipse(b.x + 18, b.y + 25, 6, 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(b.x + 42, b.y + 25, 6, 8, 0, 0, Math.PI * 2); ctx.fill();
+    // Phase cracks
+    if (b.phase >= 2) { ctx.strokeStyle = "#FF1A1A"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(b.x + 20, b.y + 40); ctx.lineTo(b.x + 35, b.y + 70); ctx.stroke(); }
+    if (b.phase >= 3 && Math.sin(time * 10) > 0) { ctx.globalAlpha = 0.5; ctx.fillStyle = "#FF1A1A"; ctx.fillRect(b.x, b.y, b.width, b.height); ctx.globalAlpha = 1; }
+    ctx.shadowBlur = 0;
+    if (b.state === "stunned") { ctx.fillStyle = "#ffaa00"; ctx.font = "16px serif"; ctx.textAlign = "center"; ctx.fillText("★", b.x + b.width / 2, b.y - 10); }
+  }
+
+  // Hide spots (debug: subtle overlay)
+  if (level.hideSpots) {
+    for (const hs of level.hideSpots) {
+      ctx.fillStyle = "rgba(0,0,30,0.15)";
+      ctx.fillRect(hs.x, hs.y, hs.width, hs.height);
+    }
+  }
+
   // Enemies (passed via level.enemies which is mutated in game loop)
   if (level.enemies) {
     for (const en of level.enemies) {

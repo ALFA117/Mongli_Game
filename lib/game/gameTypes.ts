@@ -76,6 +76,48 @@ export interface BackgroundLayer {
   elements: { x: number; y: number; w: number; h: number; lit?: boolean }[];
 }
 
+export interface PowerUp {
+  id: string;
+  x: number;
+  y: number;
+  type: "speed" | "jump" | "shield" | "vision";
+  collected: boolean;
+  duration: number;
+}
+
+export interface HideSpot {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface Score {
+  base: number;
+  timeBonus: number;
+  deathPenalty: number;
+  stompBonus: number;
+  fragmentBonus: number;
+  total: number;
+}
+
+export interface Boss {
+  active: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  velocityX: number;
+  velocityY: number;
+  maxHealth: number;
+  currentHealth: number;
+  phase: 1 | 2 | 3;
+  attackTimer: number;
+  state: string;
+  stunnedTimer: number;
+  direction: 1 | -1;
+}
+
 export interface Level {
   id: number;
   name: string;
@@ -86,11 +128,15 @@ export interface Level {
   doors: Door[];
   enemies: Enemy[];
   checkpoints: Checkpoint[];
+  powerUps?: PowerUp[];
+  hideSpots?: HideSpot[];
+  boss?: Boss;
   ambientParticles: ParticleConfig;
   bgLayers: BackgroundLayer[];
   exitX: number;
   groundY: number;
   levelWidth: number;
+  completionText?: string;
 }
 
 export interface GameState {
