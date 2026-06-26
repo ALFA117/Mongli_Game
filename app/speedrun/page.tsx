@@ -57,7 +57,7 @@ function SpeedrunContent() {
   }, []);
 
   useEffect(() => {
-    if (!isConnected) router.push("/");
+    // Guest mode allowed — no wallet redirect
   }, [isConnected, router]);
 
   // 3-2-1 countdown then start
