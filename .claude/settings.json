@@ -1,6 +1,5 @@
 {
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(*)",
       "PowerShell(*)",
@@ -15,7 +14,12 @@
       "WebSearch(*)",
       "Agent(*)",
       "NotebookEdit(*)",
-      "AskUserQuestion(*)"
-    ]
+      "AskUserQuestion(*)",
+      "Bash(npx next *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
+    ],
+    "defaultMode": "bypassPermissions"
   }
 }
