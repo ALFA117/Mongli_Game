@@ -22,7 +22,7 @@ export function GameEngine() {
   const [levelIdx, setLevelIdx] = useState(0);
   const [levelData, setLevelData] = useState(() => deepCopy(LEVELS[0]));
   const [player, setPlayer] = useState<Player>({
-    x: 100, y: 360, width: 32, height: 50, velocityX: 0, velocityY: 0,
+    x: 100, y: 320, width: 32, height: 50, velocityX: 0, velocityY: 0,
     isOnGround: false, facingRight: true, state: "idle", memoryFragments: 0, blinkTimer: 3,
     health: 100, maxHealth: 100, isInvincible: false, invincibleTimer: 0, isDead: false,
   });
@@ -314,7 +314,7 @@ export function GameEngine() {
         camRef.current.x += (targetX - camRef.current.x) * 0.1;
         camRef.current.y += (targetY - camRef.current.y) * 0.08;
         camRef.current.x = Math.max(0, Math.min(camRef.current.x, levelData.levelWidth - canvas.width));
-        camRef.current.y = Math.max(-100, Math.min(camRef.current.y, 200));
+        camRef.current.y = Math.max(-200, Math.min(camRef.current.y, 300));
 
         // Door lock check
         for (const door of levelData.doors) {
