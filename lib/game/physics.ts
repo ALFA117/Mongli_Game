@@ -1,4 +1,4 @@
-import type { Player, Platform, InteractiveObject, NPC, Door, Checkpoint } from "./gameTypes";
+import type { Player, Platform, InteractiveObject, NPC, Door, Checkpoint, Enemy } from "./gameTypes";
 import { GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_FORCE, FRICTION, INTERACT_RANGE } from "./gameTypes";
 
 export function updatePlayer(
@@ -159,4 +159,54 @@ export function checkDoor(player: Player, doors: Door[], collectedIds: Set<strin
     }
   }
   return null;
+}
+
+export function updateEnemy(enemy: Enemy, player: Player, platforms: Platform[], dt: number): Enemy {
+  const en = { ...enemy };
+  if (en.state === "dead") return en;
+  if (en.state === "stunned") { en.stunnedTimer -= dt; if (en.stunnedTimer <= 0) en.state = "patrol"; return en; }
+
+  const dist = Math.abs(player.x - en.x);
+  const sameY = Math.abs(player.y - en.y) < 100;
+  if (dist < en.detectionRange && sameY) en.state = "chase";
+  else if (dist > en.detectionRange * 1.5) en.state = "patrol";
+
+  const speed = en.type === "crawler" ? 120 : 80;
+  const chaseSpeed = en.type === "crawler" ? 180 : 140;
+
+  if (en.state === "patrol") {
+    en.velocityX = en.direction * speed;
+    if (en.x <= en.patrolLeft) en.direction = 1;
+    if (en.x >= en.patrolRight) en.direction = -1;
+  } else if (en.state === "chase") {
+    en.direction = player.x > en.x ? 1 : -1;
+    en.velocityX = en.direction * chaseSpeed;
+  }
+
+  en.velocityY += 900 * dt;
+  if (en.velocityY > 600) en.velocityY = 600;
+  en.x += en.velocityX * dt;
+  en.y += en.velocityY * dt;
+  en.isOnGround = false;
+
+  for (const p of platforms) {
+    if (en.x + en.width > p.x && en.x < p.x + p.width &&
+        en.y + en.height >= p.y && en.y + en.height < p.y + 20 && en.velocityY >= 0) {
+      en.y = p.y - en.height;
+      en.velocityY = 0;
+      en.isOnGround = true;
+    }
+  }
+  return en;
+}
+
+export function checkPlayerEnemyCollision(player: Player, enemy: Enemy): { hit: boolean; stomp: boolean } {
+  if (enemy.state === "dead" || enemy.state === "stunned" || player.isInvincible) return { hit: false, stomp: false };
+  const overlap = player.x + player.width > enemy.x && player.x < enemy.x + enemy.width &&
+    player.y + player.height > enemy.y && player.y < enemy.y + enemy.height;
+  if (!overlap) return { hit: false, stomp: false };
+  if (player.velocityY > 80 && player.y + player.height < enemy.y + enemy.height / 2) {
+    return { hit: false, stomp: true };
+  }
+  return { hit: true, stomp: false };
 }

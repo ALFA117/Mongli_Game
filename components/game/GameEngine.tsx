@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { Player, InputState, InteractiveObject, NPC } from "@/lib/game/gameTypes";
+import type { Player, InputState, InteractiveObject, NPC, Enemy } from "@/lib/game/gameTypes";
 import { LEVELS } from "@/lib/game/levels";
-import { updatePlayer, findNearbyObject, findNearbyNPC, checkDoor, respawnPlayer, updateCheckpoints } from "@/lib/game/physics";
-import { render, resetParticles } from "@/lib/game/renderer";
+import { updatePlayer, findNearbyObject, findNearbyNPC, checkDoor, respawnPlayer, updateCheckpoints, updateEnemy, checkPlayerEnemyCollision } from "@/lib/game/physics";
+import { render, resetParticles, spawnFX } from "@/lib/game/renderer";
 
 function deepCopy<T>(obj: T): T { return JSON.parse(JSON.stringify(obj)); }
 
@@ -176,6 +176,26 @@ export function GameEngine() {
         // Update checkpoints
         updateCheckpoints(updated, levelData.checkpoints);
 
+        // Update enemies
+        for (let i = 0; i < levelData.enemies.length; i++) {
+          levelData.enemies[i] = updateEnemy(levelData.enemies[i], updated, levelData.platforms, dt);
+          const col = checkPlayerEnemyCollision(updated, levelData.enemies[i]);
+          if (col.stomp) {
+            levelData.enemies[i] = { ...levelData.enemies[i], state: "stunned", stunnedTimer: 3, velocityX: 0 };
+            updated.velocityY = -350;
+            spawnFX(levelData.enemies[i].x + 14, levelData.enemies[i].y, "spark", 6);
+            notify("Enemigo aturdido");
+          } else if (col.hit) {
+            updated.health -= levelData.enemies[i].damage;
+            updated.isInvincible = true;
+            updated.invincibleTimer = 1.5;
+            updated.velocityX = updated.x > levelData.enemies[i].x ? 200 : -200;
+            updated.velocityY = -200;
+            spawnFX(updated.x + 16, updated.y + 25, "blood", 4);
+            if (updated.health <= 0) { updated.health = 0; updated.isDead = true; }
+          }
+        }
+
         // Camera follow with bounds
         const targetX = updated.x - canvas.width / 2 + 100;
         const targetY = updated.y - canvas.height / 2 + 50;
@@ -239,7 +259,7 @@ export function GameEngine() {
   const levelCollected = levelData.objects.filter((o: InteractiveObject) => o.collected || collectedRef.current.has(o.id)).length;
 
   return (
-    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", background: "#000" }}>
+    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", background: "#000", cursor: "crosshair" }}>
       <canvas ref={canvasRef} style={{ display: "block" }} />
 
       {/* HUD */}

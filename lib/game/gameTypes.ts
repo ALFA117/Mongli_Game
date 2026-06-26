@@ -84,6 +84,7 @@ export interface Level {
   objects: InteractiveObject[];
   npcs: NPC[];
   doors: Door[];
+  enemies: Enemy[];
   checkpoints: Checkpoint[];
   ambientParticles: ParticleConfig;
   bgLayers: BackgroundLayer[];
@@ -112,6 +113,26 @@ export interface InputState {
   right: boolean;
   jump: boolean;
   interact: boolean;
+}
+
+export interface Enemy {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  type: "shadow" | "watcher" | "crawler";
+  velocityX: number;
+  velocityY: number;
+  isOnGround: boolean;
+  health: number;
+  patrolLeft: number;
+  patrolRight: number;
+  direction: 1 | -1;
+  state: "patrol" | "chase" | "stunned" | "dead";
+  detectionRange: number;
+  damage: number;
+  stunnedTimer: number;
 }
 
 export const GRAVITY = 900;
