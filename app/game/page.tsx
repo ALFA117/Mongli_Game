@@ -38,10 +38,15 @@ function GameGuard() {
     if (!isConnected) router.push("/");
   }, [isConnected, router]);
 
+  useEffect(() => {
+    document.body.style.cursor = "crosshair";
+    return () => { document.body.style.cursor = "none"; };
+  }, []);
+
   if (!isConnected) return null;
 
   return (
-    <div style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#000", cursor: "crosshair" }}>
+    <div className="game-page" style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#000" }}>
       <GameEngine />
     </div>
   );

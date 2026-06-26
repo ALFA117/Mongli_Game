@@ -9,25 +9,29 @@ const e = (id: string, x: number, pl: number, pr: number, type: "shadow" | "watc
 
 export const LEVELS: Level[] = [
   {
-    id: 1, name: "EL DESPERTAR", backgroundColor: "#050505", groundY: G, exitX: 3800, levelWidth: 4000,
+    id: 1, name: "EL DESPERTAR", backgroundColor: "#050505", groundY: G, exitX: 5800, levelWidth: 6000,
     platforms: [
-      { x: 0, y: G, width: 4000, height: 80 },
+      { x: 0, y: G, width: 6000, height: 80 },
       { x: 250, y: 420, width: 200, height: 14 }, { x: 550, y: 380, width: 160, height: 14 },
       { x: 1000, y: 400, width: 180, height: 14 }, { x: 1400, y: 360, width: 200, height: 14 },
       { x: 1800, y: 460, width: 180, height: 14 }, { x: 2200, y: 400, width: 150, height: 14 },
       { x: 2600, y: 440, width: 140, height: 14 }, { x: 3000, y: 380, width: 160, height: 14 },
-      { x: 3300, y: G - 20, width: 80, height: 20 }, { x: 3400, y: G - 50, width: 80, height: 14 },
-      { x: 3500, y: G - 80, width: 80, height: 14 }, { x: 3600, y: G - 110, width: 80, height: 14 },
+      { x: 3400, y: 420, width: 120, height: 14 }, { x: 3700, y: 380, width: 140, height: 14 },
+      { x: 4000, y: 560, width: 600, height: 80 }, { x: 4100, y: 440, width: 100, height: 14 },
+      { x: 4400, y: 400, width: 120, height: 14 }, { x: 4700, y: 460, width: 100, height: 14 },
+      { x: 5000, y: G, width: 1000, height: 80 },
+      { x: 5100, y: G - 30, width: 80, height: 14 }, { x: 5250, y: G - 60, width: 80, height: 14 },
+      { x: 5400, y: G - 90, width: 80, height: 14 }, { x: 5550, y: G - 120, width: 80, height: 14 },
     ],
-    enemies: [ e("e1a", 700, 500, 900), e("e1b", 2000, 1800, 2400) ],
-    checkpoints: [{ x: 100, y: G, activated: false }, { x: 1200, y: G, activated: false }, { x: 2500, y: G, activated: false }],
+    enemies: [ e("e1a", 700, 500, 900), e("e1b", 2000, 1800, 2400), e("e1c", 3500, 3200, 3800), e("e1d", 4500, 4200, 4800, "shadow", 25) ],
+    checkpoints: [{ x: 100, y: G, activated: false }, { x: 1200, y: G, activated: false }, { x: 2500, y: G, activated: false }, { x: 4000, y: G, activated: false }],
     objects: [
       { id: "l1-maleta", x: 400, y: G - 30, width: 40, height: 30, type: "item", collected: false, glowing: false, fragmentId: 1, label: "Maleta" },
       { id: "l1-espejo", x: 1600, y: 320, width: 50, height: 70, type: "mirror", collected: false, glowing: false, fragmentId: 2, label: "Espejo roto" },
       { id: "l1-telefono", x: 2800, y: G - 25, width: 30, height: 25, type: "phone", collected: false, glowing: false, fragmentId: 3, label: "Teléfono" },
     ],
     npcs: [{ id: "l1-hooded", x: 1200, y: G - 48, name: "???", dialogues: ["No deberías estar despierto.", "El que duerme no recuerda.", "Busca la maleta, el espejo, la verdad."], currentDialogue: 0, type: "hooded", facingRight: false }],
-    doors: [{ x: 3800, y: G - 140, width: 40, height: 80, locked: true, requiredObjects: ["l1-maleta", "l1-espejo", "l1-telefono"], leadsToLevel: 2 }],
+    doors: [{ x: 5800, y: G - 150, width: 40, height: 80, locked: true, requiredObjects: ["l1-maleta", "l1-espejo", "l1-telefono"], leadsToLevel: 2 }],
     ambientParticles: { type: "ash", count: 30, color: "#8C8275" },
     bgLayers: [
       { speed: 0.1, elements: [{ x: 0, y: 200, w: 80, h: 320 }, { x: 400, y: 250, w: 60, h: 270 }, { x: 800, y: 180, w: 100, h: 340 }, { x: 1400, y: 220, w: 70, h: 300 }, { x: 2000, y: 240, w: 80, h: 280 }, { x: 2600, y: 200, w: 90, h: 320 }, { x: 3200, y: 230, w: 70, h: 290 }] },
@@ -35,9 +39,9 @@ export const LEVELS: Level[] = [
     ],
   },
   {
-    id: 2, name: "LA CIUDAD", backgroundColor: "#030308", groundY: G, exitX: 3400, levelWidth: 3600,
+    id: 2, name: "LA CIUDAD", backgroundColor: "#030308", groundY: G, exitX: 5300, levelWidth: 5500,
     platforms: [
-      { x: 0, y: G, width: 3600, height: 80 },
+      { x: 0, y: G, width: 5500, height: 80 },
       { x: 200, y: 440, width: 120, height: 14 }, { x: 400, y: 380, width: 100, height: 14 },
       { x: 600, y: 320, width: 100, height: 14 }, { x: 800, y: 260, width: 120, height: 14 },
       { x: 1000, y: 320, width: 100, height: 14 }, { x: 1200, y: 380, width: 140, height: 14 },
@@ -45,15 +49,15 @@ export const LEVELS: Level[] = [
       { x: 2100, y: 300, width: 100, height: 14 }, { x: 2400, y: 360, width: 120, height: 14 },
       { x: 2700, y: 420, width: 140, height: 14 }, { x: 3000, y: 380, width: 120, height: 14 },
     ],
-    enemies: [ e("e2a", 500, 300, 800), e("e2b", 1400, 1200, 1700), e("e2c", 2500, 2300, 2800) ],
-    checkpoints: [{ x: 100, y: G, activated: false }, { x: 1000, y: G, activated: false }, { x: 2200, y: G, activated: false }],
+    enemies: [ e("e2a", 500, 300, 800), e("e2b", 1400, 1200, 1700), e("e2c", 2500, 2300, 2800), e("e2d", 3500, 3200, 3900), e("e2e", 4500, 4200, 4800) ],
+    checkpoints: [{ x: 100, y: G, activated: false }, { x: 1000, y: G, activated: false }, { x: 2200, y: G, activated: false }, { x: 3500, y: G, activated: false }],
     objects: [
       { id: "l2-periodico", x: 350, y: G - 15, width: 35, height: 15, type: "document", collected: false, glowing: false, fragmentId: 4, label: "Periódico" },
       { id: "l2-camara", x: 1600, y: 320, width: 30, height: 30, type: "computer", collected: false, glowing: false, fragmentId: 5, label: "Cámara de seguridad" },
       { id: "l2-cartera", x: 2900, y: G - 20, width: 30, height: 20, type: "item", collected: false, glowing: false, fragmentId: 6, label: "Cartera perdida" },
     ],
     npcs: [{ id: "l2-vagrant", x: 800, y: G - 40, name: "Vagabundo", dialogues: ["Yo te conozco.", "Venías aquí todas las noches.", "Tenías sangre en las manos."], currentDialogue: 0, type: "vagrant", facingRight: true }],
-    doors: [{ x: 3400, y: G - 80, width: 40, height: 80, locked: true, requiredObjects: ["l2-periodico", "l2-camara", "l2-cartera"], leadsToLevel: 3 }],
+    doors: [{ x: 5300, y: G - 80, width: 40, height: 80, locked: true, requiredObjects: ["l2-periodico", "l2-camara", "l2-cartera"], leadsToLevel: 3 }],
     ambientParticles: { type: "rain", count: 60, color: "#4060a0" },
     bgLayers: [
       { speed: 0.1, elements: [{ x: 0, y: 150, w: 120, h: 370 }, { x: 500, y: 180, w: 80, h: 340 }, { x: 1000, y: 130, w: 100, h: 390 }, { x: 1500, y: 160, w: 90, h: 360 }, { x: 2000, y: 140, w: 110, h: 380 }, { x: 2500, y: 170, w: 85, h: 350 }, { x: 3000, y: 150, w: 100, h: 370 }] },
