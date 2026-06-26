@@ -401,12 +401,33 @@ export function GameEngine() {
   const stompBonus = stompCount * 50;
   const levelScore = 1000 + timeBonus - deathPenalty + stompBonus + 600;
 
+  const [guestBlocked, setGuestBlocked] = useState(false);
+  const isGuest = typeof window !== "undefined" && sessionStorage.getItem("mongli-guest-mode") === "true";
+
   const handleNextLevel = () => {
     setTotalScore(prev => prev + levelScore);
     const nextDoor = levelData.doors[0];
-    if (nextDoor) loadLevel(nextDoor.leadsToLevel - 1);
-    else setGameComplete(true);
+    if (!nextDoor) { setGameComplete(true); return; }
+    const nextLevelIdx = nextDoor.leadsToLevel - 1;
+    // Guest mode: block after level 2
+    if (isGuest && nextLevelIdx >= 2) { setGuestBlocked(true); return; }
+    loadLevel(nextLevelIdx);
   };
+
+  // Guest mode blocked overlay
+  if (guestBlocked) {
+    return (
+      <div className="game-page uxpm-glass" style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "crosshair", zIndex: 100 }}>
+        <div style={{ color: "#B30000", fontSize: 14, letterSpacing: "0.2em", marginBottom: 16 }}>CONTENIDO BLOQUEADO</div>
+        <div style={{ color: "#E5DEC9", fontSize: 20, marginBottom: 8, fontFamily: "'Special Elite', serif" }}>Los actos 3, 4 y 5 requieren wallet</div>
+        <div style={{ color: "#555", fontSize: 13, marginBottom: 32, textAlign: "center", maxWidth: 320 }}>Conecta MetaMask para continuar tu historia y guardarla en 0G Chain</div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button onClick={() => window.location.href = "/"} style={{ padding: "14px 28px", background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", cursor: "crosshair", fontFamily: "'Special Elite', serif", fontSize: 14, letterSpacing: "0.15em", borderRadius: 4 }}>CONECTAR WALLET</button>
+          <button onClick={() => window.location.href = "/"} style={{ padding: "14px 28px", background: "transparent", border: "1px solid #333", color: "#555", cursor: "crosshair", fontFamily: "'Special Elite', serif", fontSize: 14, borderRadius: 4 }}>volver al inicio</button>
+        </div>
+      </div>
+    );
+  }
 
   if (showCompletion) {
     const fmt = `${Math.floor(levelTime / 60)}:${String(levelTime % 60).padStart(2, "0")}`;

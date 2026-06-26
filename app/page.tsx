@@ -77,34 +77,54 @@ function LandingContent() {
           </motion.p>
         </motion.div>
 
-        {/* CTA Button */}
+        {/* CTA Buttons — side by side */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.5 }}
           className="mt-8 sm:mt-10 flex flex-col items-center gap-3">
-          {/* Botón principal — funciona con o sin wallet */}
-          <motion.button
-            onClick={() => { playChoice(); router.push("/game"); }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.97 }}
-            animate={{
-              boxShadow: ["0 0 10px rgba(212,162,68,0.2)", "0 0 25px rgba(212,162,68,0.5)", "0 0 10px rgba(212,162,68,0.2)"],
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="px-10 sm:px-14 py-3.5 sm:py-4 border-2 font-display text-sm sm:text-base tracking-[0.25em] transition-all uxpm-press border-noir-accent bg-noir-accent/15 text-noir-accent hover:bg-noir-accent/25">
-            {isConnected ? "DESPERTAR" : "JUGAR COMO INVITADO"}
-          </motion.button>
 
-          {!isConnected && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} className="font-body text-[10px] text-noir-muted mt-2 text-center max-w-xs">
-              Sin wallet puedes jugar completo. Conecta MetaMask para guardar tu progreso en 0G Chain.
-            </motion.p>
-          )}
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+            {/* Wallet button */}
+            <button
+              onClick={() => {
+                if (isConnected) { playChoice(); router.push("/game"); }
+              }}
+              style={{
+                padding: "16px 32px", background: isConnected ? "#B30000" : "transparent",
+                border: "2px solid #B30000", color: "#E5DEC9", fontSize: 16, cursor: "crosshair",
+                fontFamily: "'Special Elite', serif", letterSpacing: "0.2em",
+                boxShadow: "0 0 20px rgba(179,0,0,0.3)", borderRadius: 4,
+                opacity: isConnected ? 1 : 0.7,
+              }}
+            >
+              {isConnected ? "DESPERTAR →" : "CONECTAR WALLET"}
+            </button>
 
-          {isConnected && (
-            <p className="font-body text-[9px] text-green-500/60 mt-2 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              Wallet conectada — progreso se guarda en 0G
-            </p>
-          )}
+            <span style={{ color: "#222", fontSize: 12 }}>o</span>
+
+            {/* Guest button */}
+            <button
+              onClick={() => {
+                if (typeof window !== "undefined") sessionStorage.setItem("mongli-guest-mode", "true");
+                playChoice(); router.push("/game");
+              }}
+              style={{
+                padding: "14px 20px", background: "transparent",
+                border: "1px solid #2a2a2a", color: "#555", fontSize: 13, cursor: "crosshair",
+                fontFamily: "'Special Elite', serif", letterSpacing: "0.1em", borderRadius: 4,
+              }}
+            >
+              Jugar sin cuenta
+            </button>
+          </div>
+
+          <div style={{ color: "#333", fontSize: 11, marginTop: 6, textAlign: "center", letterSpacing: "0.05em" }}>
+            {isConnected
+              ? <span style={{ color: "#4CAF50", display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4CAF50" }} />
+                  Wallet conectada — juego completo + guardado en 0G
+                </span>
+              : "Sin cuenta: primeros 2 actos · Con wallet: juego completo + guardado en 0G"
+            }
+          </div>
 
           <div className="flex items-center gap-4 mt-3">
             <button onClick={() => router.push("/speedrun")} className="font-body text-[10px] text-red-400/60 hover:text-red-400 transition-colors">⚡ Modo Speedrun</button>
