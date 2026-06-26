@@ -26,7 +26,8 @@ html, body, *, *::before, *::after {
 }
 /* Game pages: crosshair visible (no custom cursor) */
 .game-page, .game-page *, .game-page canvas,
-.game-page button, .game-page div, .game-page input {
+.game-page button, .game-page div, .game-page input,
+.completion-overlay, .completion-overlay * {
   cursor: crosshair !important;
 }
 /* RainbowKit/modal overrides */
