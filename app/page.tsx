@@ -13,6 +13,7 @@ import AudioToggle from "@/components/AudioToggle";
 import OnboardingModal from "@/components/OnboardingModal";
 import { playChoice, startAudioOnFirstInteraction } from "@/lib/audio";
 import { switchToGalileo } from "@/lib/og-chain";
+import { createGuestSession } from "@/lib/guest";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 
@@ -79,28 +80,32 @@ function LandingContent() {
         {/* CTA Button */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.5 }}
           className="mt-8 sm:mt-10 flex flex-col items-center gap-3">
+          {/* Botón principal — funciona con o sin wallet */}
+          <motion.button
+            onClick={() => { playChoice(); router.push("/game"); }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            animate={{
+              boxShadow: ["0 0 10px rgba(212,162,68,0.2)", "0 0 25px rgba(212,162,68,0.5)", "0 0 10px rgba(212,162,68,0.2)"],
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="px-10 sm:px-14 py-3.5 sm:py-4 border-2 font-display text-sm sm:text-base tracking-[0.25em] transition-all uxpm-press border-noir-accent bg-noir-accent/15 text-noir-accent hover:bg-noir-accent/25">
+            {isConnected ? "DESPERTAR" : "JUGAR COMO INVITADO"}
+          </motion.button>
+
           {!isConnected && (
-            <motion.p animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity }}
-              className="font-body text-[10px] text-noir-accent tracking-wider">
-              Conecta tu wallet para despertar
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} className="font-body text-[10px] text-noir-muted mt-2 text-center max-w-xs">
+              Sin wallet puedes jugar completo. Conecta MetaMask para guardar tu progreso en 0G Chain.
             </motion.p>
           )}
-          <motion.button
-            onClick={() => { if (isConnected) { playChoice(); router.push("/game"); } }}
-            disabled={!isConnected}
-            whileHover={isConnected ? { scale: 1.05 } : {}}
-            whileTap={isConnected ? { scale: 0.97 } : {}}
-            animate={isConnected ? {
-              boxShadow: ["0 0 10px rgba(212,162,68,0.2)", "0 0 25px rgba(212,162,68,0.5)", "0 0 10px rgba(212,162,68,0.2)"],
-            } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
-            className={`px-10 sm:px-14 py-3.5 sm:py-4 border-2 font-display text-sm sm:text-base tracking-[0.25em] transition-all uxpm-press ${
-              isConnected
-                ? "border-noir-accent bg-noir-accent/15 text-noir-accent hover:bg-noir-accent/25"
-                : "border-noir-border bg-noir-card/30 text-noir-muted/50 cursor-not-allowed"
-            }`}>
-            DESPERTAR
-          </motion.button>
+
+          {isConnected && (
+            <p className="font-body text-[9px] text-green-500/60 mt-2 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              Wallet conectada — progreso se guarda en 0G
+            </p>
+          )}
+
           <div className="flex items-center gap-4 mt-3">
             <button onClick={() => router.push("/speedrun")} className="font-body text-[10px] text-red-400/60 hover:text-red-400 transition-colors">⚡ Modo Speedrun</button>
             <button onClick={() => router.push("/trailer")} className="font-body text-[10px] text-noir-muted/50 hover:text-noir-accent transition-colors">Ver trailer →</button>

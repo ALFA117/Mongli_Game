@@ -1,8 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useAccount } from "wagmi";
-import { useRouter } from "next/navigation";
 import { useEffect, Suspense } from "react";
 import Providers from "@/components/Providers";
 
@@ -31,19 +29,10 @@ const GameEngine = dynamic(
 );
 
 function GameGuard() {
-  const { isConnected } = useAccount();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isConnected) router.push("/");
-  }, [isConnected, router]);
-
   useEffect(() => {
     document.body.style.cursor = "crosshair";
-    return () => { document.body.style.cursor = "none"; };
+    return () => { document.body.style.cursor = ""; };
   }, []);
-
-  if (!isConnected) return null;
 
   return (
     <div className="game-page" style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#000" }}>

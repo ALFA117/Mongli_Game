@@ -42,7 +42,7 @@ function NightmareContent() {
     return () => document.removeEventListener("click", s);
   }, []);
 
-  useEffect(() => { if (!isConnected) router.push("/"); }, [isConnected, router]);
+  // Guest mode allowed — no wallet redirect
 
   // Skull flicker
   useEffect(() => {
