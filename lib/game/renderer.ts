@@ -2,137 +2,286 @@ import type { Player, Platform, InteractiveObject, NPC, Door, Level, BackgroundL
 import { INTERACT_RANGE } from "./gameTypes";
 
 interface Camera { x: number; y: number }
-interface Particle { x: number; y: number; vy: number; vx: number; opacity: number; size: number }
+interface FX { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number; color: string; type: string }
 
-let particles: Particle[] = [];
-let particlesInit = false;
+let ambientParticles: FX[] = [];
+let fxParticles: FX[] = [];
+let ambientInit = false;
+let playerTrail: { x: number; y: number }[] = [];
 
-function initParticles(config: ParticleConfig, canvasW: number) {
-  particles = [];
-  for (let i = 0; i < config.count; i++) {
-    particles.push({
-      x: Math.random() * canvasW * 2,
-      y: Math.random() * 600,
-      vy: config.type === "rain" ? 4 + Math.random() * 6 : 0.3 + Math.random() * 0.5,
-      vx: config.type === "paper" ? (Math.random() - 0.5) * 0.8 : 0,
-      opacity: 0.2 + Math.random() * 0.4,
-      size: config.type === "rain" ? 1 : 2 + Math.random() * 2,
-    });
-  }
-  particlesInit = true;
+function initAmbient(config: ParticleConfig, w: number) {
+  ambientParticles = Array.from({ length: config.count }, () => ({
+    x: Math.random() * w * 2, y: Math.random() * 600, vx: config.type === "paper" ? (Math.random() - 0.5) * 0.8 : 0,
+    vy: config.type === "rain" ? 4 + Math.random() * 6 : 0.3 + Math.random() * 0.5,
+    life: 1, maxLife: 1, size: config.type === "rain" ? 1 : 2 + Math.random() * 2, color: config.color, type: config.type,
+  }));
+  ambientInit = true;
 }
 
-export function render(
-  ctx: CanvasRenderingContext2D,
-  level: Level,
-  player: Player,
-  cam: Camera,
-  time: number,
-  nearObj: InteractiveObject | null,
-  nearNPC: NPC | null,
-  collectedIds: Set<string>
-) {
-  const W = ctx.canvas.width;
-  const H = ctx.canvas.height;
+export function spawnFX(x: number, y: number, type: string, count = 5) {
+  for (let i = 0; i < count; i++) {
+    fxParticles.push({
+      x, y, vx: (Math.random() - 0.5) * (type === "spark" ? 200 : 80),
+      vy: -Math.random() * (type === "impact" ? 150 : 100),
+      life: 0.4 + Math.random() * 0.3, maxLife: 0.5,
+      size: type === "collect" ? 3 : 2 + Math.random() * 2,
+      color: type === "collect" ? "#FF1A1A" : type === "blood" ? "#8b0000" : type === "spark" ? "#ffaa00" : "#8C8275",
+      type,
+    });
+  }
+}
 
-  // Clear
+export function resetParticles() { ambientInit = false; fxParticles = []; playerTrail = []; }
+
+export function render(
+  ctx: CanvasRenderingContext2D, level: Level, player: Player, cam: Camera, time: number,
+  nearObj: InteractiveObject | null, nearNPC: NPC | null, collectedIds: Set<string>
+) {
+  const W = ctx.canvas.width, H = ctx.canvas.height;
+
+  // Background
   ctx.fillStyle = level.backgroundColor;
   ctx.fillRect(0, 0, W, H);
 
-  // Parallax backgrounds
-  for (const layer of level.bgLayers) {
-    drawBgLayer(ctx, layer, cam, W, H);
-  }
+  // Parallax
+  for (const layer of level.bgLayers) drawBgLayer(ctx, layer, cam);
 
-  // Particles
-  if (!particlesInit) initParticles(level.ambientParticles, W);
-  drawParticles(ctx, level.ambientParticles, cam, W, H);
+  // Ambient particles
+  if (!ambientInit) initAmbient(level.ambientParticles, W);
+  drawAmbientParticles(ctx, level.ambientParticles, cam, H);
 
   ctx.save();
   ctx.translate(-cam.x, -cam.y);
 
   // Platforms
-  for (const plat of level.platforms) {
-    drawPlatform(ctx, plat, time);
-  }
+  for (const p of level.platforms) drawPlatform(ctx, p, time);
 
   // Doors
-  for (const door of level.doors) {
-    const unlocked = door.requiredObjects.every(id => collectedIds.has(id));
-    drawDoor(ctx, door, unlocked, time);
-  }
+  for (const d of level.doors) drawDoor(ctx, d, d.requiredObjects.every(id => collectedIds.has(id)), time);
 
   // Objects
-  for (const obj of level.objects) {
-    if (!obj.collected) drawObject(ctx, obj, player, time);
-  }
+  for (const o of level.objects) if (!o.collected) drawObject(ctx, o, player, time);
 
   // NPCs
-  for (const npc of level.npcs) {
-    drawNPC(ctx, npc, player, time);
+  for (const n of level.npcs) drawNPC(ctx, n, time);
+
+  // Player lighting (glow underneath)
+  const px = player.x + player.width / 2, py = player.y + player.height / 2;
+  const grd = ctx.createRadialGradient(px, py, 0, px, py, 90);
+  grd.addColorStop(0, "rgba(229,222,201,0.06)");
+  grd.addColorStop(1, "transparent");
+  ctx.fillStyle = grd;
+  ctx.fillRect(px - 90, py - 90, 180, 180);
+
+  // Player shadow on ground
+  const groundY = level.groundY;
+  const airDist = Math.max(0, groundY - (player.y + player.height));
+  const shadowScale = Math.max(0.2, 1 - airDist / 200);
+  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.beginPath();
+  ctx.ellipse(player.x + player.width / 2, groundY, 16 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Player trail
+  if (Math.abs(player.velocityX) > 100) {
+    playerTrail.push({ x: player.x, y: player.y });
+    if (playerTrail.length > 6) playerTrail.shift();
+  } else {
+    if (playerTrail.length > 0) playerTrail.shift();
+  }
+  for (let i = 0; i < playerTrail.length; i++) {
+    ctx.globalAlpha = 0.04 + i * 0.015;
+    drawPlayerSilhouette(ctx, playerTrail[i].x, playerTrail[i].y, player, time, true);
+  }
+  ctx.globalAlpha = 1;
+
+  // Draw player (with invincibility blink)
+  if (!player.isInvincible || Math.sin(time * 20) > 0) {
+    drawPlayerDetailed(ctx, player, time);
   }
 
-  // Player
-  drawPlayer(ctx, player, time);
-
-  // Interact hint
-  if (nearObj && !nearObj.collected) {
-    drawHint(ctx, nearObj.x + nearObj.width / 2, nearObj.y - 20, `[E] ${nearObj.label}`);
+  // Enemies (passed via level.enemies which is mutated in game loop)
+  if (level.enemies) {
+    for (const en of level.enemies) {
+      if (en.state === "dead") continue;
+      ctx.globalAlpha = en.state === "stunned" ? 0.4 : 0.9;
+      ctx.fillStyle = en.type === "crawler" ? "#1a0a0a" : "#0d0d0d";
+      if (en.type === "crawler") {
+        ctx.fillRect(en.x, en.y + 10, en.width, en.height - 10);
+        ctx.fillStyle = "#fff"; ctx.fillRect(en.x + 6, en.y + 14, 3, 3); ctx.fillRect(en.x + 18, en.y + 14, 3, 3);
+      } else {
+        ctx.fillRect(en.x + 6, en.y + 14, 16, 22);
+        ctx.beginPath(); ctx.arc(en.x + 14, en.y + 10, 9, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.fillRect(en.x + 10, en.y + 8, 2, 2); ctx.fillRect(en.x + 16, en.y + 8, 2, 2);
+      }
+      if (en.state === "stunned") {
+        ctx.fillStyle = "#ffaa00"; ctx.font = "12px serif"; ctx.textAlign = "center";
+        ctx.fillText("★", en.x + 14, en.y - 5);
+      }
+      if (en.state === "chase") {
+        ctx.fillStyle = "#FF1A1A"; ctx.font = "10px monospace"; ctx.textAlign = "center";
+        ctx.fillText("!", en.x + 14, en.y - 5);
+      }
+      ctx.globalAlpha = 1;
+    }
   }
-  if (nearNPC) {
-    drawHint(ctx, nearNPC.x + 16, nearNPC.y - 20, `[E] Hablar`);
+
+  // Interact hints
+  if (nearObj && !nearObj.collected) drawHint(ctx, nearObj.x + nearObj.width / 2, nearObj.y - 20, `[E] ${nearObj.label}`);
+  if (nearNPC) drawHint(ctx, nearNPC.x + 16, nearNPC.y - 20, "[E] Hablar");
+
+  // FX particles
+  updateAndDrawFX(ctx, 1 / 60);
+
+  ctx.restore();
+
+  // Damage flash
+  if (player.isInvincible) {
+    ctx.fillStyle = "rgba(179,0,0,0.1)";
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+function drawPlayerDetailed(ctx: CanvasRenderingContext2D, p: Player, time: number) {
+  const x = p.x, y = p.y;
+  ctx.save();
+  if (!p.facingRight) { ctx.translate(x + p.width, 0); ctx.scale(-1, 1); ctx.translate(-x, 0); }
+
+  // Breathing
+  const breathe = p.state === "idle" ? Math.sin(time * 3) * 1 : 0;
+
+  // HAT (fedora)
+  ctx.fillStyle = "#111";
+  ctx.fillRect(x + 2, y - 2 + breathe, 28, 8); // brim
+  ctx.fillRect(x + 6, y - 12 + breathe, 20, 12); // crown
+  ctx.fillStyle = "#B30000";
+  ctx.fillRect(x + 6, y - 3 + breathe, 20, 2); // band
+
+  // HEAD
+  ctx.fillStyle = "#E5DEC9";
+  ctx.beginPath();
+  ctx.arc(x + 16, y + 10 + breathe, 12, 0, Math.PI * 2);
+  ctx.fill();
+  // Face shadow
+  ctx.fillStyle = "rgba(0,0,0,0.2)";
+  ctx.beginPath();
+  ctx.arc(x + 16, y + 14 + breathe, 10, 0, Math.PI);
+  ctx.fill();
+
+  // EYES
+  const blinking = p.blinkTimer < 0.15;
+  if (!blinking) {
+    ctx.fillStyle = "#FF1A1A";
+    ctx.shadowColor = "#FF1A1A"; ctx.shadowBlur = 8;
+    ctx.fillRect(x + 11, y + 8 + breathe, 3, 3);
+    ctx.fillRect(x + 18, y + 8 + breathe, 3, 3);
+    ctx.shadowBlur = 0;
+    // Eye glow
+    const eg = ctx.createRadialGradient(x + 12, y + 9 + breathe, 0, x + 12, y + 9 + breathe, 20);
+    eg.addColorStop(0, "rgba(255,26,26,0.1)"); eg.addColorStop(1, "transparent");
+    ctx.fillStyle = eg; ctx.fillRect(x - 5, y - 5, 40, 30);
+  }
+
+  // NECK
+  ctx.fillStyle = "#C8BCA8";
+  ctx.fillRect(x + 13, y + 20 + breathe, 6, 6);
+
+  // TORSO
+  ctx.fillStyle = "#D4C9B4";
+  ctx.fillRect(x + 4, y + 24 + breathe, 24, 22);
+  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  ctx.fillRect(x + 4, y + 24 + breathe, 8, 22); // shadow
+  // Buttons
+  ctx.fillStyle = "#8C8275";
+  for (let i = 0; i < 3; i++) ctx.fillRect(x + 15, y + 28 + i * 6 + breathe, 2, 2);
+
+  // ARMS
+  const armSwing = p.state === "walking" ? Math.sin(time * 8) * 12 : 0;
+  ctx.fillStyle = "#C8BCA8";
+  ctx.save(); ctx.translate(x + 3, y + 26 + breathe); ctx.rotate((-armSwing * Math.PI) / 180); ctx.fillRect(-3, 0, 7, 18); ctx.restore();
+  if (p.state === "interacting") {
+    ctx.save(); ctx.translate(x + 24, y + 26 + breathe); ctx.rotate(-0.7); ctx.fillRect(0, 0, 7, 18); ctx.restore();
+  } else {
+    ctx.save(); ctx.translate(x + 24, y + 26 + breathe); ctx.rotate((armSwing * Math.PI) / 180); ctx.fillRect(0, 0, 7, 18); ctx.restore();
+  }
+
+  // LEGS
+  ctx.fillStyle = "#C8BCA8";
+  const legSwing = p.state === "walking" ? Math.sin(time * 8) * 10 : 0;
+  if (p.state === "jumping") {
+    ctx.fillRect(x + 6, y + 44, 9, 10); ctx.fillRect(x + 17, y + 44, 9, 10);
+  } else {
+    ctx.save(); ctx.translate(x + 8, y + 44); ctx.rotate((legSwing * Math.PI) / 180); ctx.fillRect(-3, 0, 9, 16); ctx.restore();
+    ctx.save(); ctx.translate(x + 20, y + 44); ctx.rotate((-legSwing * Math.PI) / 180); ctx.fillRect(-3, 0, 9, 16); ctx.restore();
+  }
+  // Boots
+  ctx.fillStyle = "#1a1a1a";
+  ctx.fillRect(x + 4, y + 56, 11, 5);
+  ctx.fillRect(x + 17, y + 56, 11, 5);
+
+  // Walking dust
+  if (p.state === "walking" && p.isOnGround && Math.floor(time * 8) % 2 === 0) {
+    spawnFX(x + 16, y + p.height, "dust", 1);
   }
 
   ctx.restore();
 }
 
-function drawBgLayer(ctx: CanvasRenderingContext2D, layer: BackgroundLayer, cam: Camera, W: number, H: number) {
-  ctx.save();
+function drawPlayerSilhouette(ctx: CanvasRenderingContext2D, x: number, y: number, p: Player, _t: number, ghost: boolean) {
+  ctx.fillStyle = ghost ? "#0d0d0d" : "#E5DEC9";
+  ctx.beginPath(); ctx.arc(x + 16, y + 10, 12, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(x + 4, y + 24, 24, 22);
+  ctx.fillRect(x + 6, y + 44, 9, 14); ctx.fillRect(x + 17, y + 44, 9, 14);
+}
+
+function drawBgLayer(ctx: CanvasRenderingContext2D, layer: BackgroundLayer, cam: Camera) {
   for (const el of layer.elements) {
     const sx = el.x - cam.x * layer.speed;
     ctx.fillStyle = "#080808";
     ctx.fillRect(sx, el.y, el.w, el.h);
     if (el.lit) {
-      // Windows
       for (let wy = el.y + 20; wy < el.y + el.h - 20; wy += 40) {
         for (let wx = sx + 8; wx < sx + el.w - 8; wx += 18) {
-          ctx.fillStyle = "rgba(196,146,58,0.15)";
+          ctx.fillStyle = "rgba(196,146,58,0.12)";
           ctx.fillRect(wx, wy, 8, 10);
         }
       }
     }
   }
-  ctx.restore();
 }
 
-function drawParticles(ctx: CanvasRenderingContext2D, config: ParticleConfig, cam: Camera, W: number, H: number) {
-  for (const p of particles) {
-    p.y += p.vy;
-    p.x += p.vx;
-    if (p.y > H) { p.y = -5; p.x = Math.random() * W * 2; }
-    if (p.x > W * 2) p.x = 0;
-
+function drawAmbientParticles(ctx: CanvasRenderingContext2D, config: ParticleConfig, cam: Camera, H: number) {
+  for (const p of ambientParticles) {
+    p.y += p.vy; p.x += p.vx;
+    if (p.y > H) { p.y = -5; p.x = Math.random() * ctx.canvas.width * 2; }
     ctx.fillStyle = config.color;
-    ctx.globalAlpha = p.opacity;
-    if (config.type === "rain") {
-      ctx.fillRect(p.x - cam.x * 0.5, p.y, 1, 8);
-    } else {
-      ctx.beginPath();
-      ctx.arc(p.x - cam.x * 0.2, p.y, p.size, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    ctx.globalAlpha = 0.3;
+    if (config.type === "rain") ctx.fillRect(p.x - cam.x * 0.5, p.y, 1, 8);
+    else { ctx.beginPath(); ctx.arc(p.x - cam.x * 0.2, p.y, p.size, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+}
+
+function updateAndDrawFX(ctx: CanvasRenderingContext2D, dt: number) {
+  for (let i = fxParticles.length - 1; i >= 0; i--) {
+    const p = fxParticles[i];
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vy += 300 * dt; p.life -= dt;
+    if (p.life <= 0) { fxParticles.splice(i, 1); continue; }
+    ctx.globalAlpha = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
   }
 }
 
 function drawPlatform(ctx: CanvasRenderingContext2D, plat: Platform, time: number) {
   if (plat.type === "flickering") {
-    const visible = Math.sin(time * 2 + plat.x * 0.01) > -0.3;
-    ctx.globalAlpha = visible ? 0.4 + Math.sin(time * 3) * 0.2 : 0.05;
+    const vis = Math.sin(time * 2 + plat.x * 0.01) > -0.3;
+    ctx.globalAlpha = vis ? 0.4 + Math.sin(time * 3) * 0.2 : 0.05;
   }
-  ctx.fillStyle = plat.y >= 490 ? "#0a0a0a" : "#1a1a1a";
+  ctx.fillStyle = plat.y >= 510 ? "#0a0a0a" : "#1a1a1a";
   ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
-  // Top edge highlight
   ctx.fillStyle = "#2a2a2a";
   ctx.fillRect(plat.x, plat.y, plat.width, 2);
   ctx.globalAlpha = 1;
@@ -144,137 +293,40 @@ function drawDoor(ctx: CanvasRenderingContext2D, door: Door, unlocked: boolean, 
   ctx.strokeStyle = unlocked ? "#E5DEC9" : "#B30000";
   ctx.lineWidth = 2;
   ctx.strokeRect(door.x, door.y, door.width, door.height);
-
   if (unlocked) {
-    ctx.shadowBlur = 10 + Math.sin(time * 3) * 5;
-    ctx.shadowColor = "#E5DEC9";
-    ctx.fillStyle = "#E5DEC9";
-    ctx.font = "10px monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("SALIDA →", door.x + door.width / 2, door.y - 8);
-    ctx.shadowBlur = 0;
+    ctx.shadowBlur = 10 + Math.sin(time * 3) * 5; ctx.shadowColor = "#E5DEC9";
+    ctx.fillStyle = "#E5DEC9"; ctx.font = "10px monospace"; ctx.textAlign = "center";
+    ctx.fillText("SALIDA →", door.x + door.width / 2, door.y - 8); ctx.shadowBlur = 0;
   } else {
-    ctx.fillStyle = "#B30000";
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = "#FF1A1A";
-    ctx.beginPath();
-    ctx.arc(door.x + door.width / 2, door.y + door.height / 2, 6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#B30000"; ctx.shadowBlur = 8; ctx.shadowColor = "#FF1A1A";
+    ctx.beginPath(); ctx.arc(door.x + door.width / 2, door.y + door.height / 2, 6, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
   }
 }
 
 function drawObject(ctx: CanvasRenderingContext2D, obj: InteractiveObject, player: Player, time: number) {
   const dx = (player.x + player.width / 2) - (obj.x + obj.width / 2);
   const dy = (player.y + player.height / 2) - (obj.y + obj.height / 2);
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  const near = dist < INTERACT_RANGE;
-
-  if (near || obj.glowing) {
-    ctx.shadowBlur = 12 + Math.sin(time * 4) * 4;
-    ctx.shadowColor = "#FF1A1A";
-  }
-
+  const near = Math.sqrt(dx * dx + dy * dy) < INTERACT_RANGE;
+  if (near || obj.glowing) { ctx.shadowBlur = 12 + Math.sin(time * 4) * 4; ctx.shadowColor = "#FF1A1A"; }
   ctx.fillStyle = obj.type === "light" ? "#FF1A1A" : "#E5DEC9";
   ctx.globalAlpha = near ? 0.9 : 0.4;
-
-  if (obj.type === "light") {
-    ctx.beginPath();
-    ctx.arc(obj.x + obj.width / 2, obj.y + obj.height / 2, obj.width / 2, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
-  }
-
-  ctx.globalAlpha = 1;
-  ctx.shadowBlur = 0;
+  if (obj.type === "light") { ctx.beginPath(); ctx.arc(obj.x + obj.width / 2, obj.y + obj.height / 2, obj.width / 2, 0, Math.PI * 2); ctx.fill(); }
+  else ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 }
 
-function drawNPC(ctx: CanvasRenderingContext2D, npc: NPC, player: Player, time: number) {
-  const x = npc.x;
-  const y = npc.y;
-
+function drawNPC(ctx: CanvasRenderingContext2D, npc: NPC, time: number) {
   ctx.fillStyle = npc.type === "reflection" ? "#3060a0" : "#E5DEC9";
   ctx.globalAlpha = npc.type === "figure" ? 0.5 : 0.8;
-
-  // Body
-  ctx.fillRect(x + 8, y + 16, 16, 28);
-  // Head
-  ctx.beginPath();
-  ctx.arc(x + 16, y + 10, 10, 0, Math.PI * 2);
-  ctx.fill();
-
-  if (npc.type === "hooded") {
-    ctx.fillStyle = "#0a0a0a";
-    ctx.beginPath();
-    ctx.arc(x + 16, y + 8, 12, Math.PI, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Eyes
-  ctx.fillStyle = "#FF1A1A";
-  ctx.globalAlpha = 0.8;
-  ctx.fillRect(x + 12, y + 9, 2, 2);
-  ctx.fillRect(x + 18, y + 9, 2, 2);
-
+  ctx.fillRect(npc.x + 8, npc.y + 16, 16, 28);
+  ctx.beginPath(); ctx.arc(npc.x + 16, npc.y + 10, 10, 0, Math.PI * 2); ctx.fill();
+  if (npc.type === "hooded") { ctx.fillStyle = "#0a0a0a"; ctx.beginPath(); ctx.arc(npc.x + 16, npc.y + 8, 12, Math.PI, Math.PI * 2); ctx.fill(); }
+  ctx.fillStyle = "#FF1A1A"; ctx.globalAlpha = 0.8;
+  ctx.fillRect(npc.x + 12, npc.y + 9, 2, 2); ctx.fillRect(npc.x + 18, npc.y + 9, 2, 2);
   ctx.globalAlpha = 1;
-}
-
-function drawPlayer(ctx: CanvasRenderingContext2D, player: Player, time: number) {
-  const x = player.x;
-  const y = player.y;
-
-  ctx.save();
-  if (!player.facingRight) {
-    ctx.translate(x + player.width, 0);
-    ctx.scale(-1, 1);
-    ctx.translate(-x, 0);
-  }
-
-  ctx.fillStyle = "#E5DEC9";
-
-  // Body
-  ctx.fillRect(x + 8, y + 18, 16, 26);
-
-  // Head
-  ctx.beginPath();
-  ctx.arc(x + 16, y + 12, 10, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Legs animation
-  if (player.state === "walking") {
-    const legAnim = Math.sin(time * 10) * 4;
-    ctx.fillRect(x + 8, y + 44, 6, 8 + legAnim);
-    ctx.fillRect(x + 18, y + 44, 6, 8 - legAnim);
-  } else {
-    ctx.fillRect(x + 8, y + 44, 6, 6);
-    ctx.fillRect(x + 18, y + 44, 6, 6);
-  }
-
-  // Eyes
-  const blinking = player.blinkTimer < 0.15;
-  if (!blinking) {
-    ctx.fillStyle = "#FF1A1A";
-    ctx.shadowBlur = 4;
-    ctx.shadowColor = "#FF1A1A";
-    ctx.fillRect(x + 12, y + 10, 3, 3);
-    ctx.fillRect(x + 19, y + 10, 3, 3);
-    ctx.shadowBlur = 0;
-  }
-
-  ctx.restore();
 }
 
 function drawHint(ctx: CanvasRenderingContext2D, x: number, y: number, text: string) {
-  ctx.fillStyle = "#B30000";
-  ctx.font = "11px monospace";
-  ctx.textAlign = "center";
-  ctx.shadowBlur = 6;
-  ctx.shadowColor = "#FF1A1A";
-  ctx.fillText(text, x, y);
-  ctx.shadowBlur = 0;
-}
-
-export function resetParticles() {
-  particlesInit = false;
+  ctx.fillStyle = "#B30000"; ctx.font = "11px monospace"; ctx.textAlign = "center";
+  ctx.shadowBlur = 6; ctx.shadowColor = "#FF1A1A"; ctx.fillText(text, x, y); ctx.shadowBlur = 0;
 }
