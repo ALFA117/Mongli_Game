@@ -1,6 +1,6 @@
 import type { Level } from "./gameTypes";
 
-const G = 420; // Ground Y — visible in upper portion of screen
+const G = 380; // Ground Y — centered on screen
 
 const e = (id: string, x: number, pl: number, pr: number, type: "shadow" | "watcher" | "crawler" = "shadow", dmg = 20, customY?: number) => ({
   id, x, y: customY ?? G - 40, width: 28, height: 40, type, velocityX: 0, velocityY: 0, isOnGround: false,
