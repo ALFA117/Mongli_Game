@@ -368,10 +368,46 @@ function drawPlatform(ctx: CanvasRenderingContext2D, plat: Platform, time: numbe
     const [base, top] = platColors[levelId] || ["#2d1a1a", "#5a3a3a"];
     ctx.fillStyle = "rgba(0,0,0,0.4)";
     ctx.fillRect(plat.x + 3, plat.y + plat.height, plat.width - 3, 4);
-    ctx.fillStyle = base;
-    ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
-    ctx.fillStyle = top;
-    ctx.fillRect(plat.x, plat.y, plat.width, 2);
+    // Breakable: red tint + cracks
+    if (plat.breakable && !plat.broken) {
+      const cracking = plat.breakTimer !== undefined && plat.breakTimer < 1.2;
+      ctx.fillStyle = cracking && Math.sin(Date.now() * 0.02) > 0 ? "#4a0808" : "#3a1515";
+      ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+      ctx.strokeStyle = "rgba(200,0,0,0.4)"; ctx.lineWidth = 0.5;
+      for (let c = 0; c < 3; c++) {
+        ctx.beginPath(); ctx.moveTo(plat.x + c * 25 + 10, plat.y);
+        ctx.lineTo(plat.x + c * 25 + 20, plat.y + plat.height); ctx.stroke();
+      }
+      ctx.fillStyle = "#5a2020"; ctx.fillRect(plat.x, plat.y, plat.width, 2);
+    } else if (plat.broken) {
+      return; // don't draw broken platforms
+    } else {
+      ctx.fillStyle = base;
+      ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+      ctx.fillStyle = top;
+      ctx.fillRect(plat.x, plat.y, plat.width, 2);
+    }
+
+    // Moving platform indicator
+    if (plat.moving && plat.startX !== undefined && plat.endX !== undefined) {
+      ctx.fillStyle = "rgba(196,146,58,0.15)";
+      ctx.fillRect(plat.startX, plat.y + plat.height + 2, plat.endX - plat.startX + plat.width, 2);
+    }
+
+    // Spikes
+    if (plat.hasSpikes) {
+      ctx.fillStyle = "#4a0808";
+      const spikes = Math.floor(plat.width / 10);
+      for (let s = 0; s < spikes; s++) {
+        const sx = plat.x + s * 10 + 5;
+        ctx.beginPath(); ctx.moveTo(sx - 4, plat.y); ctx.lineTo(sx, plat.y - 8); ctx.lineTo(sx + 4, plat.y);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.fillStyle = "rgba(180,0,0,0.3)";
+      for (let s = 0; s < spikes; s++) {
+        ctx.beginPath(); ctx.arc(plat.x + s * 10 + 5, plat.y - 8, 1.5, 0, Math.PI * 2); ctx.fill();
+      }
+    }
   }
 }
 

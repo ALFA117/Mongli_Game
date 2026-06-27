@@ -23,6 +23,15 @@ export interface Platform {
   width: number;
   height: number;
   type?: "solid" | "flickering";
+  breakable?: boolean;
+  breakTimer?: number;
+  broken?: boolean;
+  moving?: boolean;
+  startX?: number;
+  endX?: number;
+  speed?: number;
+  direction?: 1 | -1;
+  hasSpikes?: boolean;
 }
 
 export interface Checkpoint {

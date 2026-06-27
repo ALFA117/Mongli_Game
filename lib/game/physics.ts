@@ -72,8 +72,17 @@ export function updatePlayer(
   const currBottom = p.y + p.height;
 
   for (const plat of platforms) {
+    // Skip broken breakable platforms
+    if (plat.broken) continue;
     // Skip flickering platforms that are "off"
     if (plat.type === "flickering" && Math.sin(time * 2 + plat.x * 0.01) < -0.3) continue;
+
+    // Update moving platforms
+    if (plat.moving && plat.startX !== undefined && plat.endX !== undefined && plat.speed && plat.direction !== undefined) {
+      plat.x += plat.speed * plat.direction * dt;
+      if (plat.x >= plat.endX) plat.direction = -1;
+      if (plat.x <= plat.startX) plat.direction = 1;
+    }
 
     const overlapX = p.x + p.width > plat.x && p.x < plat.x + plat.width;
     const wasAbove = prevBottom <= plat.y + 4;
@@ -84,6 +93,27 @@ export function updatePlayer(
       p.y = plat.y - p.height;
       p.velocityY = 0;
       p.isOnGround = true;
+
+      // Move player with moving platform
+      if (plat.moving && plat.speed && plat.direction !== undefined) {
+        p.x += plat.speed * plat.direction * dt;
+      }
+
+      // Breakable platform timer
+      if (plat.breakable && plat.breakTimer !== undefined && !plat.broken) {
+        plat.breakTimer -= dt;
+        if (plat.breakTimer <= 0) plat.broken = true;
+      }
+
+      // Spike damage
+      if (plat.hasSpikes && !p.isInvincible) {
+        p.health -= 15;
+        p.isInvincible = true;
+        p.invincibleTimer = 1;
+        p.velocityY = -300;
+        if (p.health <= 0) { p.health = 0; p.isDead = true; }
+      }
+
       break;
     }
   }
