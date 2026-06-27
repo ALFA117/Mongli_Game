@@ -354,24 +354,66 @@ function drawPlayer(ctx: CanvasRenderingContext2D, p: Player, time: number, grou
   ctx.fillStyle = "#C8BCA8"; ctx.fillRect(px + 12, py + 15, 8, 7);
   ctx.fillStyle = "#E5DEC9"; ctx.beginPath(); ctx.arc(px + 16, py + 10, 12, 0, Math.PI * 2); ctx.fill();
 
-  // Eyes
-  if (p.blinkTimer > 0.15) {
-    ctx.fillStyle = "#FF1A1A"; ctx.shadowColor = "#FF1A1A"; ctx.shadowBlur = 8;
-    ctx.beginPath(); ctx.arc(px + 11, py + 8, 2.5, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(px + 21, py + 8, 2.5, 0, Math.PI * 2); ctx.fill();
+  // Eyes — expressions based on situation
+  const isFalling = p.velocityY > 200 && !p.isOnGround;
+  const isHurt = p.health < 30;
+  if (p.isDead) {
+    // Dead: X eyes
+    ctx.strokeStyle = "#666"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(px + 9, py + 6); ctx.lineTo(px + 13, py + 10); ctx.moveTo(px + 13, py + 6); ctx.lineTo(px + 9, py + 10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px + 19, py + 6); ctx.lineTo(px + 23, py + 10); ctx.moveTo(px + 23, py + 6); ctx.lineTo(px + 19, py + 10); ctx.stroke();
+    // Sad mouth
+    ctx.strokeStyle = "#888"; ctx.lineWidth = 1; ctx.beginPath();
+    ctx.arc(px + 16, py + 18, 4, 0.2, Math.PI - 0.2); ctx.stroke();
+  } else if (p.blinkTimer > 0.15) {
+    const eyeR = isFalling ? 3.5 : isHurt ? 1.8 : 2.5;
+    const eyeSpread = isFalling ? 2 : 0;
+    ctx.fillStyle = "#FF1A1A"; ctx.shadowColor = "#FF1A1A"; ctx.shadowBlur = isFalling ? 12 : 8;
+    ctx.beginPath(); ctx.arc(px + 11 - eyeSpread, py + 8, eyeR, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px + 21 + eyeSpread, py + 8, eyeR, 0, Math.PI * 2); ctx.fill();
     ctx.shadowBlur = 0;
+    // Eyebrows when falling (scared)
+    if (isFalling) {
+      ctx.strokeStyle = "#C8BCA8"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(px + 8, py + 4); ctx.lineTo(px + 12, py + 5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(px + 24, py + 4); ctx.lineTo(px + 20, py + 5); ctx.stroke();
+    }
+    // Squint when hurt
+    if (isHurt) {
+      ctx.fillStyle = "rgba(10,10,10,0.6)"; ctx.fillRect(px + 9, py + 7, 5, 2);
+    }
   }
 
-  // Fedora
-  ctx.fillStyle = "#111"; ctx.beginPath(); ctx.ellipse(px + 16, py - 3, 18, 4, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillRect(px + 6, py - 20, 20, 18);
-  ctx.fillStyle = "#B30000"; ctx.fillRect(px + 6, py - 6, 20, 3);
+  // Fedora — tilts when falling
+  const hatTilt = isFalling ? 0.3 : p.state === "jumping" ? 0.15 : 0;
+  ctx.save(); ctx.translate(px + 16, py - 3); ctx.rotate(hatTilt);
+  ctx.fillStyle = "#111"; ctx.beginPath(); ctx.ellipse(0, 0, 18, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(-10, -17, 20, 18);
+  ctx.fillStyle = "#B30000"; ctx.fillRect(-10, -3, 20, 3);
+  ctx.restore();
 
-  // Scarf
+  // Scarf — flies up when falling
+  const scarfY = isFalling ? -8 : 0;
   ctx.strokeStyle = "#6a6060"; ctx.lineWidth = 3.5; ctx.lineCap = "round";
-  ctx.beginPath(); ctx.moveTo(px + 10, py + 17);
-  ctx.quadraticCurveTo(px + 16 + Math.sin(time * 2) * 3, py + 22, px + 22, py + 19); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px + 10, py + 17 + scarfY);
+  ctx.quadraticCurveTo(px + 16 + Math.sin(time * 2) * (isFalling ? 8 : 3), py + 22 + scarfY * 1.5, px + 22, py + 19 + scarfY); ctx.stroke();
+  // Second scarf tail when running
+  if (Math.abs(p.velocityX) > 100) {
+    ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.moveTo(px + 8, py + 18 + scarfY);
+    ctx.quadraticCurveTo(px + 2 + Math.sin(time * 3) * 5, py + 25 + scarfY, px - 2, py + 22 + scarfY); ctx.stroke(); ctx.globalAlpha = 1;
+  }
   ctx.lineCap = "butt";
+
+  // Speed trail when running fast
+  if (Math.abs(p.velocityX) > 160) {
+    const dir = p.velocityX > 0 ? -1 : 1;
+    for (let t = 1; t <= 5; t++) {
+      ctx.globalAlpha = 0.03 * (6 - t); ctx.fillStyle = "#E5DEC9";
+      ctx.beginPath(); ctx.arc(px + 16 + dir * t * 10, py + 10, 10 - t, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(px + 4 + dir * t * 10, py + 20, 24, 20);
+    }
+    ctx.globalAlpha = 1;
+  }
 
   ctx.restore();
   ctx.globalAlpha = 1;
@@ -466,8 +508,74 @@ function drawObject(ctx: CanvasRenderingContext2D, obj: InteractiveObject, playe
   ctx.fillStyle = obj.type === "light" ? "#FF1A1A" : near ? "#8a3030" : "#3a2020";
   ctx.globalAlpha = near ? 1 : dist < 250 ? 0.65 : 0.35;
 
-  if (obj.type === "light") { ctx.beginPath(); ctx.arc(obj.x + obj.width / 2, obj.y + obj.height / 2, obj.width / 2 + (near ? 3 : 0), 0, Math.PI * 2); ctx.fill(); }
-  else { ctx.fillRect(obj.x, obj.y, obj.width, obj.height); ctx.strokeStyle = near ? "#FF1A1A" : "#5a3030"; ctx.lineWidth = near ? 2 : 1; ctx.strokeRect(obj.x, obj.y, obj.width, obj.height); }
+  if (obj.type === "light") {
+    // Glowing orb with multiple halos
+    const cx = obj.x + obj.width / 2, cy = obj.y + obj.height / 2;
+    const pulse = 0.9 + Math.sin(time * 3) * 0.1;
+    const g2 = ctx.createRadialGradient(cx, cy, 0, cx, cy, 35 * pulse);
+    g2.addColorStop(0, "rgba(255,200,100,0.5)"); g2.addColorStop(0.5, "rgba(255,150,50,0.2)"); g2.addColorStop(1, "transparent");
+    ctx.fillStyle = g2; ctx.fillRect(cx - 35, cy - 35, 70, 70);
+    ctx.fillStyle = "#ffe0a0"; ctx.beginPath(); ctx.arc(cx, cy, 8 * pulse, 0, Math.PI * 2); ctx.fill();
+    // Orbiting sparkles
+    for (let s = 0; s < 6; s++) {
+      const sa = time * 2 + s * 1.05; ctx.fillStyle = "rgba(255,200,100,0.6)";
+      ctx.beginPath(); ctx.arc(cx + Math.cos(sa) * 16, cy + Math.sin(sa) * 10, 1.5, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (obj.type === "item") {
+    // Suitcase
+    ctx.fillStyle = near ? "#5a3820" : "#3a2810";
+    ctx.fillRect(obj.x, obj.y + 4, obj.width, obj.height - 4);
+    ctx.fillStyle = near ? "#7a5030" : "#5a4020"; ctx.fillRect(obj.x + obj.width / 2 - 6, obj.y, 12, 5); // handle
+    ctx.fillStyle = "#2a1a08"; ctx.fillRect(obj.x + 4, obj.y + 8, 3, 3); ctx.fillRect(obj.x + obj.width - 7, obj.y + 8, 3, 3); // clasps
+  } else if (obj.type === "mirror") {
+    // Mirror with frame
+    ctx.fillStyle = "#3a2810"; ctx.fillRect(obj.x - 3, obj.y - 3, obj.width + 6, obj.height + 6); // frame
+    const mg = ctx.createLinearGradient(obj.x, obj.y, obj.x + obj.width, obj.y + obj.height);
+    mg.addColorStop(0, "#8090a0"); mg.addColorStop(1, "#506070"); ctx.fillStyle = mg;
+    ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+    ctx.strokeStyle = "rgba(255,255,255,0.2)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(obj.x + 5, obj.y + 5); ctx.lineTo(obj.x + obj.width - 10, obj.y + obj.height - 10); ctx.stroke();
+  } else if (obj.type === "phone") {
+    ctx.fillStyle = near ? "#2a4a2a" : "#1a2a1a";
+    ctx.fillRect(obj.x, obj.y + 8, obj.width, obj.height - 8); // base
+    ctx.fillStyle = near ? "#3a5a3a" : "#2a3a2a";
+    ctx.beginPath(); ctx.arc(obj.x + 6, obj.y + 6, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(obj.x + obj.width - 6, obj.y + 6, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(obj.x + 5, obj.y + 3, obj.width - 10, 6); // handset
+    if (near) { // ringing indicator
+      ctx.strokeStyle = "rgba(196,146,58,0.4)"; ctx.lineWidth = 1;
+      for (let r = 0; r < 3; r++) { ctx.beginPath(); ctx.arc(obj.x + obj.width / 2, obj.y - 5, 6 + r * 4, -0.8, 0.8); ctx.stroke(); }
+    }
+  } else if (obj.type === "computer") {
+    ctx.fillStyle = "#0a1218"; ctx.fillRect(obj.x, obj.y, obj.width, obj.height - 6); // monitor
+    ctx.fillStyle = "#050f05"; ctx.fillRect(obj.x + 3, obj.y + 3, obj.width - 6, obj.height - 12); // screen
+    ctx.fillStyle = "#00ff41"; ctx.globalAlpha = near ? 0.6 : 0.3; ctx.font = "5px monospace";
+    for (let l = 0; l < 3; l++) ctx.fillText(">>_data", obj.x + 5, obj.y + 10 + l * 7);
+    if (Math.sin(time * 4) > 0) ctx.fillRect(obj.x + 30, obj.y + 8 + (Math.floor(time * 2) % 3) * 7, 4, 5);
+    ctx.globalAlpha = near ? 1 : (dist < 250 ? 0.65 : 0.35);
+    ctx.fillStyle = "#1a2a1a"; ctx.fillRect(obj.x + 10, obj.y + obj.height - 6, obj.width - 20, 6); // stand
+  } else if (obj.type === "document") {
+    ctx.fillStyle = near ? "#3a3a2a" : "#2a2a20"; ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+    ctx.strokeStyle = "rgba(255,255,255,0.1)"; ctx.lineWidth = 0.5;
+    for (let l = 0; l < 6; l++) { ctx.beginPath(); ctx.moveTo(obj.x + 4, obj.y + 4 + l * 3); ctx.lineTo(obj.x + obj.width - 4, obj.y + 4 + l * 3); ctx.stroke(); }
+    ctx.strokeStyle = "rgba(179,0,0,0.3)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(obj.x + 4, obj.y + 10); ctx.lineTo(obj.x + obj.width - 4, obj.y + 10); ctx.stroke();
+    // Folded corner
+    ctx.fillStyle = near ? "#4a4a3a" : "#3a3a28";
+    ctx.beginPath(); ctx.moveTo(obj.x + obj.width - 8, obj.y); ctx.lineTo(obj.x + obj.width, obj.y); ctx.lineTo(obj.x + obj.width, obj.y + 8); ctx.closePath(); ctx.fill();
+  } else if (obj.type === "photo") {
+    ctx.fillStyle = "#3a3020"; ctx.fillRect(obj.x - 2, obj.y - 2, obj.width + 4, obj.height + 4);
+    ctx.fillStyle = "#2a1a0a"; ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+    const sg = ctx.createLinearGradient(obj.x, obj.y, obj.x + obj.width, obj.y + obj.height);
+    sg.addColorStop(0, "#3a2a1a"); sg.addColorStop(1, "#2a1a0a"); ctx.fillStyle = sg;
+    ctx.fillRect(obj.x + 2, obj.y + 2, obj.width - 4, obj.height - 4);
+    // Silhouette figures
+    ctx.fillStyle = "#1a0a00"; ctx.fillRect(obj.x + 8, obj.y + obj.height - 15, 8, 12);
+    ctx.fillRect(obj.x + 18, obj.y + obj.height - 13, 7, 10);
+  } else {
+    ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+    ctx.strokeStyle = near ? "#FF1A1A" : "#5a3030"; ctx.lineWidth = near ? 2 : 1; ctx.strokeRect(obj.x, obj.y, obj.width, obj.height);
+  }
 
   // Pulsing circle when near
   if (near) {
