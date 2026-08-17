@@ -53,8 +53,12 @@ function useTypewriterPhrase(text: string, speed = 40) {
   return { displayed, done };
 }
 
-function FallingBinaryParticle({ delay, left }: { delay: number; left: number }) {
-  const char = Math.random() > 0.5 ? "1" : "0";
+function FallingBinaryParticle({ id, delay, left }: { id: number; delay: number; left: number }) {
+  // Deterministic from id (not Math.random() at render time) — SSR and the
+  // client hydration pass must produce identical text or React throws a
+  // hydration mismatch (error #425) and aborts, which is what was leaving
+  // the whole boot sequence stuck.
+  const char = id % 2 === 0 ? "1" : "0";
   return (
     <motion.span
       className="absolute font-mono text-[10px] text-noir-accent/20 select-none"
@@ -168,7 +172,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
           {/* Falling binary particles */}
           <div className="absolute inset-0 overflow-hidden">
             {particles.map((p) => (
-              <FallingBinaryParticle key={p.id} delay={p.delay} left={p.left} />
+              <FallingBinaryParticle key={p.id} id={p.id} delay={p.delay} left={p.left} />
             ))}
           </div>
 
