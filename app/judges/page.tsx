@@ -94,8 +94,31 @@ export default function JudgesPage() {
           </div>
         </Section>
 
+        {/* Honest implementation status -- the narrative flow's 0G calls
+            (lib/og-storage.ts, lib/og-chain.ts) are in-memory stubs today,
+            not real network/chain calls. The level-complete and speedrun
+            flows DO sign a real transaction against the deployed contract
+            via wagmi -- that part is real. Judges should see this distinction
+            up front, not discover it by clicking a dead explorer link. */}
+        <Section title="Implementation status (read before the pitch above)">
+          <div className="manila-folder p-5 text-xs font-body leading-relaxed space-y-2">
+            <p className="text-green-500">
+              ✓ Real: level-complete and speedrun records sign an actual transaction against
+              <code className="mx-1 text-noir-accent">MongliMemory.sol</code>
+              (0x81B6...E9f8, 0G Galileo Testnet) via wagmi/RainbowKit — check any wallet after playing.
+            </p>
+            <p className="text-yellow-500">
+              ○ Simulated today: the 5-act narrative&apos;s &quot;0G Storage&quot; and &quot;0G Chain&quot; calls
+              (<code className="text-noir-accent">lib/og-storage.ts</code>, <code className="text-noir-accent">lib/og-chain.ts</code>)
+              are in-memory stubs — no fragment is actually uploaded or submitted on-chain yet, and the
+              &quot;TX&quot; shown in the fragment viewer is a content hash, not a transaction. The architecture
+              below is the real target design, not yet the current behavior of that flow.
+            </p>
+          </div>
+        </Section>
+
         {/* Section 2: Why 0G is not bolt-on */}
-        <Section title="Why 0G is NOT a bolt-on">
+        <Section title="Why 0G is NOT a bolt-on (target architecture)">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               {

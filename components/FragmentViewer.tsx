@@ -10,7 +10,6 @@ interface FragmentViewerProps {
   visible: boolean;
   onClose: () => void;
   onNavigate?: (id: number) => void;
-  onTxLinkClick?: () => void;
 }
 
 function useSlowTypewriter(text: string, active: boolean) {
@@ -168,7 +167,6 @@ export default function FragmentViewer({
   visible,
   onClose,
   onNavigate,
-  onTxLinkClick,
 }: FragmentViewerProps) {
   const [isSharing, setIsSharing] = useState(false);
   const [shareReady, setShareReady] = useState(false);
@@ -232,9 +230,10 @@ export default function FragmentViewer({
 
   const tone = getToneStyle(fragment.toneScore);
   const related = findRelatedFragments(fragment, allFragments);
-  const explorerUrl = fragment.txHash
-    ? `https://chainscan-galileo.0g.ai/tx/${fragment.txHash}`
-    : null;
+  // saveFragmentOnChain() (lib/og-chain.ts) never submits a real transaction --
+  // it returns the same content hash as storageHash, logged only. Linking that
+  // to chainscan-galileo.0g.ai would 404 for anyone who clicks it, so this is
+  // shown as plain text, never as a link to a block explorer.
 
   return (
     <AnimatePresence>
@@ -378,22 +377,12 @@ export default function FragmentViewer({
 
               {fragment.txHash && (
                 <div className="flex items-center justify-between text-[10px] font-body">
-                  <span className="text-noir-muted">0G Chain TX</span>
-                  {explorerUrl ? (
-                    <a
-                      href={explorerUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-500 hover:text-green-400 font-mono text-[9px] underline underline-offset-2 transition-colors"
-                      onClick={(e) => { e.stopPropagation(); onTxLinkClick?.(); }}
-                    >
-                      {fragment.txHash.slice(0, 10)}...{fragment.txHash.slice(-6)}
-                    </a>
-                  ) : (
-                    <span className="text-green-500 font-mono text-[9px]">
-                      {fragment.txHash.slice(0, 10)}...
-                    </span>
-                  )}
+                  <span className="text-noir-muted" title="Guardado localmente en esta sesión -- todavía no se envía como transacción real a 0G Chain.">
+                    0G Chain TX (simulado)
+                  </span>
+                  <span className="text-noir-accent font-mono text-[9px]">
+                    {fragment.txHash.slice(0, 10)}...{fragment.txHash.slice(-6)}
+                  </span>
                 </div>
               )}
 

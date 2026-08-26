@@ -79,7 +79,10 @@ export default function WorldPage() {
 
           {data && data.regions.length > 0 && (
             <div className="manila-folder p-4">
-              <p className="text-[8px] font-body text-noir-muted uppercase tracking-wider mb-3">Regiones</p>
+              <p className="text-[8px] font-body text-noir-muted uppercase tracking-wider mb-1">Regiones</p>
+              <p className="text-[7px] font-body text-noir-muted/50 mb-3">
+                Asignada al azar por sesión, no es geolocalización real.
+              </p>
               {data.regions.slice(0, 5).map(r => (
                 <div key={r.name} className="flex items-center gap-2 mb-2">
                   <span className="font-mono text-[9px] text-noir-text/60 w-12">{REGION_POSITIONS[r.name]?.label.slice(0, 6) || r.name}</span>
