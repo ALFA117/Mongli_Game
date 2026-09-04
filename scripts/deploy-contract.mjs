@@ -1,7 +1,11 @@
 import { ethers } from "ethers";
 
 const RPC = "https://evmrpc-testnet.0g.ai";
-const PRIVATE_KEY = process.env.PRIVATE_KEY || "REDACTED_LEAKED_PRIVATE_KEY_ROTATED";
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+if (!PRIVATE_KEY) {
+  console.error("Falta PRIVATE_KEY en el entorno. Nunca la pongas en el código.");
+  process.exit(1);
+}
 
 // MongliMemory compiled bytecode + ABI
 // Solidity: pragma solidity ^0.8.19;
