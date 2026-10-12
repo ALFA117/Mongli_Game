@@ -33,7 +33,7 @@ export default function AudioToggle() {
         transition: "all 0.3s",
       }} />
       <span style={{
-        fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase" as const,
+        fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase" as const,
         color: active ? "#E5DEC9" : "#444",
         fontFamily: "'Special Elite', serif",
       }}>

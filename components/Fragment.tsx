@@ -24,7 +24,7 @@ export default function Fragment({
       <div
         style={{
           color: "#333",
-          fontSize: 11,
+          fontSize: 12,
           letterSpacing: "0.2em",
           marginBottom: 12,
           paddingBottom: 8,

@@ -94,8 +94,8 @@ function SilentContent() {
       <Cursor /><ScanlineOverlay />
 
       <header className="flex items-center justify-between p-3 border-b border-noir-border/10 relative z-50">
-        <span className="font-mono text-[9px] text-noir-muted/30">◌ silencio</span>
-        <span className="font-mono text-[9px] text-noir-muted/20">{actIdx + 1}/{TOTAL_ACTS}</span>
+        <span className="font-mono text-xs text-noir-muted">◌ silencio</span>
+        <span className="font-mono text-xs text-noir-muted">{actIdx + 1}/{TOTAL_ACTS}</span>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-6">
@@ -128,7 +128,7 @@ function SilentContent() {
               <motion.button onClick={() => handleDecision("light")} whileHover={{ scale: 1.2 }}
                 className="text-6xl text-noir-accent/60 hover:text-noir-accent transition-colors uxpm-press">○</motion.button>
               <motion.button onClick={() => handleDecision("dark")} whileHover={{ scale: 1.2 }}
-                className="text-6xl text-noir-text/60 hover:text-noir-text transition-colors uxpm-press">●</motion.button>
+                className="text-6xl text-noir-text/75 hover:text-noir-text transition-colors uxpm-press">●</motion.button>
             </motion.div>
           )}
 
@@ -139,11 +139,11 @@ function SilentContent() {
                 {identity}
               </motion.span>
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.2 }} transition={{ delay: 2 }}
-                className="font-mono text-[9px] text-noir-muted tracking-wider mb-8">
+                className="font-mono text-xs text-noir-muted tracking-wider mb-8">
                 {allFrags.length} decisiones · silencio
               </motion.p>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4 }}>
-                <button onClick={() => router.push("/")} className="font-mono text-[10px] text-noir-muted/30 hover:text-noir-accent transition-colors">
+                <button onClick={() => router.push("/")} className="font-mono text-xs text-noir-muted hover:text-noir-accent transition-colors">
                   salir
                 </button>
               </motion.div>

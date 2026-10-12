@@ -251,7 +251,7 @@ export default function Achievements({ fragments, meta, visible, onClose }: Achi
             {/* Header */}
             <div className="mb-5 pr-8">
               <h2 className="font-display text-lg text-noir-accent tracking-wider">Logros</h2>
-              <p className="font-body text-[10px] text-noir-muted mt-1">
+              <p className="font-body text-xs text-noir-muted mt-1">
                 {unlockedCount} de {ACHIEVEMENTS.length} desbloqueados
               </p>
             </div>
@@ -294,7 +294,7 @@ export default function Achievements({ fragments, meta, visible, onClose }: Achi
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <p className={`font-display text-[11px] ${unlocked ? "text-noir-text" : "text-noir-muted"}`}>
+                        <p className={`font-display text-xs ${unlocked ? "text-noir-text" : "text-noir-muted"}`}>
                           {ach.title}
                         </p>
                         <span
@@ -307,7 +307,7 @@ export default function Achievements({ fragments, meta, visible, onClose }: Achi
                           {CATEGORY_LABELS[ach.category]}
                         </span>
                       </div>
-                      <p className="font-body text-[9px] text-noir-muted truncate">
+                      <p className="font-body text-xs text-noir-muted truncate">
                         {unlocked ? ach.description : "???"}
                       </p>
                     </div>

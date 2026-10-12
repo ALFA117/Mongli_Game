@@ -94,7 +94,7 @@ function NotificationCard({
               {CATEGORY_LABELS[item.category]}
             </span>
           </div>
-          <p className="font-display text-[11px] text-noir-text truncate">
+          <p className="font-display text-xs text-noir-text truncate">
             {item.title}
           </p>
         </div>

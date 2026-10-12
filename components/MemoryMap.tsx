@@ -334,7 +334,7 @@ function MemoryMapInner({
               {unlocked ? (
                 <span style={{ color: toneColor }}>{fragmentId}</span>
               ) : (
-                <span className="text-[8px] opacity-60">&#128274;</span>
+                <span className="text-xs opacity-60">&#128274;</span>
               )}
 
               {/* Pulse ring on current */}
@@ -377,20 +377,20 @@ function MemoryMapInner({
                     }}
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[9px] font-body text-noir-muted">
+                      <span className="text-xs font-body text-noir-muted">
                         #{String(fragmentId).padStart(2, "0")}
                       </span>
                       <span
-                        className="text-[9px] font-mono"
+                        className="text-xs font-mono"
                         style={{ color: toneColor }}
                       >
                         {fragment.toneScore}/10
                       </span>
                     </div>
-                    <p className="font-display text-[10px] text-noir-text/80 leading-relaxed line-clamp-3">
+                    <p className="font-display text-xs text-noir-text/80 leading-relaxed line-clamp-3">
                       {fragment.text.slice(0, 90)}...
                     </p>
-                    <p className="text-[8px] font-body text-noir-muted/50 mt-1.5">
+                    <p className="text-xs font-body text-noir-muted mt-1.5">
                       Toca de nuevo para abrir
                     </p>
                   </motion.div>
@@ -417,7 +417,7 @@ function MemoryMapInner({
         </button>
         <button
           onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
-          className="w-6 h-6 uxpm-glass text-noir-muted hover:text-noir-accent text-[8px] flex items-center justify-center uxpm-press"
+          className="w-6 h-6 uxpm-glass text-noir-muted hover:text-noir-accent text-xs flex items-center justify-center uxpm-press"
           title="Reset"
         >
           ⟳
@@ -425,7 +425,7 @@ function MemoryMapInner({
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-2 right-2 flex items-center gap-3 text-[8px] sm:text-[9px] font-body text-noir-muted/60 z-20">
+      <div className="absolute bottom-2 right-2 flex items-center gap-3 text-xs sm:text-xs font-body text-noir-muted z-20">
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-noir-accent/60 border border-noir-accent" />
           <span className="hidden sm:inline">activo</span>
@@ -434,7 +434,7 @@ function MemoryMapInner({
           <div className="w-2 h-2 rounded-full bg-noir-bg border border-noir-border opacity-40 blur-[0.5px]" />
           <span className="hidden sm:inline">bloqueado</span>
         </div>
-        <span className="hidden md:inline text-noir-muted/30">
+        <span className="hidden md:inline text-noir-muted">
           scroll: zoom &middot; drag: mover
         </span>
       </div>

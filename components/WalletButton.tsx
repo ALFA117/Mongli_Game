@@ -53,7 +53,7 @@ export default function WalletButton() {
                   ],
                 }}
                 transition={{ duration: 1.5, repeat: Infinity }}
-                className="px-4 py-2 sm:px-5 sm:py-2.5 border-2 border-red-700 bg-red-900/20 text-red-400 font-display text-[10px] sm:text-xs tracking-wider uxpm-press"
+                className="px-4 py-2 sm:px-5 sm:py-2.5 border-2 border-red-700 bg-red-900/20 text-red-400 font-display text-xs sm:text-xs tracking-wider uxpm-press"
               >
                 ⚠ Red incorrecta
               </motion.button>
@@ -61,11 +61,11 @@ export default function WalletButton() {
               <motion.button
                 onClick={openAccountModal}
                 whileHover={{ scale: 1.02 }}
-                className="px-3 py-2 sm:px-4 sm:py-2.5 border border-noir-accent/40 bg-noir-card text-noir-text font-body text-[10px] sm:text-xs flex items-center gap-2 uxpm-press uxpm-glass"
+                className="px-3 py-2 sm:px-4 sm:py-2.5 border border-noir-accent/40 bg-noir-card text-noir-text font-body text-xs sm:text-xs flex items-center gap-2 uxpm-press uxpm-glass"
               >
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
                 <span className="truncate max-w-[100px] sm:max-w-[120px]">{account.displayName}</span>
-                <span className="text-noir-muted/40 text-[8px] hidden sm:inline">
+                <span className="text-noir-muted text-xs hidden sm:inline">
                   {chain.name?.split(" ")[0]}
                 </span>
               </motion.button>

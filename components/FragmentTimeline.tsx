@@ -167,17 +167,17 @@ export default function FragmentTimeline({
                     }}
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[9px] font-body text-noir-muted">
+                      <span className="text-xs font-body text-noir-muted">
                         #{String(id).padStart(2, "0")} — Acto {act}
                       </span>
                       <span
-                        className="text-[9px] font-mono"
+                        className="text-xs font-mono"
                         style={{ color: getToneColor(fragment.toneScore) }}
                       >
                         {fragment.toneScore}/10
                       </span>
                     </div>
-                    <p className="font-display text-[11px] text-noir-text/80 leading-relaxed">
+                    <p className="font-display text-xs text-noir-text/80 leading-relaxed">
                       {truncateText(fragment.text, 120)}
                     </p>
                     {fragment.tags.length > 0 && (
@@ -185,7 +185,7 @@ export default function FragmentTimeline({
                         {fragment.tags.slice(0, 3).map((tag) => (
                           <span
                             key={tag}
-                            className="text-[8px] font-body text-noir-accent/60 px-1 border border-noir-border/30"
+                            className="text-xs font-body text-noir-accent/60 px-1 border border-noir-border/30"
                           >
                             {tag}
                           </span>

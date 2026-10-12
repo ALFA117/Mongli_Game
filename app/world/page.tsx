@@ -32,7 +32,7 @@ export default function WorldPage() {
       <Cursor /><ScanlineOverlay />
       <header className="flex items-center justify-between p-4 border-b border-noir-border/20 relative z-50">
         <button onClick={() => router.push("/")} className="font-display text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent"><GlitchText text="MONGLI" intensity="low" /></button>
-        <span className="font-body text-[9px] text-noir-muted tracking-[0.3em] uppercase">Señales detectadas · Mongli Network</span>
+        <span className="font-body text-xs text-noir-muted tracking-[0.3em] uppercase">Señales detectadas · Mongli Network</span>
       </header>
 
       <main className="flex-1 flex flex-col lg:flex-row p-4 sm:p-8 gap-6 max-w-5xl mx-auto w-full">
@@ -63,7 +63,7 @@ export default function WorldPage() {
                 <motion.div key={r.name} className="absolute" style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
                   animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }} transition={{ duration: 2, repeat: Infinity, delay: Math.random() }}>
                   <div className="rounded-full bg-noir-accent" style={{ width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2, boxShadow: `0 0 ${size}px rgba(212,162,68,0.5)` }} />
-                  <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 font-mono text-[8px] text-noir-accent/60 whitespace-nowrap">{pos.label} ({r.count})</span>
+                  <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 font-mono text-xs text-noir-accent/60 whitespace-nowrap">{pos.label} ({r.count})</span>
                 </motion.div>
               );
             })}
@@ -74,27 +74,27 @@ export default function WorldPage() {
         <div className="lg:w-[30%] space-y-6">
           <div className="manila-folder p-4 text-center">
             <p className="font-display text-3xl text-noir-accent">{data?.totalActive || 0}</p>
-            <p className="text-[9px] font-body text-noir-muted uppercase">jugadores activos</p>
+            <p className="text-xs font-body text-noir-muted uppercase">jugadores activos</p>
           </div>
 
           {data && data.regions.length > 0 && (
             <div className="manila-folder p-4">
-              <p className="text-[8px] font-body text-noir-muted uppercase tracking-wider mb-1">Regiones</p>
-              <p className="text-[7px] font-body text-noir-muted/50 mb-3">
+              <p className="text-xs font-body text-noir-muted uppercase tracking-wider mb-1">Regiones</p>
+              <p className="text-[7px] font-body text-noir-muted mb-3">
                 Asignada al azar por sesión, no es geolocalización real.
               </p>
               {data.regions.slice(0, 5).map(r => (
                 <div key={r.name} className="flex items-center gap-2 mb-2">
-                  <span className="font-mono text-[9px] text-noir-text/60 w-12">{REGION_POSITIONS[r.name]?.label.slice(0, 6) || r.name}</span>
+                  <span className="font-mono text-xs text-noir-text/75 w-12">{REGION_POSITIONS[r.name]?.label.slice(0, 6) || r.name}</span>
                   <div className="flex-1 h-[4px] bg-noir-border/20"><div className="h-full bg-noir-accent/60" style={{ width: `${(r.count / maxCount) * 100}%` }} /></div>
-                  <span className="font-mono text-[8px] text-noir-muted">{r.count}</span>
+                  <span className="font-mono text-xs text-noir-muted">{r.count}</span>
                 </div>
               ))}
             </div>
           )}
 
           <div className="text-center">
-            <p className="font-body text-[9px] text-noir-muted/40">Última actividad: hace {data?.lastActivityMinutesAgo || 0}m</p>
+            <p className="font-body text-xs text-noir-muted">Última actividad: hace {data?.lastActivityMinutesAgo || 0}m</p>
           </div>
         </div>
       </main>

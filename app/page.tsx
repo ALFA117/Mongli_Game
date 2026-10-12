@@ -25,11 +25,27 @@ function LandingContent() {
   const [loading, setLoading] = useState(true);
   const [audioStarted, setAudioStarted] = useState(false);
 
+  // La intro de "reconstruyendo identidad" es ambientación (el progreso es
+  // simulado): se muestra una vez por sesión y nunca con movimiento reducido.
+  useEffect(() => {
+    try {
+      const seen = sessionStorage.getItem("mongli-intro-seen");
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (seen || reduce) setLoading(false);
+    } catch {
+      /* sin sessionStorage: se muestra la intro */
+    }
+  }, []);
+  const finishIntro = useCallback(() => {
+    try { sessionStorage.setItem("mongli-intro-seen", "1"); } catch { /* modo privado */ }
+    setLoading(false);
+  }, []);
+
   const startAudio = useCallback(() => {
     if (!audioStarted) { startAudioOnFirstInteraction(); setAudioStarted(true); }
   }, [audioStarted]);
 
-  if (loading) return <LoadingScreen onComplete={() => setLoading(false)} />;
+  if (loading) return <LoadingScreen onComplete={finishIntro} />;
 
   return (
     <div className="min-h-screen flex flex-col relative" onClick={startAudio}>
@@ -44,7 +60,7 @@ function LandingContent() {
           className="flex items-center gap-2 sm:gap-3">
           <span className="font-display text-xs text-noir-muted tracking-[0.3em] uppercase">Zero Cup 2026</span>
           <span className="w-1 h-1 bg-noir-accent/50 rounded-full" />
-          <span className="font-body text-[10px] text-noir-muted/50">0G Labs</span>
+          <span className="font-body text-xs text-noir-muted">0G Labs</span>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
           <WalletButton />
@@ -71,7 +87,7 @@ function LandingContent() {
             transition={{ delay: 1.5, duration: 1.5 }}
             className="h-[1px] bg-gradient-to-r from-transparent via-noir-accent/50 to-transparent mx-auto mt-4 max-w-[250px]" />
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.7 }} transition={{ delay: 2 }}
-            className="font-body text-noir-text/60 text-xs sm:text-sm max-w-md mx-auto mt-4 leading-relaxed">
+            className="font-body text-noir-text/75 text-xs sm:text-sm max-w-md mx-auto mt-4 leading-relaxed">
             Tus recuerdos están en algún lugar. La IA los encontrará.
             La blockchain los guardará para siempre.
           </motion.p>
@@ -98,7 +114,7 @@ function LandingContent() {
               {isConnected ? "DESPERTAR →" : "CONECTAR WALLET"}
             </button>
 
-            <span style={{ color: "#222", fontSize: 12 }}>o</span>
+            <span style={{ color: "#8C8275", fontSize: 12 }}>o</span>
 
             {/* Guest button */}
             <button
@@ -108,7 +124,7 @@ function LandingContent() {
               }}
               style={{
                 padding: "14px 20px", background: "transparent",
-                border: "1px solid #2a2a2a", color: "#555", fontSize: 13, cursor: "crosshair",
+                border: "1px solid #4a4540", color: "#BDB4A2", fontSize: 14, cursor: "crosshair", minHeight: 48,
                 fontFamily: "'Special Elite', serif", letterSpacing: "0.1em", borderRadius: 4,
               }}
             >
@@ -116,7 +132,7 @@ function LandingContent() {
             </button>
           </div>
 
-          <div style={{ color: "#333", fontSize: 11, marginTop: 6, textAlign: "center", letterSpacing: "0.05em" }}>
+          <div style={{ color: "#8C8275", fontSize: 12, marginTop: 6, textAlign: "center", letterSpacing: "0.05em" }}>
             {isConnected
               ? <span style={{ color: "#4CAF50", display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4CAF50" }} />
@@ -127,9 +143,9 @@ function LandingContent() {
           </div>
 
           <div className="flex items-center gap-4 mt-3">
-            <button onClick={() => router.push("/speedrun")} className="font-body text-[10px] text-red-400/60 hover:text-red-400 transition-colors">⚡ Modo Speedrun</button>
-            <button onClick={() => router.push("/trailer")} className="font-body text-[10px] text-noir-muted/50 hover:text-noir-accent transition-colors">Ver trailer →</button>
-            <button onClick={() => router.push("/world")} className="font-body text-[10px] text-noir-muted/50 hover:text-noir-accent transition-colors">Mapa global →</button>
+            <button onClick={() => router.push("/speedrun")} className="font-body text-xs min-h-11 px-1 text-red-400/80 hover:text-red-400 transition-colors">Modo Speedrun</button>
+            <button onClick={() => router.push("/trailer")} className="font-body text-xs min-h-11 px-1 text-noir-muted hover:text-noir-text transition-colors">Ver trailer →</button>
+            <button onClick={() => router.push("/world")} className="font-body text-xs min-h-11 px-1 text-noir-muted hover:text-noir-text transition-colors">Mapa global →</button>
           </div>
         </motion.div>
       </section>
@@ -149,7 +165,7 @@ function LandingContent() {
               className="text-center sm:text-left">
               <span className="font-mono text-noir-accent text-xs tracking-wider">{item.num}</span>
               <h3 className="font-display text-noir-text text-sm mt-2 mb-2 tracking-wider">{item.title}</h3>
-              <p className="font-body text-noir-muted text-[11px] leading-relaxed">{item.desc}</p>
+              <p className="font-body text-noir-muted text-xs leading-relaxed">{item.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -195,16 +211,16 @@ function LandingContent() {
                 <p className="font-display text-xs text-noir-text">{item.text}</p>
                 {item.action ? (
                   <button onClick={() => switchToGalileo()}
-                    className="font-body text-[10px] text-noir-accent hover:underline">
+                    className="font-body text-xs text-noir-accent hover:underline">
                     {item.sub}
                   </button>
                 ) : item.href ? (
                   <a href={item.href} target="_blank" rel="noopener noreferrer"
-                    className="font-body text-[10px] text-noir-accent hover:underline">
+                    className="font-body text-xs text-noir-accent hover:underline">
                     {item.sub}
                   </a>
                 ) : (
-                    <p className="font-body text-[10px] text-noir-muted">{item.sub}</p>
+                    <p className="font-body text-xs text-noir-muted">{item.sub}</p>
                   )}
                 </div>
               </motion.div>
@@ -216,26 +232,26 @@ function LandingContent() {
       {/* ═══ FOOTER ═══ */}
       <footer className="p-6 sm:p-8 border-t border-noir-border/10">
         <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[9px] font-body text-noir-muted/40">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-body text-noir-muted">
             <p>Construido para Zero Cup 2026 · 0G Labs</p>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-0">
               <a href="https://github.com/ALFA117/Mongli_Game" target="_blank" rel="noopener noreferrer"
-                className="hover:text-noir-accent transition-colors">GitHub</a>
+                className="inline-flex min-h-11 items-center hover:text-noir-accent transition-colors">GitHub</a>
               <a href="https://chainscan-galileo.0g.ai/address/0x81B600E7ACE4CEe5D698C39368B615A732d0E9f8"
-                target="_blank" rel="noopener noreferrer" className="hover:text-noir-accent transition-colors">
+                target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center hover:text-noir-accent transition-colors">
                 Contrato: 0x81B6...E9f8
               </a>
-              <button onClick={() => router.push("/about")} className="hover:text-noir-accent transition-colors">About</button>
-              <button onClick={() => router.push("/gallery")} className="hover:text-noir-accent transition-colors">Archivo</button>
-              <button onClick={() => router.push("/vote")} className="hover:text-noir-accent transition-colors">Votos</button>
-              <button onClick={() => router.push("/nightmare")} className="hover:text-noir-accent transition-colors opacity-30 hover:opacity-60">▓ Pesadilla</button>
-              <button onClick={() => router.push("/silent")} className="hover:text-noir-accent transition-colors opacity-30 hover:opacity-60">◌ Silencioso</button>
-              <button onClick={() => router.push("/judges")} className="hover:text-noir-accent transition-colors opacity-40">Judges</button>
+              <button onClick={() => router.push("/about")} className="inline-flex min-h-11 items-center hover:text-noir-accent transition-colors">About</button>
+              <button onClick={() => router.push("/gallery")} className="inline-flex min-h-11 items-center hover:text-noir-accent transition-colors">Archivo</button>
+              <button onClick={() => router.push("/vote")} className="inline-flex min-h-11 items-center hover:text-noir-accent transition-colors">Votos</button>
+              <button onClick={() => router.push("/nightmare")} className="inline-flex min-h-11 items-center hover:text-noir-accent transition-colors opacity-50 hover:opacity-100">▓ Pesadilla</button>
+              <button onClick={() => router.push("/silent")} className="inline-flex min-h-11 items-center hover:text-noir-accent transition-colors opacity-50 hover:opacity-100">◌ Silencioso</button>
+              <button onClick={() => router.push("/judges")} className="inline-flex min-h-11 items-center hover:text-noir-accent transition-colors opacity-60 hover:opacity-100">Judges</button>
             </div>
           </div>
           {!audioStarted && (
             <motion.p animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 2, repeat: Infinity }}
-              className="text-center font-body text-[8px] text-noir-accent/40 mt-3 tracking-wider">
+              className="text-center font-body text-xs text-noir-accent/40 mt-3 tracking-wider">
               [ click para activar audio ]
             </motion.p>
           )}

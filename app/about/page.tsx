@@ -226,13 +226,13 @@ export default function AboutPage() {
             <div className="w-2.5 h-2.5 rounded-full bg-red-600/60" />
             <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/40" />
             <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-            <span className="ml-3 font-mono text-[10px] text-green-600/60">
+            <span className="ml-3 font-mono text-xs text-green-600/60">
               mongli@0g-chain:~
             </span>
           </div>
           <button
             onClick={() => router.push("/")}
-            className="font-mono text-[10px] text-green-700/50 hover:text-green-500 transition-colors uxpm-press px-2 py-1"
+            className="font-mono text-xs text-green-700/50 hover:text-green-500 transition-colors uxpm-press px-2 py-1"
           >
             [ESC] salir
           </button>
@@ -241,7 +241,7 @@ export default function AboutPage() {
         {/* Terminal body */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4 sm:p-6 font-mono text-[11px] sm:text-[12px] leading-[1.7] uxpm-smooth-scroll"
+          className="flex-1 overflow-y-auto p-4 sm:p-6 font-mono text-xs sm:text-[12px] leading-[1.7] uxpm-smooth-scroll"
           style={{ color: "#00ff41" }}
         >
           {/* Rendered lines */}
@@ -282,7 +282,7 @@ export default function AboutPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 bg-transparent outline-none text-green-400 font-mono text-[11px] sm:text-[12px] ml-0.5 caret-green-500"
+                className="flex-1 bg-transparent outline-none text-green-400 font-mono text-xs sm:text-[12px] ml-0.5 caret-green-500"
                 style={{ caretColor: "#00ff41" }}
                 autoFocus
                 spellCheck={false}

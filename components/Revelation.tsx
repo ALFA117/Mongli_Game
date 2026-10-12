@@ -393,7 +393,7 @@ export default function Revelation({
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0.4 }}
-                    className="font-body text-[9px] text-noir-muted tracking-[0.5em] uppercase mb-6"
+                    className="font-body text-xs text-noir-muted tracking-[0.5em] uppercase mb-6"
                   >
                     La verdad se escribe
                   </motion.p>
@@ -433,7 +433,7 @@ export default function Revelation({
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0.4 }}
-                    className="font-body text-[9px] text-noir-muted tracking-[0.5em] uppercase mb-4"
+                    className="font-body text-xs text-noir-muted tracking-[0.5em] uppercase mb-4"
                   >
                     Tu identidad
                   </motion.p>
@@ -488,7 +488,7 @@ export default function Revelation({
                   </h2>
 
                   <div className="manila-folder p-4 sm:p-5 max-w-sm mx-auto text-left relative">
-                    <p className="text-[7px] font-body text-noir-muted/30 uppercase tracking-[0.3em] mb-3">
+                    <p className="text-[7px] font-body text-noir-muted uppercase tracking-[0.3em] mb-3">
                       Expediente final
                     </p>
                     <div className="space-y-1.5">
@@ -498,7 +498,7 @@ export default function Revelation({
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: i * 0.2 }}
-                          className="flex items-center justify-between text-[10px] font-body"
+                          className="flex items-center justify-between text-xs font-body"
                         >
                           <span className="text-noir-muted">{stat.label}</span>
                           <span className="text-noir-text font-mono">{stat.value}</span>
@@ -509,7 +509,7 @@ export default function Revelation({
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: STAT_LINES.length * 0.2 }}
-                        className="flex items-center justify-between text-[10px] font-body pt-1 border-t border-noir-border/20"
+                        className="flex items-center justify-between text-xs font-body pt-1 border-t border-noir-border/20"
                       >
                         <span className="text-noir-muted">IDENTIDAD FINAL</span>
                         <span className="font-display" style={{ color: data.color }}>
@@ -523,7 +523,7 @@ export default function Revelation({
                       initial={{ opacity: 0, scale: 1.5, rotate: -15 }}
                       animate={{ opacity: 0.25, scale: 1, rotate: -12 }}
                       transition={{ delay: STAT_LINES.length * 0.2 + 0.5, type: "spring" }}
-                      className="absolute top-3 right-3 text-[11px] font-body text-red-700 uppercase tracking-[0.3em] font-bold border-2 border-red-800/40 px-2 py-0.5"
+                      className="absolute top-3 right-3 text-xs font-body text-red-700 uppercase tracking-[0.3em] font-bold border-2 border-red-800/40 px-2 py-0.5"
                       style={{ transform: "rotate(-12deg)" }}
                     >
                       Caso cerrado
@@ -546,11 +546,11 @@ export default function Revelation({
                   >
                     {data.name}
                   </h2>
-                  <p className="font-display text-xs text-noir-text/60 leading-relaxed mb-8 max-w-sm mx-auto">
+                  <p className="font-display text-xs text-noir-text/75 leading-relaxed mb-8 max-w-sm mx-auto">
                     {data.summary}
                   </p>
 
-                  <p className="font-body text-[9px] text-noir-muted/40 mb-6">
+                  <p className="font-body text-xs text-noir-muted mb-6">
                     Todos tus recuerdos fueron grabados permanentemente en 0G Storage + 0G Chain.
                   </p>
 
@@ -563,7 +563,7 @@ export default function Revelation({
                     <button
                       onClick={handleShare}
                       disabled={isSharing}
-                      className="px-5 py-2.5 border text-[11px] font-display tracking-wider hover:opacity-80 transition-opacity uxpm-press disabled:opacity-40 flex items-center gap-2"
+                      className="px-5 py-2.5 border text-xs font-display tracking-wider hover:opacity-80 transition-opacity uxpm-press disabled:opacity-40 flex items-center gap-2"
                       style={{ borderColor: `${data.color}60`, color: data.color }}
                     >
                       {isSharing ? "Generando..." : (
@@ -579,7 +579,7 @@ export default function Revelation({
                     </button>
                     <button
                       onClick={onClose}
-                      className="px-5 py-2.5 border border-noir-border text-noir-muted text-[11px] font-display tracking-wider hover:text-noir-accent hover:border-noir-accent/50 transition-colors uxpm-press"
+                      className="px-5 py-2.5 border border-noir-border text-noir-muted text-xs font-display tracking-wider hover:text-noir-accent hover:border-noir-accent/50 transition-colors uxpm-press"
                     >
                       Nueva partida
                     </button>

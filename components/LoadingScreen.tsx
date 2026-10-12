@@ -61,7 +61,7 @@ function FallingBinaryParticle({ id, delay, left }: { id: number; delay: number;
   const char = id % 2 === 0 ? "1" : "0";
   return (
     <motion.span
-      className="absolute font-mono text-[10px] text-noir-accent/20 select-none"
+      className="absolute font-mono text-xs text-noir-accent/20 select-none"
       style={{ left: `${left}%` }}
       initial={{ top: "-5%", opacity: 0 }}
       animate={{ top: "105%", opacity: [0, 0.4, 0.3, 0] }}
@@ -158,6 +158,19 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
     return () => clearInterval(interval);
   }, [phase, onComplete, phraseIndex]);
 
+  // Saltar la intro: toque, clic, Esc, Enter o espacio.
+  const skip = useCallback(() => {
+    setVisible(false);
+    setTimeout(onComplete, 300);
+  }, [onComplete]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" || e.key === "Enter" || e.key === " ") skip();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [skip]);
+
   const filledSegments = Math.floor((progress / 100) * SEGMENTS);
 
   return (
@@ -167,6 +180,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6 }}
+          onClick={skip}
           className="fixed inset-0 z-[10001] bg-noir-bg flex flex-col items-center justify-center overflow-hidden"
         >
           {/* Falling binary particles */}
@@ -203,7 +217,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                     key={i}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: i === bootLine ? 1 : 0.4 }}
-                    className={`font-mono text-[11px] leading-relaxed ${
+                    className={`font-mono text-xs leading-relaxed ${
                       i === bootLine ? "text-green-500" : "text-green-800"
                     }`}
                   >
@@ -262,7 +276,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                 </div>
 
                 {/* Percentage */}
-                <p className="font-mono text-[10px] text-noir-muted/60 -mt-5">
+                <p className="font-mono text-xs text-noir-muted -mt-5">
                   {Math.floor(progress)}%
                 </p>
 
@@ -275,7 +289,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                       animate={{ opacity: 0.6, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.3 }}
-                      className="font-body text-[10px] text-noir-muted tracking-[0.3em] uppercase"
+                      className="font-body text-xs text-noir-muted tracking-[0.3em] uppercase"
                     >
                       {typewriterPhrase}
                       {!phraseDone && (
@@ -300,6 +314,9 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                 "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(232,213,176,0.1) 2px, rgba(232,213,176,0.1) 4px)",
             }}
           />
+          <p className="absolute bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-0 right-0 text-center text-xs tracking-[0.3em] uppercase text-noir-muted">
+            Toca para saltar · Esc
+          </p>
         </motion.div>
       )}
     </AnimatePresence>

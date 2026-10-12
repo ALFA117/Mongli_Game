@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AudioInit } from "@/components/AudioInit";
 import Cursor from "@/components/Cursor";
+import { AmbientBackground } from "@/components/AmbientBackground";
 
 const SITE_URL = "https://mongli-game.vercel.app";
 
@@ -31,6 +32,8 @@ export const metadata: Metadata = {
     images: [`${SITE_URL}/api/og`],
   },
   robots: { index: true, follow: true },
+  metadataBase: new URL(SITE_URL),
+  alternates: { canonical: "/" },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -60,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="grain vignette antialiased min-h-screen">
+        <AmbientBackground />
         <AudioInit />
         <Cursor />
         {children}

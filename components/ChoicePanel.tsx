@@ -58,7 +58,7 @@ export default function ChoicePanel({ choices, onChoose, disabled }: ChoicePanel
               <span style={{
                 display: "inline-block", marginLeft: 10, background: "#3d0000",
                 border: "1px solid #dc2626", color: "#fca5a5", padding: "2px 8px",
-                borderRadius: 4, fontSize: 11, letterSpacing: "0.1em",
+                borderRadius: 4, fontSize: 12, letterSpacing: "0.1em",
               }}>SIN RETORNO</span>
             )}
 

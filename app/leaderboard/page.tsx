@@ -29,7 +29,7 @@ export default function LeaderboardPage() {
       <Cursor /><ScanlineOverlay />
       <header className="flex items-center justify-between p-4 border-b border-noir-border/20 relative z-50">
         <button onClick={() => router.push("/")} className="font-display text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent"><GlitchText text="MONGLI" intensity="low" /></button>
-        <span className="font-body text-[9px] text-noir-muted">/ leaderboard</span>
+        <span className="font-body text-xs text-noir-muted">/ leaderboard</span>
       </header>
 
       <main className="flex-1 p-4 sm:p-8 max-w-2xl mx-auto w-full">
@@ -51,14 +51,14 @@ export default function LeaderboardPage() {
               <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
                 className={`flex items-center gap-3 p-3 manila-folder ${i < 3 ? "border-l-2" : ""}`}
                 style={i < 3 ? { borderLeftColor: i === 0 ? "#eab308" : i === 1 ? "#9ca3af" : "#b45309" } : undefined}>
-                <span className={`text-lg w-8 text-center ${i < 3 ? MEDAL_COLORS[i] : "text-noir-muted/30 text-sm font-mono"}`}>
+                <span className={`text-lg w-8 text-center ${i < 3 ? MEDAL_COLORS[i] : "text-noir-muted text-sm font-mono"}`}>
                   {i < 3 ? MEDALS[i] : `${i + 1}.`}
                 </span>
                 <div className="flex-1">
-                  <p className="font-mono text-[10px] text-noir-muted/50">{e.walletAddress.slice(0, 6)}...{e.walletAddress.slice(-4)}</p>
+                  <p className="font-mono text-xs text-noir-muted">{e.walletAddress.slice(0, 6)}...{e.walletAddress.slice(-4)}</p>
                   <p className="font-display text-xs text-noir-text">{e.shareText || "—"}</p>
                 </div>
-                <span className="font-body text-[9px] text-noir-muted/40">{new Date(e.completedAt).toLocaleDateString("es-MX")}</span>
+                <span className="font-body text-xs text-noir-muted">{new Date(e.completedAt).toLocaleDateString("es-MX")}</span>
               </motion.div>
             ))}
           </div>

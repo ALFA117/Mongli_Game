@@ -31,7 +31,7 @@ const STEPS = [
             transition={{ delay: i * 0.3 }} className="text-center">
             <span className="text-2xl block mb-2">{item.icon}</span>
             <p className="font-display text-xs text-noir-accent mb-1">{item.label}</p>
-            <p className="font-body text-[10px] text-noir-muted">{item.desc}</p>
+            <p className="font-body text-xs text-noir-muted">{item.desc}</p>
           </motion.div>
         ))}
       </div>
@@ -50,7 +50,7 @@ const STEPS = [
           ].map(id => (
             <div key={id.name} className="text-center">
               <span className="text-3xl block mb-2" style={{ color: id.color }}>{id.symbol}</span>
-              <p className="font-display text-[10px]" style={{ color: id.color }}>{id.name}</p>
+              <p className="font-display text-xs" style={{ color: id.color }}>{id.name}</p>
             </div>
           ))}
         </div>
@@ -62,9 +62,9 @@ const STEPS = [
     content: (
       <div className="py-4 text-center">
         <div className="mb-4"><WalletButton /></div>
-        <p className="font-body text-[10px] text-noir-muted mb-2">Necesitas MetaMask y tokens gratuitos de 0G Galileo</p>
+        <p className="font-body text-xs text-noir-muted mb-2">Necesitas MetaMask y tokens gratuitos de 0G Galileo</p>
         <a href="https://faucet.0g.ai" target="_blank" rel="noopener noreferrer"
-          className="font-body text-[10px] text-noir-accent hover:underline">Obtener tokens gratis →</a>
+          className="font-body text-xs text-noir-accent hover:underline">Obtener tokens gratis →</a>
       </div>
     ),
   },
@@ -96,7 +96,7 @@ export default function OnboardingModal() {
         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
           className="bg-noir-card border border-noir-border p-6 sm:p-8 max-w-md w-full relative">
           {/* Skip */}
-          <button onClick={close} className="absolute top-3 right-3 font-body text-[9px] text-noir-muted/40 hover:text-noir-accent">
+          <button onClick={close} className="absolute top-3 right-3 font-body text-xs text-noir-muted hover:text-noir-accent">
             Saltar
           </button>
 
@@ -108,7 +108,7 @@ export default function OnboardingModal() {
           </div>
 
           {/* Title */}
-          <p className="font-body text-[8px] text-noir-muted/40 uppercase tracking-[0.3em] text-center mb-1">
+          <p className="font-body text-xs text-noir-muted uppercase tracking-[0.3em] text-center mb-1">
             Paso {step + 1} de {STEPS.length}
           </p>
           <h3 className="font-display text-sm text-noir-accent text-center tracking-wider mb-4">

@@ -32,7 +32,7 @@ export default function Toast({ message, hash, visible, onClose }: ToastProps) {
             <div>
               <p className="text-noir-text">{message}</p>
               {hash && (
-                <p className="text-noir-muted mt-0.5 font-mono text-[10px]">
+                <p className="text-noir-muted mt-0.5 font-mono text-xs">
                   {hash.slice(0, 8)}...{hash.slice(-6)}
                 </p>
               )}

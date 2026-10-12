@@ -174,7 +174,7 @@ function SpeedrunContent() {
           <button onClick={() => router.push("/")} className="font-display text-base text-noir-text tracking-[0.15em] hover:text-noir-accent">
             <GlitchText text="MONGLI" intensity="low" />
           </button>
-          <span className="text-[9px] font-body text-red-400 border border-red-800/40 px-1.5 py-0.5">⚡ SPEEDRUN</span>
+          <span className="text-xs font-body text-red-400 border border-red-800/40 px-1.5 py-0.5">⚡ SPEEDRUN</span>
         </div>
         {/* Timer */}
         <span className="font-mono text-lg sm:text-xl text-red-400 tracking-wider tabular-nums">
@@ -216,11 +216,11 @@ function SpeedrunContent() {
                 <p className="font-mono text-xs text-red-400 text-center mb-4">{decisionCountdown}s</p>
                 <div className="flex flex-col gap-3">
                   <button onClick={() => handleDecision(act.decision.dark.text)} className="p-4 border-2 border-red-800/50 bg-noir-card text-left uxpm-press hover:bg-red-950/20">
-                    <span className="text-[9px] text-red-400/70 uppercase tracking-wider block mb-1">Sombra</span>
+                    <span className="text-xs text-red-400/70 uppercase tracking-wider block mb-1">Sombra</span>
                     <p className="font-display text-sm text-noir-text">{act.decision.dark.text}</p>
                   </button>
                   <button onClick={() => handleDecision(act.decision.light.text)} className="p-4 border-2 border-noir-accent/50 bg-noir-card text-left uxpm-press hover:bg-noir-accent/10">
-                    <span className="text-[9px] text-noir-accent/70 uppercase tracking-wider block mb-1">Luz</span>
+                    <span className="text-xs text-noir-accent/70 uppercase tracking-wider block mb-1">Luz</span>
                     <p className="font-display text-sm text-noir-text">{act.decision.light.text}</p>
                   </button>
                 </div>

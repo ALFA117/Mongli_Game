@@ -46,7 +46,7 @@ export default function JudgesPage() {
           className="font-display text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent transition-colors">
           <GlitchText text="MONGLI" intensity="low" />
         </button>
-        <span className="font-body text-[9px] text-noir-muted tracking-[0.3em] uppercase">
+        <span className="font-body text-xs text-noir-muted tracking-[0.3em] uppercase">
           Technical Overview
         </span>
       </header>
@@ -64,9 +64,9 @@ export default function JudgesPage() {
             Zero Cup 2026 · 0G Labs Hackathon
           </p>
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="px-2 py-1 border border-noir-accent/40 text-[9px] font-body text-noir-accent">Built on 0G</span>
-            <span className="px-2 py-1 border border-blue-500/40 text-[9px] font-body text-blue-400">AI-Native</span>
-            <span className="px-2 py-1 border border-purple-500/40 text-[9px] font-body text-purple-400">Vibe Coded</span>
+            <span className="px-2 py-1 border border-noir-accent/40 text-xs font-body text-noir-accent">Built on 0G</span>
+            <span className="px-2 py-1 border border-blue-500/40 text-xs font-body text-blue-400">AI-Native</span>
+            <span className="px-2 py-1 border border-purple-500/40 text-xs font-body text-purple-400">Vibe Coded</span>
           </div>
         </div>
 
@@ -143,11 +143,11 @@ export default function JudgesPage() {
               <div key={card.title} className="manila-folder p-4">
                 <span className="text-xl mb-2 block">{card.icon}</span>
                 <h3 className="font-display text-xs text-noir-text mb-2">{card.title}</h3>
-                <p className="font-body text-[10px] text-noir-muted mb-3">{card.desc}</p>
-                <pre className="font-mono text-[8px] text-green-500/60 bg-noir-bg/50 p-2 mb-2 overflow-x-auto">
+                <p className="font-body text-xs text-noir-muted mb-3">{card.desc}</p>
+                <pre className="font-mono text-xs text-green-500/60 bg-noir-bg/50 p-2 mb-2 overflow-x-auto">
                   {card.code}
                 </pre>
-                <p className="font-body text-[9px] text-noir-accent/60 italic">{card.why}</p>
+                <p className="font-body text-xs text-noir-accent/60 italic">{card.why}</p>
               </div>
             ))}
           </div>
@@ -155,7 +155,7 @@ export default function JudgesPage() {
 
         {/* Section 3: Architecture */}
         <Section title="Architecture">
-          <pre className="font-mono text-[10px] sm:text-[11px] text-noir-text/70 bg-noir-card p-4 sm:p-6 border border-noir-border/30 overflow-x-auto leading-relaxed">
+          <pre className="font-mono text-xs sm:text-xs text-noir-text/70 bg-noir-card p-4 sm:p-6 border border-noir-border/30 overflow-x-auto leading-relaxed">
 {`Player → MetaMask → Next.js API → Claude/Gemini AI
                         │               │
                         │         Fragment JSON
@@ -183,8 +183,8 @@ export default function JudgesPage() {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
             {STACK.map((s) => (
               <div key={s.name} className="border border-noir-border/30 p-2 text-center">
-                <p className="font-body text-[10px] text-noir-text">{s.name}</p>
-                <p className="font-body text-[8px] text-noir-muted">{s.role}</p>
+                <p className="font-body text-xs text-noir-text">{s.name}</p>
+                <p className="font-body text-xs text-noir-muted">{s.role}</p>
               </div>
             ))}
           </div>
@@ -198,7 +198,7 @@ export default function JudgesPage() {
             ].map((s) => (
               <div key={s.label}>
                 <p className="font-display text-xl text-noir-accent">{s.num}</p>
-                <p className="text-[8px] font-body text-noir-muted uppercase">{s.label}</p>
+                <p className="text-xs font-body text-noir-muted uppercase">{s.label}</p>
               </div>
             ))}
           </div>
@@ -208,7 +208,7 @@ export default function JudgesPage() {
         <Section title="Live Contract">
           <div className="manila-folder p-5 text-center">
             <p className="font-mono text-xs text-noir-accent mb-2">MongliMemory.sol</p>
-            <p className="font-mono text-[10px] text-noir-muted mb-4">
+            <p className="font-mono text-xs text-noir-muted mb-4">
               0x81B600E7ACE4CEe5D698C39368B615A732d0E9f8
             </p>
             <a href="https://chainscan-galileo.0g.ai/address/0x81B600E7ACE4CEe5D698C39368B615A732d0E9f8"
@@ -235,8 +235,8 @@ export default function JudgesPage() {
         {/* Footer */}
         <div className="text-center border-t border-noir-border/20 pt-8">
           <p className="font-body text-xs text-noir-muted">Edgar Lopez Baeza · @ALFA_EDG</p>
-          <p className="font-body text-[9px] text-noir-muted/40 mt-1">Zero Cup 2026 · 0G Labs</p>
-          <div className="flex items-center justify-center gap-4 mt-4 text-[9px] font-body text-noir-muted/40">
+          <p className="font-body text-xs text-noir-muted mt-1">Zero Cup 2026 · 0G Labs</p>
+          <div className="flex items-center justify-center gap-4 mt-4 text-xs font-body text-noir-muted">
             <a href="https://mongli-game.vercel.app" className="hover:text-noir-accent">Live Game</a>
             <a href="https://github.com/ALFA117/Mongli_Game" target="_blank" rel="noopener noreferrer" className="hover:text-noir-accent">GitHub</a>
             <button onClick={() => router.push("/gallery")} className="hover:text-noir-accent">Gallery</button>

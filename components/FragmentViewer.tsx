@@ -278,11 +278,11 @@ export default function FragmentViewer({
             {/* Header */}
             <div className="flex items-center justify-between mb-4 pr-8">
               <div className="flex items-center gap-2">
-                <span className="font-body text-[10px] text-noir-muted uppercase tracking-[0.2em]">
+                <span className="font-body text-xs text-noir-muted uppercase tracking-[0.2em]">
                   Fragmento #{String(fragment.id).padStart(2, "0")}
                 </span>
                 <span
-                  className="text-[8px] font-body uppercase tracking-wider px-1.5 py-0.5 border"
+                  className="text-xs font-body uppercase tracking-wider px-1.5 py-0.5 border"
                   style={{
                     color: tone.color,
                     borderColor: `${tone.color}40`,
@@ -318,13 +318,13 @@ export default function FragmentViewer({
             {/* Metadata section */}
             <div className="space-y-3 mb-5">
               {/* Date */}
-              <div className="flex items-center justify-between text-[10px] font-body">
+              <div className="flex items-center justify-between text-xs font-body">
                 <span className="text-noir-muted">Fecha</span>
                 <span className="text-noir-text/70">{formatDate(fragment.timestamp)}</span>
               </div>
 
               {/* Choice */}
-              <div className="flex items-center justify-between text-[10px] font-body">
+              <div className="flex items-center justify-between text-xs font-body">
                 <span className="text-noir-muted">Decisión</span>
                 <span className="text-noir-text/70 max-w-[200px] text-right truncate">
                   {fragment.choiceMade || "Inicio — despertar"}
@@ -332,7 +332,7 @@ export default function FragmentViewer({
               </div>
 
               {/* Tone bar */}
-              <div className="flex items-center gap-2 text-[10px] font-body">
+              <div className="flex items-center gap-2 text-xs font-body">
                 <span className="text-noir-muted w-12 shrink-0">Tono</span>
                 <div className="flex-1 h-[4px] bg-noir-border/30 relative overflow-hidden">
                   <motion.div
@@ -350,13 +350,13 @@ export default function FragmentViewer({
 
               {/* Tags */}
               {fragment.tags.length > 0 && (
-                <div className="flex items-start gap-2 text-[10px] font-body">
+                <div className="flex items-start gap-2 text-xs font-body">
                   <span className="text-noir-muted w-12 shrink-0 pt-0.5">Tags</span>
                   <div className="flex flex-wrap gap-1">
                     {fragment.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-1.5 py-0.5 border border-noir-border/40 bg-noir-bg/30 text-noir-accent/80 text-[9px]"
+                        className="px-1.5 py-0.5 border border-noir-border/40 bg-noir-bg/30 text-noir-accent/80 text-xs"
                       >
                         {tag}
                       </span>
@@ -367,20 +367,20 @@ export default function FragmentViewer({
 
               {/* 0G Hashes */}
               {fragment.storageHash && (
-                <div className="flex items-center justify-between text-[10px] font-body">
+                <div className="flex items-center justify-between text-xs font-body">
                   <span className="text-noir-muted">0G Storage</span>
-                  <span className="text-noir-accent font-mono text-[9px]">
+                  <span className="text-noir-accent font-mono text-xs">
                     {fragment.storageHash.slice(0, 10)}...{fragment.storageHash.slice(-6)}
                   </span>
                 </div>
               )}
 
               {fragment.txHash && (
-                <div className="flex items-center justify-between text-[10px] font-body">
+                <div className="flex items-center justify-between text-xs font-body">
                   <span className="text-noir-muted" title="Guardado localmente en esta sesión -- todavía no se envía como transacción real a 0G Chain.">
                     0G Chain TX (simulado)
                   </span>
-                  <span className="text-noir-accent font-mono text-[9px]">
+                  <span className="text-noir-accent font-mono text-xs">
                     {fragment.txHash.slice(0, 10)}...{fragment.txHash.slice(-6)}
                   </span>
                 </div>
@@ -389,11 +389,11 @@ export default function FragmentViewer({
               {/* Traces */}
               {fragment.traces.length > 0 && (
                 <div>
-                  <span className="text-[10px] font-body text-noir-muted block mb-1">Trazas</span>
+                  <span className="text-xs font-body text-noir-muted block mb-1">Trazas</span>
                   {fragment.traces.map((trace) => (
                     <p
                       key={trace}
-                      className="text-[10px] font-body text-noir-text/50 pl-2 border-l border-noir-accent/20 mb-0.5"
+                      className="text-xs font-body text-noir-text/75 pl-2 border-l border-noir-accent/20 mb-0.5"
                     >
                       {trace}
                     </p>
@@ -405,7 +405,7 @@ export default function FragmentViewer({
             {/* Related fragments */}
             {related.length > 0 && (
               <div className="border-t border-noir-border/30 pt-4 mb-5">
-                <p className="text-[9px] font-body text-noir-muted uppercase tracking-wider mb-2">
+                <p className="text-xs font-body text-noir-muted uppercase tracking-wider mb-2">
                   Conecta con
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -430,7 +430,7 @@ export default function FragmentViewer({
                           {rf.id}
                         </span>
                         <div>
-                          <span className="text-[9px] font-body text-noir-text/60 block leading-tight">
+                          <span className="text-xs font-body text-noir-text/75 block leading-tight">
                             #{rf.id} — {rf.text.slice(0, 30)}...
                           </span>
                           <span className="text-[7px] font-body text-noir-accent/40">
@@ -449,7 +449,7 @@ export default function FragmentViewer({
               <button
                 onClick={handleShare}
                 disabled={isSharing}
-                className="flex-1 py-2.5 border border-noir-accent/40 text-noir-accent text-[10px] font-display tracking-wider hover:bg-noir-accent/10 transition-colors uxpm-press disabled:opacity-40 flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 border border-noir-accent/40 text-noir-accent text-xs font-display tracking-wider hover:bg-noir-accent/10 transition-colors uxpm-press disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {isSharing ? (
                   <motion.span
@@ -481,7 +481,7 @@ export default function FragmentViewer({
                 );
                 window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
               }}
-              className="w-full py-2 border border-noir-border/40 text-noir-muted text-[10px] font-body tracking-wider hover:text-noir-accent hover:border-noir-accent/40 transition-colors uxpm-press mt-2 flex items-center justify-center gap-2"
+              className="w-full py-2 border border-noir-border/40 text-noir-muted text-xs font-body tracking-wider hover:text-noir-accent hover:border-noir-accent/40 transition-colors uxpm-press mt-2 flex items-center justify-center gap-2"
             >
               Compartir en X/Twitter
             </button>
@@ -492,13 +492,13 @@ export default function FragmentViewer({
                 navigator.clipboard.writeText(`https://mongli-game.vercel.app`);
                 alert("Link copiado");
               }}
-              className="w-full py-2 border border-noir-border/30 text-noir-muted/50 text-[10px] font-body tracking-wider hover:text-noir-accent transition-colors uxpm-press mt-1"
+              className="w-full py-2 border border-noir-border/30 text-noir-muted text-xs font-body tracking-wider hover:text-noir-accent transition-colors uxpm-press mt-1"
             >
               Copiar link
             </button>
 
             {/* Footer watermark */}
-            <p className="text-[7px] font-body text-noir-muted/20 text-center mt-4 tracking-wider">
+            <p className="text-[7px] font-body text-noir-muted text-center mt-4 tracking-wider">
               MONGLI GAME — 0G STORAGE — PERMANENTE
             </p>
           </motion.div>

@@ -433,18 +433,18 @@ export function GameEngine() {
     const fmt = `${Math.floor(levelTime / 60)}:${String(levelTime % 60).padStart(2, "0")}`;
     return (
       <div className="game-page completion-overlay" onMouseMove={() => {}} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", zIndex: 100, cursor: "crosshair", overflowY: "auto", padding: "20px" }}>
-        <div style={{ color: "#B30000", fontSize: 11, letterSpacing: "0.3em", marginBottom: 8 }}>NIVEL {levelIdx + 1} COMPLETADO</div>
+        <div style={{ color: "#B30000", fontSize: 12, letterSpacing: "0.3em", marginBottom: 8 }}>NIVEL {levelIdx + 1} COMPLETADO</div>
         <div style={{ color: "#E5DEC9", fontSize: 28, marginBottom: 4 }}>{levelData.name}</div>
         <div style={{ color: "#555", fontSize: 13, marginBottom: 28 }}>{fmt} · {deaths} muertes · {stompCount} aturdidos</div>
         <div style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 8, padding: 20, marginBottom: 24, maxWidth: 400, width: "90%" }}>
-          <div style={{ color: "#444", fontSize: 10, letterSpacing: "0.2em", marginBottom: 12 }}>FRAGMENTOS RECUPERADOS</div>
+          <div style={{ color: "#444", fontSize: 12, letterSpacing: "0.2em", marginBottom: 12 }}>FRAGMENTOS RECUPERADOS</div>
           {collectedTexts.map((t, i) => (
             <div key={i} style={{ color: "#8C8275", fontSize: 12, lineHeight: 1.5, marginBottom: 8, paddingLeft: 12, borderLeft: "2px solid #B30000" }}>{t.slice(0, 80)}...</div>
           ))}
         </div>
         {/* Score */}
         <div className="uxpm-surface" style={{ borderRadius: 8, padding: 16, marginBottom: 20, maxWidth: 300, width: "90%" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, fontSize: 11, fontFamily: "monospace" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, fontSize: 12, fontFamily: "monospace" }}>
             <span style={{ color: "#555" }}>BASE</span><span style={{ color: "#E5DEC9", textAlign: "right" }}>1000</span>
             <span style={{ color: "#555" }}>TIEMPO</span><span style={{ color: "#4CAF50", textAlign: "right" }}>+{timeBonus}</span>
             <span style={{ color: "#555" }}>MUERTES</span><span style={{ color: "#FF4444", textAlign: "right" }}>-{deathPenalty}</span>
@@ -489,27 +489,27 @@ export function GameEngine() {
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           zIndex: 50, cursor: "crosshair", fontFamily: "'Special Elite', serif",
         }}>
-          <div style={{ color: "#555", fontSize: 11, letterSpacing: "0.4em", marginBottom: 12 }}>ACTO {levelIdx + 1}</div>
+          <div style={{ color: "#555", fontSize: 12, letterSpacing: "0.4em", marginBottom: 12 }}>ACTO {levelIdx + 1}</div>
           <div style={{ color: "#E5DEC9", fontSize: 32, letterSpacing: "0.1em", marginBottom: 8, textShadow: "0 0 20px rgba(179,0,0,0.5)" }}>{levelData.name}</div>
           <div style={{ color: "#444", fontSize: 13, marginBottom: 32 }}>Encuentra los fragmentos de tu memoria</div>
-          <div style={{ color: "#333", fontSize: 11, letterSpacing: "0.2em", animation: "pulse 1.5s infinite" }}>CLICK PARA COMENZAR</div>
+          <div style={{ color: "#333", fontSize: 12, letterSpacing: "0.2em", animation: "pulse 1.5s infinite" }}>CLICK PARA COMENZAR</div>
         </div>
       )}
 
       {/* HUD */}
       <div style={{ position: "absolute", top: 16, left: 20, zIndex: 10 }}>
         <div style={{ color: "#B30000", fontSize: 18, letterSpacing: "0.2em", textShadow: "0 0 10px #FF1A1A", fontFamily: "'Special Elite', serif" }}>MONGLI</div>
-        <div style={{ color: "#555", fontSize: 11, letterSpacing: "0.1em", marginTop: 4, fontFamily: "monospace" }}>ACTO {levelIdx + 1} · {levelData.name}</div>
+        <div style={{ color: "#555", fontSize: 12, letterSpacing: "0.1em", marginTop: 4, fontFamily: "monospace" }}>ACTO {levelIdx + 1} · {levelData.name}</div>
         {/* Health bar */}
         <div style={{ width: 120, height: 6, background: "#1a1a1a", borderRadius: 3, marginTop: 6, overflow: "hidden" }}>
           <div style={{ width: `${player.health}%`, height: "100%", background: player.health > 50 ? "#B30000" : player.health > 25 ? "#ff6600" : "#ff0000", boxShadow: `0 0 6px ${player.health > 50 ? "#B30000" : "#ff0000"}`, transition: "width 0.3s" }} />
         </div>
-        <div style={{ color: "#333", fontSize: 10, letterSpacing: "0.1em", marginTop: 4, fontFamily: "monospace" }}>{player.health}/100 · MUERTES: {deaths}</div>
+        <div style={{ color: "#333", fontSize: 12, letterSpacing: "0.1em", marginTop: 4, fontFamily: "monospace" }}>{player.health}/100 · MUERTES: {deaths}</div>
       </div>
 
       {/* Memory counter */}
       <div style={{ position: "absolute", top: 16, right: 20, zIndex: 10, display: "flex", gap: 6, alignItems: "center" }}>
-        <span style={{ color: "#555", fontSize: 11, marginRight: 8, fontFamily: "monospace" }}>MEMORIA</span>
+        <span style={{ color: "#555", fontSize: 12, marginRight: 8, fontFamily: "monospace" }}>MEMORIA</span>
         {[0, 1, 2].map(i => (
           <div key={i} style={{
             width: 10, height: 10, borderRadius: "50%",
@@ -523,7 +523,7 @@ export function GameEngine() {
       {/* Boss HP bar */}
       {levelData.boss?.active && levelData.boss.state !== "dead" && (
         <div className="uxpm-glass" style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", width: 300, padding: "12px 16px", textAlign: "center", cursor: "crosshair", zIndex: 20 }}>
-          <div style={{ color: "#FF1A1A", fontSize: 11, letterSpacing: "0.2em", marginBottom: 6 }}>LA FIGURA</div>
+          <div style={{ color: "#FF1A1A", fontSize: 12, letterSpacing: "0.2em", marginBottom: 6 }}>LA FIGURA</div>
           <div style={{ background: "#111", height: 6, borderRadius: 3 }}>
             <div style={{ width: `${(levelData.boss.currentHealth / levelData.boss.maxHealth) * 100}%`, height: "100%", background: "linear-gradient(90deg, #7a0000, #FF1A1A)", boxShadow: "0 0 8px #FF1A1A", borderRadius: 3, transition: "width 0.3s" }} />
           </div>
@@ -532,14 +532,14 @@ export function GameEngine() {
 
       {/* Power-up indicator */}
       {activePowerUp && (
-        <div style={{ position: "absolute", top: 100, left: 20, zIndex: 10, background: "rgba(0,0,0,0.7)", border: "1px solid #2a2a2a", borderRadius: 4, padding: "4px 10px", fontSize: 10, color: "#E5DEC9", fontFamily: "monospace" }}>
+        <div style={{ position: "absolute", top: 100, left: 20, zIndex: 10, background: "rgba(0,0,0,0.7)", border: "1px solid #2a2a2a", borderRadius: 4, padding: "4px 10px", fontSize: 12, color: "#E5DEC9", fontFamily: "monospace" }}>
           {activePowerUp.type.toUpperCase()} {Math.ceil(activePowerUp.timer)}s
         </div>
       )}
 
       {/* Hidden indicator */}
       {isHiding && (
-        <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, color: "#4444ff", fontSize: 11, fontFamily: "monospace", letterSpacing: "0.15em" }}>
+        <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, color: "#4444ff", fontSize: 12, fontFamily: "monospace", letterSpacing: "0.15em" }}>
           OCULTO
         </div>
       )}
@@ -567,12 +567,12 @@ export function GameEngine() {
       {/* Dialog */}
       {dialogActive && (
         <div style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", width: "80%", maxWidth: 600, zIndex: 30, background: "rgba(0,0,0,0.95)", border: "1px solid #B30000", borderRadius: 4, padding: "20px 24px", fontFamily: "'Special Elite', serif", boxShadow: "0 0 30px rgba(179,0,0,0.3)" }}>
-          <div style={{ color: "#B30000", fontSize: 11, letterSpacing: "0.2em", marginBottom: 12 }}>{dialogSpeaker} {loading && "..."}</div>
+          <div style={{ color: "#B30000", fontSize: 12, letterSpacing: "0.2em", marginBottom: 12 }}>{dialogSpeaker} {loading && "..."}</div>
           <p style={{ color: "#E5DEC9", fontSize: 15, lineHeight: 1.8, margin: 0 }}>
             {dialogDisplay}
             {!dialogDone && <span style={{ animation: "blink 1s infinite" }}>|</span>}
           </p>
-          {dialogDone && <div style={{ color: "#444", fontSize: 11, marginTop: 12, textAlign: "right", animation: "pulse 1.5s infinite" }}>[E] CONTINUAR</div>}
+          {dialogDone && <div style={{ color: "#444", fontSize: 12, marginTop: 12, textAlign: "right", animation: "pulse 1.5s infinite" }}>[E] CONTINUAR</div>}
         </div>
       )}
 
