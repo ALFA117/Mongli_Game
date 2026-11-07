@@ -89,7 +89,7 @@ function LandingContent() {
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.7 }} transition={{ delay: 2 }}
             className="font-body text-noir-text/60 text-xs sm:text-sm max-w-md mx-auto mt-4 leading-relaxed">
             Tus recuerdos están en algún lugar. La IA los encontrará.
-            La blockchain los guardará para siempre.
+            0G registrará tu avance en la cadena.
           </motion.p>
         </motion.div>
 
