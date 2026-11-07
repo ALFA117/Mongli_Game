@@ -8,7 +8,7 @@ const SITE_URL = "https://mongli-game.vercel.app";
 export const metadata: Metadata = {
   title: "Mongli Game — Tu memoria vive en la blockchain",
   description:
-    "5 game modes · AI narrative · 0G blockchain · 22 routes · Zero Cup 2026. Juego noir donde la IA escribe tu historia y 0G la guarda para siempre.",
+    "5 game modes · AI narrative · 0G blockchain · 22 routes · Zero Cup 2026. Juego noir donde la IA escribe tu historia y tu avance queda registrado on-chain en 0G Galileo testnet.",
   keywords: "0G, blockchain, AI game, noir, amnesia, Zero Cup 2026, Claude, Gemini, Web3, hackathon",
   authors: [{ name: "Edgar Lopez Baeza", url: "https://github.com/ALFA117" }],
   manifest: "/manifest.json",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "Mongli Game — Tu memoria vive en la blockchain",
-    description: "Juego noir de amnesia donde la IA escribe tu historia y 0G la guarda para siempre.",
+    description: "Juego noir de amnesia donde la IA escribe tu historia y tu avance queda registrado on-chain en 0G Galileo testnet.",
     url: SITE_URL,
     siteName: "Mongli Game",
     images: [{ url: `${SITE_URL}/api/og`, width: 1200, height: 630, alt: "Mongli Game — Amnesia Noir" }],

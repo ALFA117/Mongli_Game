@@ -25,11 +25,27 @@ function LandingContent() {
   const [loading, setLoading] = useState(true);
   const [audioStarted, setAudioStarted] = useState(false);
 
+  // The "reconstructing identity" intro is atmosphere with simulated progress:
+  // show it once per session, never with reduced motion, and let it be skipped.
+  useEffect(() => {
+    try {
+      const seen = sessionStorage.getItem("mongli-intro-seen");
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (seen || reduce) setLoading(false);
+    } catch {
+      /* no sessionStorage: show the intro */
+    }
+  }, []);
+  const finishIntro = useCallback(() => {
+    try { sessionStorage.setItem("mongli-intro-seen", "1"); } catch { /* private mode */ }
+    setLoading(false);
+  }, []);
+
   const startAudio = useCallback(() => {
     if (!audioStarted) { startAudioOnFirstInteraction(); setAudioStarted(true); }
   }, [audioStarted]);
 
-  if (loading) return <LoadingScreen onComplete={() => setLoading(false)} />;
+  if (loading) return <LoadingScreen onComplete={finishIntro} />;
 
   return (
     <div className="min-h-screen flex flex-col relative" onClick={startAudio}>
@@ -120,9 +136,9 @@ function LandingContent() {
             {isConnected
               ? <span style={{ color: "#4CAF50", display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4CAF50" }} />
-                  Wallet conectada — juego completo + guardado en 0G
+                  Wallet conectada — juego completo + registro on-chain en 0G testnet
                 </span>
-              : "Sin cuenta: primeros 2 actos · Con wallet: juego completo + guardado en 0G"
+              : "Sin cuenta: primeros 2 actos · Con wallet: juego completo + registro on-chain en 0G testnet"
             }
           </div>
 
@@ -140,7 +156,7 @@ function LandingContent() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
           {[
             { num: "01", title: "La IA Recuerda", desc: "Claude genera fragmentos de memoria únicos basados en tus decisiones" },
-            { num: "02", title: "0G Los Guarda", desc: "Cada recuerdo se graba permanentemente en la blockchain de 0G" },
+            { num: "02", title: "0G Lo Registra", desc: "Con wallet, cada acto completado firma una transacción real en 0G Galileo testnet. El guardado del texto en 0G Storage aún es simulado" },
             { num: "03", title: "Tú Decides", desc: "5 actos, 5 decisiones. Cada elección define quién fuiste" },
           ].map((item, i) => (
             <motion.div key={item.num} initial={{ opacity: 0, y: 20 }}

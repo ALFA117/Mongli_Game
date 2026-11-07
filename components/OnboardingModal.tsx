@@ -14,7 +14,7 @@ const STEPS = [
       <>
         <div className="w-[120px] h-[120px] mx-auto mb-4"><Skull3D scene="void" className="w-full h-full" /></div>
         <p className="font-display text-sm text-noir-text mb-2">Un juego de amnesia donde la IA escribe tu historia</p>
-        <p className="font-body text-xs text-noir-muted">y la blockchain la guarda para siempre.</p>
+        <p className="font-body text-xs text-noir-muted">y tu avance queda registrado en 0G (testnet).</p>
       </>
     ),
   },

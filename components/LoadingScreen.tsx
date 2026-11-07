@@ -292,6 +292,19 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
             )}
           </AnimatePresence>
 
+          {/* The intro is atmosphere (its progress is simulated), so it can
+              always be skipped. */}
+          <button
+            type="button"
+            onClick={() => {
+              setVisible(false);
+              setTimeout(onComplete, 300);
+            }}
+            className="absolute bottom-6 right-6 z-20 min-h-11 px-4 font-mono text-xs uppercase tracking-[0.2em] text-noir-muted hover:text-noir-text border border-noir-muted/30 hover:border-noir-text/50 rounded transition-colors"
+          >
+            Saltar intro
+          </button>
+
           {/* Scanlines */}
           <div
             className="fixed inset-0 pointer-events-none opacity-[0.04]"
