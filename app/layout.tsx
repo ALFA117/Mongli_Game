@@ -5,6 +5,7 @@ import { AudioInit } from "@/components/AudioInit";
 const SITE_URL = "https://mongli-game.vercel.app";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Mongli Game — Tu memoria vive en la blockchain",
   description:
     "5 game modes · AI narrative · 0G blockchain · 22 routes · Zero Cup 2026. Juego noir donde la IA escribe tu historia y tu avance queda registrado on-chain en 0G Galileo testnet.",
