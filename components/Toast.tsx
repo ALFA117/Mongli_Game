@@ -28,11 +28,11 @@ export default function Toast({ message, hash, visible, onClose }: ToastProps) {
           className="fixed bottom-6 left-1/2 z-[9999] bg-noir-card border border-noir-accent/40 px-5 py-3 shadow-xl"
         >
           <div className="flex items-center gap-3 font-body text-xs">
-            <span className="text-green-500 text-sm">&#10003;</span>
+            <span className="text-noir-ok text-sm">&#10003;</span>
             <div>
               <p className="text-noir-text">{message}</p>
               {hash && (
-                <p className="text-noir-muted mt-0.5 font-mono text-[10px]">
+                <p className="text-noir-muted mt-0.5 font-mono text-[13px]">
                   {hash.slice(0, 8)}...{hash.slice(-6)}
                 </p>
               )}

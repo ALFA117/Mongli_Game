@@ -174,16 +174,16 @@ function SpeedrunContent() {
           <button onClick={() => router.push("/")} className="font-display text-base text-noir-text tracking-[0.15em] hover:text-noir-accent">
             <GlitchText text="MONGLI" intensity="low" />
           </button>
-          <span className="text-[9px] font-body text-red-400 border border-red-800/40 px-1.5 py-0.5">⚡ SPEEDRUN</span>
+          <span className="text-xs font-body text-noir-accent border border-noir-accent px-1.5 py-0.5">Speedrun</span>
         </div>
         {/* Timer */}
-        <span className="font-mono text-lg sm:text-xl text-red-400 tracking-wider tabular-nums">
+        <span className="font-mono text-lg sm:text-xl text-noir-accent tracking-wider tabular-nums">
           {formatTime(elapsedMs)}
         </span>
       </header>
 
       {/* Progress */}
-      <div className="h-[3px] bg-noir-border/20"><div className="h-full bg-red-600/60 transition-all" style={{ width: `${(actIdx / 5) * 100}%` }} /></div>
+      <div className="h-[3px] bg-noir-border/20"><div className="h-full bg-noir-accent/10 transition-all" style={{ width: `${(actIdx / 5) * 100}%` }} /></div>
 
       <main className="flex-1 flex flex-col lg:flex-row">
         <div className="lg:w-[35%] flex items-center justify-center p-4">
@@ -196,7 +196,7 @@ function SpeedrunContent() {
           <AnimatePresence mode="wait">
             {phase === "countdown" && (
               <motion.div key="cd" initial={{ opacity: 0, scale: 2 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-center">
-                <motion.p animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.8, repeat: 2 }} className="font-display text-4xl text-red-400">
+                <motion.p animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.8, repeat: 2 }} className="font-display text-4xl text-noir-accent">
                   PREPARADO
                 </motion.p>
               </motion.div>
@@ -204,7 +204,7 @@ function SpeedrunContent() {
 
             {phase === "fragments" && actFragments[fragIdx] && (
               <motion.div key={`f-${actIdx}-${fragIdx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <div className="flex gap-1 mb-3">{[0,1,2].map(i => <div key={i} className={`h-[2px] flex-1 ${i <= fragIdx ? "bg-red-500" : "bg-noir-border/30"}`} />)}</div>
+                <div className="flex gap-1 mb-3">{[0,1,2].map(i => <div key={i} className={`h-[2px] flex-1 ${i <= fragIdx ? "bg-noir-accent/10" : "bg-noir-border/30"}`} />)}</div>
                 <FragmentComponent text={actFragments[fragIdx]?.text || ""} toneScore={actFragments[fragIdx]?.toneScore} fragmentId={actFragments[fragIdx]?.id} />
               </motion.div>
             )}
@@ -212,15 +212,15 @@ function SpeedrunContent() {
             {phase === "decision" && (
               <motion.div key="dec" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 {/* Countdown bar */}
-                <div className="h-[4px] bg-noir-border/30 mb-6"><motion.div className="h-full bg-red-500" animate={{ width: `${(decisionCountdown / 10) * 100}%` }} transition={{ duration: 0.3 }} /></div>
-                <p className="font-mono text-xs text-red-400 text-center mb-4">{decisionCountdown}s</p>
+                <div className="h-[4px] bg-noir-border/30 mb-6"><motion.div className="h-full bg-noir-accent/10" animate={{ width: `${(decisionCountdown / 10) * 100}%` }} transition={{ duration: 0.3 }} /></div>
+                <p className="font-mono text-xs text-noir-accent text-center mb-4">{decisionCountdown}s</p>
                 <div className="flex flex-col gap-3">
-                  <button onClick={() => handleDecision(act.decision.dark.text)} className="p-4 border-2 border-red-800/50 bg-noir-card text-left uxpm-press hover:bg-red-950/20">
-                    <span className="text-[9px] text-red-400/70 uppercase tracking-wider block mb-1">Sombra</span>
+                  <button onClick={() => handleDecision(act.decision.dark.text)} className="p-4 border-2 border-noir-accent bg-noir-card text-left uxpm-press hover:bg-noir-accent/10">
+                    <span className="text-xs text-noir-accent uppercase tracking-wider block mb-1">Sombra</span>
                     <p className="font-display text-sm text-noir-text">{act.decision.dark.text}</p>
                   </button>
                   <button onClick={() => handleDecision(act.decision.light.text)} className="p-4 border-2 border-noir-accent/50 bg-noir-card text-left uxpm-press hover:bg-noir-accent/10">
-                    <span className="text-[9px] text-noir-accent/70 uppercase tracking-wider block mb-1">Luz</span>
+                    <span className="text-xs text-noir-accent/70 uppercase tracking-wider block mb-1">Luz</span>
                     <p className="font-display text-sm text-noir-text">{act.decision.light.text}</p>
                   </button>
                 </div>
@@ -230,10 +230,10 @@ function SpeedrunContent() {
             {phase === "result" && (
               <motion.div key="res" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
                 {isNewRecord && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-display text-sm text-yellow-400 mb-2 tracking-wider">NUEVO RÉCORD</motion.p>}
-                <p className="font-mono text-4xl sm:text-5xl text-red-400 mb-6 tabular-nums">{formatTime(elapsedMs)}</p>
+                <p className="font-mono text-4xl sm:text-5xl text-noir-accent mb-6 tabular-nums">{formatTime(elapsedMs)}</p>
                 <div className="flex flex-col items-center gap-3">
                   {!saved && <button onClick={handleSave} className="px-6 py-2.5 border-2 border-noir-accent text-noir-accent font-display text-xs tracking-wider uxpm-press hover:bg-noir-accent/10">Guardar en leaderboard</button>}
-                  {saved && <p className="text-green-500 text-xs font-body">✓ Guardado en 0G</p>}
+                  {saved && <p className="text-noir-ok text-xs font-body">Récord registrado en 0G testnet</p>}
                   <button onClick={() => router.push("/leaderboard")} className="px-6 py-2 border border-noir-border text-noir-muted font-display text-xs tracking-wider uxpm-press">Ver leaderboard</button>
                 </div>
               </motion.div>

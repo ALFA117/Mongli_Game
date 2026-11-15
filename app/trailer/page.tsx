@@ -72,9 +72,9 @@ export default function TrailerPage() {
 
       {/* Skip button */}
       <div className="absolute top-3 right-3 z-50 flex items-center gap-2">
-        {paused && <span className="font-body text-[9px] text-noir-muted">pausado</span>}
+        {paused && <span className="font-body text-xs text-noir-muted">pausado</span>}
         <button onClick={(e) => { e.stopPropagation(); router.push("/"); }}
-          className="font-body text-[9px] text-noir-muted/40 hover:text-noir-accent px-2 py-1 border border-noir-border/20 uxpm-press">
+          className="font-body text-xs text-noir-muted hover:text-noir-accent px-2 py-1 border border-noir-border/20 uxpm-press">
           skip →
         </button>
       </div>
@@ -97,7 +97,7 @@ export default function TrailerPage() {
           {scene === 2 && (
             <motion.div key="s2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-lg relative">
               <div className="absolute -left-20 top-0 w-[120px] h-[120px] opacity-20"><Skull3D scene="hotel" className="w-full h-full" /></div>
-              <p className="font-body text-[8px] text-noir-muted tracking-[0.4em] uppercase mb-4">Acto I · El Despertar</p>
+              <p className="font-body text-xs text-noir-muted tracking-[0.4em] uppercase mb-4">Acto I · El Despertar</p>
               <p className="font-display text-sm sm:text-base text-noir-text leading-[1.9]">
                 {fragText}
                 {!fragDone && <span className="inline-block w-[2px] h-[1em] bg-noir-accent/60 ml-0.5 animate-pulse align-middle" />}
@@ -108,14 +108,14 @@ export default function TrailerPage() {
           {/* Scene 3: The Decision */}
           {scene === 3 && (
             <motion.div key="s3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="max-w-md w-full">
-              <p className="font-body text-[9px] text-noir-accent tracking-[0.3em] uppercase mb-4 text-center">Tu decisión</p>
+              <p className="font-body text-xs text-noir-accent tracking-[0.3em] uppercase mb-4 text-center">Tu decisión</p>
               <div className="space-y-3">
-                <div className="p-4 border-2 border-red-800/50 bg-noir-card"><p className="font-display text-sm text-noir-text">Abres la puerta — enfrentar lo que hay afuera</p></div>
-                <motion.div animate={{ borderColor: ["rgba(212,162,68,0.5)", "rgba(212,162,68,0.9)", "rgba(212,162,68,0.5)"] }} transition={{ duration: 1, repeat: 2 }}
+                <div className="p-4 border-2 border-noir-accent bg-noir-card"><p className="font-display text-sm text-noir-text">Abres la puerta — enfrentar lo que hay afuera</p></div>
+                <motion.div animate={{ borderColor: ["rgba(229,72,61,0.5)", "rgba(229,72,61,0.9)", "rgba(229,72,61,0.5)"] }} transition={{ duration: 1, repeat: 2 }}
                   className="p-4 border-2 bg-noir-card"><p className="font-display text-sm text-noir-text">Esperas en silencio — escuchas antes de actuar</p></motion.div>
               </div>
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }}
-                className="text-center mt-4 text-[9px] font-body text-green-500/60">Decisión guardada en 0G Chain ✓ 0x7f3a...c91d</motion.p>
+                className="text-center mt-4 text-xs font-body text-noir-ok">Escena de muestra · en el juego, con wallet, cada acto se registra en 0G testnet</motion.p>
             </motion.div>
           )}
 
@@ -126,12 +126,12 @@ export default function TrailerPage() {
               <div className="flex justify-center gap-4">
                 {[1,2,3,4,5].map((n,i) => (
                   <motion.div key={n} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.3 }}
-                    className="w-8 h-8 rounded-full border-2 border-noir-accent flex items-center justify-center text-[10px] text-noir-accent font-mono"
-                    style={{ boxShadow: "0 0 10px rgba(212,162,68,0.3)" }}>{n}</motion.div>
+                    className="w-8 h-8 rounded-full border-2 border-noir-accent flex items-center justify-center text-[13px] text-noir-accent font-mono"
+                    style={{ boxShadow: "0 0 10px rgba(229,72,61,0.3)" }}>{n}</motion.div>
                 ))}
               </div>
               <svg className="w-[250px] h-[10px] mx-auto mt-3" viewBox="0 0 250 10">
-                {[0,1,2,3].map(i => <motion.line key={i} x1={30 + i * 50} y1={5} x2={70 + i * 50} y2={5} stroke="#d4a244" strokeWidth="1" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: i * 0.3 + 0.5 }} />)}
+                {[0,1,2,3].map(i => <motion.line key={i} x1={30 + i * 50} y1={5} x2={70 + i * 50} y2={5} stroke="#E5483D" strokeWidth="1" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: i * 0.3 + 0.5 }} />)}
               </svg>
             </motion.div>
           )}
@@ -139,8 +139,8 @@ export default function TrailerPage() {
           {/* Scene 5: Revelation */}
           {scene === 5 && (
             <motion.div key="s5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
-              <p className="font-body text-[9px] text-noir-muted tracking-[0.4em] uppercase mb-6">Al final, descubrirás quién eres</p>
-              <h2 className="font-display text-3xl sm:text-5xl text-red-500">
+              <p className="font-body text-xs text-noir-muted tracking-[0.4em] uppercase mb-6">Al final, descubrirás quién eres</p>
+              <h2 className="font-display text-3xl sm:text-5xl text-noir-accent">
                 <GlitchText text="EL ARQUITECTO" intensity="high" />
               </h2>
             </motion.div>
@@ -150,11 +150,11 @@ export default function TrailerPage() {
           {scene === 6 && (
             <motion.div key="s6" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-center">
               <div className="w-[100px] h-[100px] mx-auto mb-6 opacity-30"><Skull3D scene="archive" className="w-full h-full" /></div>
-              <p className="font-body text-[9px] text-noir-muted tracking-[0.3em] uppercase mb-2">Zero Cup 2026 · 0G Labs</p>
+              <p className="font-body text-xs text-noir-muted tracking-[0.3em] uppercase mb-2">Zero Cup 2026 · 0G Labs</p>
               <h2 className="font-display text-2xl text-noir-text mb-6">Built on 0G</h2>
               <motion.button onClick={(e) => { e.stopPropagation(); router.push("/"); }}
                 whileHover={{ scale: 1.05 }}
-                animate={{ boxShadow: ["0 0 10px rgba(212,162,68,0.2)", "0 0 25px rgba(212,162,68,0.5)", "0 0 10px rgba(212,162,68,0.2)"] }}
+                animate={{ boxShadow: ["0 0 10px rgba(229,72,61,0.2)", "0 0 25px rgba(229,72,61,0.5)", "0 0 10px rgba(229,72,61,0.2)"] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="px-10 py-3.5 border-2 border-noir-accent text-noir-accent font-display text-sm tracking-[0.2em] uxpm-press">
                 DESPERTAR →

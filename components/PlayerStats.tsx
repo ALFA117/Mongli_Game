@@ -52,7 +52,7 @@ function formatRelative(ts: number): string {
 
 function ToneGauge({ value }: { value: number }) {
   const angle = -90 + (value / 10) * 180;
-  const needleColor = value >= 7 ? "#dc2626" : value >= 4 ? "#c4923a" : "#3b82f6";
+  const needleColor = value >= 7 ? "#dc2626" : value >= 4 ? "#E5483D" : "#3b82f6";
 
   return (
     <svg viewBox="0 0 100 60" className="w-full max-w-[160px]">
@@ -68,7 +68,7 @@ function ToneGauge({ value }: { value: number }) {
       <defs>
         <linearGradient id="gauge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#3b82f6" />
-          <stop offset="50%" stopColor="#c4923a" />
+          <stop offset="50%" stopColor="#E5483D" />
           <stop offset="100%" stopColor="#dc2626" />
         </linearGradient>
       </defs>
@@ -98,7 +98,7 @@ function ToneGauge({ value }: { value: number }) {
       <circle cx="50" cy="55" r="3" fill={needleColor} />
       {/* Labels */}
       <text x="8" y="58" fontSize="5" fill="#3b82f6" fontFamily="monospace">0</text>
-      <text x="47" y="12" fontSize="5" fill="#c4923a" fontFamily="monospace">5</text>
+      <text x="47" y="12" fontSize="5" fill="#E5483D" fontFamily="monospace">5</text>
       <text x="86" y="58" fontSize="5" fill="#dc2626" fontFamily="monospace">10</text>
     </svg>
   );
@@ -143,7 +143,7 @@ export default function PlayerStats({
     profile.tendency === "shadow"
       ? "#dc2626"
       : profile.tendency === "light"
-      ? "#c4923a"
+      ? "#E5483D"
       : "#a855f7";
 
   const sessionHash = useMemo(() => {
@@ -180,7 +180,7 @@ export default function PlayerStats({
 
             {/* CONFIDENCIAL stamp */}
             <div
-              className="absolute top-12 right-4 text-[10px] font-body text-red-800/20 uppercase tracking-[0.3em] select-none pointer-events-none"
+              className="absolute top-12 right-4 text-[13px] font-body text-noir-accent uppercase tracking-[0.3em] select-none pointer-events-none"
               style={{ transform: "rotate(-12deg)" }}
             >
               CONFIDENCIAL
@@ -199,7 +199,7 @@ export default function PlayerStats({
 
               {/* ── HEADER ── */}
               <div className="mb-5">
-                <p className="text-[8px] font-body text-noir-muted/40 uppercase tracking-[0.4em] mb-1">
+                <p className="text-xs font-body text-noir-muted uppercase tracking-[0.4em] mb-1">
                   Expediente de caso
                 </p>
                 <h2 className="font-display text-lg text-noir-accent tracking-wider">
@@ -210,10 +210,10 @@ export default function PlayerStats({
 
               {/* ── IDENTIFICACIÓN ── */}
               <section className="mb-5">
-                <p className="text-[8px] font-body text-noir-muted/50 uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
+                <p className="text-xs font-body text-noir-muted uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
                   Identificación
                 </p>
-                <div className="space-y-1.5 text-[10px] font-body">
+                <div className="space-y-1.5 text-[13px] font-body">
                   <div className="flex justify-between">
                     <span className="text-noir-muted">Sujeto</span>
                     <span className="text-noir-text font-display">{profileName}</span>
@@ -229,7 +229,7 @@ export default function PlayerStats({
 
               {/* ── ACTIVIDAD ── */}
               <section className="mb-5">
-                <p className="text-[8px] font-body text-noir-muted/50 uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
+                <p className="text-xs font-body text-noir-muted uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
                   Actividad
                 </p>
                 {/* Segmented progress */}
@@ -242,7 +242,7 @@ export default function PlayerStats({
                         backgroundColor:
                           i < fragments.length
                             ? i < 5
-                              ? "#c4923a"
+                              ? "#E5483D"
                               : i < 12
                               ? "#dc2626"
                               : "#a855f7"
@@ -251,7 +251,7 @@ export default function PlayerStats({
                     />
                   ))}
                 </div>
-                <div className="flex justify-between text-[9px] font-body text-noir-muted">
+                <div className="flex justify-between text-xs font-body text-noir-muted">
                   <span>{fragments.length}/15 fragmentos</span>
                   {lastFragment && (
                     <span>Último: {formatRelative(lastFragment.timestamp)}</span>
@@ -261,14 +261,14 @@ export default function PlayerStats({
 
               {/* ── PERFIL PSICOLÓGICO ── */}
               <section className="mb-5">
-                <p className="text-[8px] font-body text-noir-muted/50 uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
+                <p className="text-xs font-body text-noir-muted uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
                   Perfil psicológico
                 </p>
 
                 {/* Tendency badge */}
                 <div className="flex items-center gap-2 mb-3">
                   <span
-                    className="text-[9px] font-body uppercase tracking-[0.2em] px-2 py-1 border"
+                    className="text-xs font-body uppercase tracking-[0.2em] px-2 py-1 border"
                     style={{ borderColor: `${tendencyColor}40`, color: tendencyColor }}
                   >
                     {profile.tendency === "shadow"
@@ -277,7 +277,7 @@ export default function PlayerStats({
                       ? "Luz"
                       : "Equilibrio"}
                   </span>
-                  <span className="text-[9px] font-body text-noir-muted/50">
+                  <span className="text-xs font-body text-noir-muted">
                     ({profile.darkChoices} oscuras / {profile.lightChoices} luminosas)
                   </span>
                 </div>
@@ -288,7 +288,7 @@ export default function PlayerStats({
                     <motion.div
                       className="absolute left-0 top-0 h-full"
                       style={{
-                        background: "linear-gradient(to right, #991b1b, #b45309, #c4923a)",
+                        background: "linear-gradient(to right, #991b1b, #b45309, #E5483D)",
                       }}
                       initial={{ width: 0 }}
                       animate={{ width: `${darkPct}%` }}
@@ -301,9 +301,9 @@ export default function PlayerStats({
                       transition={{ duration: 1.2, ease: "easeOut" }}
                     />
                   </div>
-                  <div className="flex justify-between mt-1 text-[7px] font-body text-noir-muted/40">
+                  <div className="flex justify-between mt-1 text-xs font-body text-noir-muted">
                     <span>Sombra</span>
-                    <span className="font-mono text-noir-muted/60">{darkPct.toFixed(0)}%</span>
+                    <span className="font-mono text-noir-muted">{darkPct.toFixed(0)}%</span>
                     <span>Luz</span>
                   </div>
                 </div>
@@ -311,16 +311,16 @@ export default function PlayerStats({
                 {/* Tags */}
                 {topTags.length > 0 && (
                   <div className="mb-2">
-                    <span className="text-[8px] font-body text-noir-muted/40 block mb-1">
+                    <span className="text-xs font-body text-noir-muted block mb-1">
                       Temas dominantes
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {topTags.map(([tag, count]) => (
                         <span
                           key={tag}
-                          className="px-1.5 py-0.5 border border-noir-border/30 bg-noir-bg/20 text-[8px] font-body text-noir-text/60"
+                          className="px-1.5 py-0.5 border border-noir-border/30 bg-noir-bg/20 text-xs font-body text-noir-text/60"
                         >
-                          {tag} <span className="text-noir-accent/40">({count})</span>
+                          {tag} <span className="text-noir-accent">({count})</span>
                         </span>
                       ))}
                     </div>
@@ -330,13 +330,13 @@ export default function PlayerStats({
 
               {/* ── TONO PROMEDIO — Gauge ── */}
               <section className="mb-5">
-                <p className="text-[8px] font-body text-noir-muted/50 uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
+                <p className="text-xs font-body text-noir-muted uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
                   Tono promedio
                 </p>
                 <div className="flex items-center justify-center">
                   <ToneGauge value={avgTone} />
                 </div>
-                <p className="text-center text-[9px] font-mono text-noir-muted mt-1">
+                <p className="text-center text-xs font-mono text-noir-muted mt-1">
                   {avgTone.toFixed(1)} / 10
                 </p>
               </section>
@@ -344,17 +344,17 @@ export default function PlayerStats({
               {/* ── TRAZAS ── */}
               {allTraces.length > 0 && (
                 <section className="mb-5">
-                  <p className="text-[8px] font-body text-noir-muted/50 uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
+                  <p className="text-xs font-body text-noir-muted uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
                     Trazas acumuladas ({allTraces.length})
                   </p>
-                  <p className="text-[8px] font-body text-noir-muted/40 mb-1.5">
+                  <p className="text-xs font-body text-noir-muted mb-1.5">
                     Pistas sobre la identidad extraídas de los fragmentos
                   </p>
                   <div className="space-y-0.5 max-h-20 overflow-y-auto uxpm-smooth-scroll">
                     {allTraces.map((trace) => (
                       <p
                         key={trace}
-                        className="text-[9px] font-body text-noir-text/50 pl-2 border-l border-noir-accent/20"
+                        className="text-xs font-body text-noir-muted pl-2 border-l border-noir-accent/20"
                       >
                         {trace}
                       </p>
@@ -365,26 +365,26 @@ export default function PlayerStats({
 
               {/* ── LOGROS ── */}
               <section className="mb-4">
-                <p className="text-[8px] font-body text-noir-muted/50 uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
+                <p className="text-xs font-body text-noir-muted uppercase tracking-[0.3em] mb-2 border-b border-noir-border/20 pb-1">
                   Logros ({unlockedAch.length}/{ACHIEVEMENTS.length})
                 </p>
                 {recentAch.length > 0 ? (
                   <div className="space-y-1">
                     {recentAch.map((ach) => (
-                      <div key={ach.id} className="flex items-center gap-2 text-[9px] font-body">
-                        <span className="font-mono text-noir-accent text-[11px]">{ach.asciiIcon}</span>
+                      <div key={ach.id} className="flex items-center gap-2 text-xs font-body">
+                        <span className="font-mono text-noir-accent text-[13px]">{ach.asciiIcon}</span>
                         <span className="text-noir-text/60">{ach.title}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[9px] font-body text-noir-muted/30">Ninguno aún</p>
+                  <p className="text-xs font-body text-noir-muted">Ninguno aún</p>
                 )}
               </section>
 
               {/* ── FOOTER ── */}
               <div className="border-t border-noir-border/20 pt-3">
-                <p className="text-[7px] font-body text-noir-muted/25 text-center tracking-[0.2em]">
+                <p className="text-xs font-body text-noir-muted text-center tracking-[0.2em]">
                   ARCHIVO CLASIFICADO — 0G STORAGE — SESIÓN {sessionHash}
                 </p>
               </div>

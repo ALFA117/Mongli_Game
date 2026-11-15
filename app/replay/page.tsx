@@ -136,16 +136,16 @@ function ReplayContent() {
 
       {/* Top bar */}
       <div className="flex items-center justify-between p-3 relative z-10">
-        <span className="font-body text-[9px] text-noir-muted/40">
+        <span className="font-body text-xs text-noir-muted">
           Acto {currentActIdx + 1}/{acts.length} · Fragmento {currentFragIdx + 1}
         </span>
         <div className="flex items-center gap-3">
           <button onClick={() => setPaused((p) => !p)}
-            className="font-body text-[10px] text-noir-muted hover:text-noir-accent uxpm-press px-2 py-1 border border-noir-border/30">
+            className="font-body text-[13px] text-noir-muted hover:text-noir-accent uxpm-press px-2 py-1 border border-noir-border/30">
             {paused ? "▶" : "❚❚"}
           </button>
           <button onClick={() => router.push("/history")}
-            className="font-body text-[10px] text-noir-muted hover:text-noir-accent uxpm-press">
+            className="font-body text-[13px] text-noir-muted hover:text-noir-accent uxpm-press">
             Salir
           </button>
         </div>
@@ -157,7 +157,7 @@ function ReplayContent() {
           {showDecision && currentAct ? (
             <motion.div key="decision" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }} className="text-center">
-              <p className="font-body text-[9px] text-noir-muted tracking-[0.3em] uppercase mb-3">Decisión</p>
+              <p className="font-body text-xs text-noir-muted tracking-[0.3em] uppercase mb-3">Decisión</p>
               <p className="font-display text-lg sm:text-xl text-noir-accent max-w-md leading-relaxed">
                 &ldquo;{currentAct.decision}&rdquo;
               </p>
@@ -182,7 +182,7 @@ function ReplayContent() {
             <motion.div key={`${currentActIdx}-${currentFragIdx}`}
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="max-w-lg">
-              <p className="font-body text-[8px] text-noir-muted/30 tracking-[0.4em] uppercase mb-4 text-center">
+              <p className="font-body text-xs text-noir-muted tracking-[0.4em] uppercase mb-4 text-center">
                 Acto {currentActIdx + 1}: {actDef.title}
               </p>
               <p className="font-display text-sm sm:text-base text-noir-text leading-[1.9] tracking-wide">

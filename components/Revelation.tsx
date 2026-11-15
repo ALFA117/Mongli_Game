@@ -111,7 +111,7 @@ function useGlitchReveal(text: string, active: boolean) {
 const IDENTITY_DATA = {
   architect: {
     name: "El Arquitecto",
-    color: "#b42828",
+    color: "#E5483D",
     description:
       "Cada plano fue tuyo. Cada trampa, cada pasillo sin salida, cada puerta que solo abría hacia la oscuridad — todo fue diseñado con precisión quirúrgica. No eres la víctima que encontró estas paredes: eres quien las levantó. La amnesia fue tu última obra maestra. Borrarte fue la única forma de no tener que mirar lo que construiste. Pero las paredes siguen en pie. Y ahora sabes que cada grieta lleva tu firma.",
     summary:
@@ -119,15 +119,15 @@ const IDENTITY_DATA = {
   },
   witness: {
     name: "El Testigo",
-    color: "#c4923a",
+    color: "#ECE8E1",
     description:
       "Estuviste ahí. En cada esquina, detrás de cada puerta, en el reflejo de cada ventana rota. No moviste un dedo. No levantaste la voz. Viste cómo se construía el horror y elegiste el silencio. Tu amnesia no fue un acto de cobardía sino de piedad — hacia ti mismo. Porque recordar que pudiste hacer algo y elegiste no hacerlo es una herida que no cierra. Ahora la herida tiene nombre. El tuyo.",
     summary:
-      "Elegiste la luz más veces que la sombra. Pero la luz no limpia — solo revela. Tu historia queda grabada para siempre en 0G. Nadie puede borrarla. Ni siquiera tú.",
+      "Elegiste la luz más veces que la sombra. Pero la luz no limpia — solo revela. Nadie puede borrar lo que hiciste. Ni siquiera tú.",
   },
   mirror: {
     name: "El Espejo",
-    color: "#7c3aed",
+    color: "#8E97AB",
     description:
       "No hay respuesta. No hay villano ni héroe en esta historia porque tú eres ambos. Cada decisión que tomaste contenía su opuesto. Cada sombra que abrazaste tenía un hilo de luz. Cada momento de bondad ocultaba algo más oscuro. Tu amnesia no fue cobardía ni piedad — fue el único modo de sobrevivir la imposibilidad de ser todo a la vez. Eres el espejo en el que cualquiera puede verse. Y nadie quiere mirar.",
     summary:
@@ -156,12 +156,12 @@ async function generateCaseFileImage(
   // Manila border
   ctx.fillStyle = "#151310";
   ctx.fillRect(30, 30, 640, 440);
-  ctx.strokeStyle = "rgba(196,146,58,0.2)";
+  ctx.strokeStyle = "rgba(229,72,61,0.2)";
   ctx.lineWidth = 1;
   ctx.strokeRect(30, 30, 640, 440);
 
   // Header
-  ctx.fillStyle = "rgba(196,146,58,0.3)";
+  ctx.fillStyle = "rgba(229,72,61,0.3)";
   ctx.font = '9px "Courier New"';
   ctx.fillText("EXPEDIENTE CLASIFICADO — MONGLI GAME — 0G CHAIN", 50, 55);
 
@@ -180,7 +180,7 @@ async function generateCaseFileImage(
   ctx.restore();
 
   // Stats
-  ctx.fillStyle = "#e8d5b0";
+  ctx.fillStyle = "#ECE8E1";
   ctx.font = '11px "Courier New"';
   const stats = [
     `FRAGMENTOS ANALIZADOS ........ ${fragments.length}/15`,
@@ -192,7 +192,7 @@ async function generateCaseFileImage(
     `IDENTIDAD FINAL .............. ${data.name}`,
   ];
   stats.forEach((line, i) => {
-    ctx.fillStyle = i === stats.length - 1 ? data.color : "#e8d5b0";
+    ctx.fillStyle = i === stats.length - 1 ? data.color : "#ECE8E1";
     ctx.fillText(line, 50, 140 + i * 22);
   });
 
@@ -203,9 +203,9 @@ async function generateCaseFileImage(
   ctx.fillText(desc, 50, 320);
 
   // Footer
-  ctx.fillStyle = "rgba(196,146,58,0.2)";
+  ctx.fillStyle = "rgba(229,72,61,0.2)";
   ctx.font = '8px "Courier New"';
-  ctx.fillText("ARCHIVO PERMANENTE — 0G STORAGE — ZERO CUP 2026", 50, 450);
+  ctx.fillText("MONGLI GAME — 0G GALILEO TESTNET — ZERO CUP 2026", 50, 450);
 
   // Vignette
   const grad = ctx.createRadialGradient(350, 250, 100, 350, 250, 400);
@@ -393,7 +393,7 @@ export default function Revelation({
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0.4 }}
-                    className="font-body text-[9px] text-noir-muted tracking-[0.5em] uppercase mb-6"
+                    className="font-body text-xs text-noir-muted tracking-[0.5em] uppercase mb-6"
                   >
                     La verdad se escribe
                   </motion.p>
@@ -404,8 +404,8 @@ export default function Revelation({
                         state === "hot"
                           ? "#ff6030"
                           : state === "warm"
-                          ? "#c4923a"
-                          : "#e8d5b0";
+                          ? "#E5483D"
+                          : "#ECE8E1";
                       return (
                         <span key={i} style={{ color, transition: "color 0.4s" }}>
                           {char}
@@ -433,14 +433,14 @@ export default function Revelation({
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0.4 }}
-                    className="font-body text-[9px] text-noir-muted tracking-[0.5em] uppercase mb-4"
+                    className="font-body text-xs text-noir-muted tracking-[0.5em] uppercase mb-4"
                   >
                     Tu identidad
                   </motion.p>
                   <h2
                     className="font-display text-4xl sm:text-5xl md:text-6xl relative inline-block"
                     style={{
-                      color: nameStable ? data.color : "#e8d5b0",
+                      color: nameStable ? data.color : "#ECE8E1",
                       textShadow: nameStable ? `0 0 30px ${data.color}60` : "none",
                       transition: "color 0.3s, text-shadow 0.3s",
                     }}
@@ -488,7 +488,7 @@ export default function Revelation({
                   </h2>
 
                   <div className="manila-folder p-4 sm:p-5 max-w-sm mx-auto text-left relative">
-                    <p className="text-[7px] font-body text-noir-muted/30 uppercase tracking-[0.3em] mb-3">
+                    <p className="text-xs font-body text-noir-muted uppercase tracking-[0.3em] mb-3">
                       Expediente final
                     </p>
                     <div className="space-y-1.5">
@@ -498,7 +498,7 @@ export default function Revelation({
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: i * 0.2 }}
-                          className="flex items-center justify-between text-[10px] font-body"
+                          className="flex items-center justify-between text-[13px] font-body"
                         >
                           <span className="text-noir-muted">{stat.label}</span>
                           <span className="text-noir-text font-mono">{stat.value}</span>
@@ -509,7 +509,7 @@ export default function Revelation({
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: STAT_LINES.length * 0.2 }}
-                        className="flex items-center justify-between text-[10px] font-body pt-1 border-t border-noir-border/20"
+                        className="flex items-center justify-between text-[13px] font-body pt-1 border-t border-noir-border/20"
                       >
                         <span className="text-noir-muted">IDENTIDAD FINAL</span>
                         <span className="font-display" style={{ color: data.color }}>
@@ -523,7 +523,7 @@ export default function Revelation({
                       initial={{ opacity: 0, scale: 1.5, rotate: -15 }}
                       animate={{ opacity: 0.25, scale: 1, rotate: -12 }}
                       transition={{ delay: STAT_LINES.length * 0.2 + 0.5, type: "spring" }}
-                      className="absolute top-3 right-3 text-[11px] font-body text-red-700 uppercase tracking-[0.3em] font-bold border-2 border-red-800/40 px-2 py-0.5"
+                      className="absolute top-3 right-3 text-[13px] font-body text-noir-accent uppercase tracking-[0.3em] font-bold border-2 border-noir-accent px-2 py-0.5"
                       style={{ transform: "rotate(-12deg)" }}
                     >
                       Caso cerrado
@@ -550,8 +550,8 @@ export default function Revelation({
                     {data.summary}
                   </p>
 
-                  <p className="font-body text-[9px] text-noir-muted/40 mb-6">
-                    Todos tus recuerdos fueron grabados permanentemente en 0G Storage + 0G Chain.
+                  <p className="font-body text-xs text-noir-muted mb-6">
+                    Con wallet, cada acto terminado quedó registrado en 0G Galileo testnet. El guardado del texto en 0G Storage aún es simulado.
                   </p>
 
                   <motion.div
@@ -563,7 +563,7 @@ export default function Revelation({
                     <button
                       onClick={handleShare}
                       disabled={isSharing}
-                      className="px-5 py-2.5 border text-[11px] font-display tracking-wider hover:opacity-80 transition-opacity uxpm-press disabled:opacity-40 flex items-center gap-2"
+                      className="px-5 py-2.5 border text-[13px] font-display tracking-wider hover:opacity-80 transition-opacity uxpm-press disabled:opacity-40 flex items-center gap-2"
                       style={{ borderColor: `${data.color}60`, color: data.color }}
                     >
                       {isSharing ? "Generando..." : (
@@ -579,7 +579,7 @@ export default function Revelation({
                     </button>
                     <button
                       onClick={onClose}
-                      className="px-5 py-2.5 border border-noir-border text-noir-muted text-[11px] font-display tracking-wider hover:text-noir-accent hover:border-noir-accent/50 transition-colors uxpm-press"
+                      className="px-5 py-2.5 border border-noir-border text-noir-muted text-[13px] font-display tracking-wider hover:text-noir-accent hover:border-noir-accent/50 transition-colors uxpm-press"
                     >
                       Nueva partida
                     </button>

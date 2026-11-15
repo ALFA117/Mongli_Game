@@ -27,12 +27,12 @@ const CATEGORY_LABELS: Record<AchievementCategory, string> = {
 };
 
 const CATEGORY_COLORS: Record<AchievementCategory, string> = {
-  exploration: "#c4923a",
+  exploration: "#E5483D",
   decision: "#dc2626",
   obsession: "#a855f7",
   verification: "#22c55e",
   balance: "#3b82f6",
-  general: "#e8d5b0",
+  general: "#ECE8E1",
 };
 
 function NotificationCard({
@@ -88,13 +88,13 @@ function NotificationCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span
-              className="text-[7px] font-body uppercase tracking-wider"
+              className="text-xs font-body uppercase tracking-wider"
               style={{ color }}
             >
               {CATEGORY_LABELS[item.category]}
             </span>
           </div>
-          <p className="font-display text-[11px] text-noir-text truncate">
+          <p className="font-display text-[13px] text-noir-text truncate">
             {item.title}
           </p>
         </div>

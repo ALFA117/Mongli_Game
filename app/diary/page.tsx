@@ -48,11 +48,11 @@ function DiaryContent() {
       <header className="flex items-center justify-between p-4 border-b" style={{ borderColor: "#c4a87040" }}>
         <div>
           <h1 style={{ fontFamily: "Special Elite, cursive" }} className="text-sm tracking-wider">DIARIO PERSONAL</h1>
-          <p className="font-mono text-[8px] opacity-40">Propiedad de: {address?.slice(0, 8)}...{address?.slice(-4)}</p>
+          <p className="font-mono text-xs opacity-40">Propiedad de: {address?.slice(0, 8)}...{address?.slice(-4)}</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[8px] font-body text-red-800/40 uppercase tracking-wider border border-red-800/20 px-1.5 py-0.5 rotate-[-3deg]">Confidencial</span>
-          <button onClick={() => router.push("/history")} className="text-[10px] font-body opacity-50 hover:opacity-100" style={{ color: "#2a1a0a" }}>← Volver</button>
+          <span className="text-xs font-body text-noir-accent uppercase tracking-wider border border-noir-accent px-1.5 py-0.5 rotate-[-3deg]">Confidencial</span>
+          <button onClick={() => router.push("/history")} className="text-[13px] font-body opacity-50 hover:opacity-100" style={{ color: "#2a1a0a" }}>← Volver</button>
         </div>
       </header>
 
@@ -71,10 +71,10 @@ function DiaryContent() {
               border: "1px solid #c4a87030",
             }}>
               {/* Page number */}
-              <span className="absolute top-3 right-4 font-mono text-[10px] opacity-30">{page + 1}/{totalPages}</span>
+              <span className="absolute top-3 right-4 font-mono text-[13px] opacity-30">{page + 1}/{totalPages}</span>
 
               {/* Date */}
-              <p style={{ fontFamily: "Special Elite, cursive" }} className="text-[10px] opacity-40 mb-4">
+              <p style={{ fontFamily: "Special Elite, cursive" }} className="text-[13px] opacity-40 mb-4">
                 {new Date(frag.timestamp).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}
                 {" — "}{new Date(frag.timestamp).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
               </p>
@@ -104,7 +104,7 @@ function DiaryContent() {
 
               {/* TX hash */}
               {frag.txHash && (
-                <p className="absolute bottom-3 left-6 font-mono text-[7px] opacity-20">
+                <p className="absolute bottom-3 left-6 font-mono text-xs opacity-20">
                   Grabado en 0G: {frag.txHash.slice(0, 12)}...
                 </p>
               )}

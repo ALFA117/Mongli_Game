@@ -209,12 +209,12 @@ const CATEGORY_LABELS: Record<AchievementCategory, string> = {
 };
 
 const CATEGORY_COLORS: Record<AchievementCategory, string> = {
-  exploration: "#c4923a",
+  exploration: "#E5483D",
   decision: "#dc2626",
   obsession: "#a855f7",
   verification: "#22c55e",
   balance: "#3b82f6",
-  general: "#e8d5b0",
+  general: "#ECE8E1",
 };
 
 export default function Achievements({ fragments, meta, visible, onClose }: AchievementsProps) {
@@ -251,7 +251,7 @@ export default function Achievements({ fragments, meta, visible, onClose }: Achi
             {/* Header */}
             <div className="mb-5 pr-8">
               <h2 className="font-display text-lg text-noir-accent tracking-wider">Logros</h2>
-              <p className="font-body text-[10px] text-noir-muted mt-1">
+              <p className="font-body text-[13px] text-noir-muted mt-1">
                 {unlockedCount} de {ACHIEVEMENTS.length} desbloqueados
               </p>
             </div>
@@ -294,11 +294,11 @@ export default function Achievements({ fragments, meta, visible, onClose }: Achi
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <p className={`font-display text-[11px] ${unlocked ? "text-noir-text" : "text-noir-muted"}`}>
+                        <p className={`font-display text-[13px] ${unlocked ? "text-noir-text" : "text-noir-muted"}`}>
                           {ach.title}
                         </p>
                         <span
-                          className="text-[7px] font-body uppercase tracking-wider px-1 py-0.5 border"
+                          className="text-xs font-body uppercase tracking-wider px-1 py-0.5 border"
                           style={{
                             color: unlocked ? catColor : "#2a2a2a",
                             borderColor: unlocked ? `${catColor}40` : "#1a1a1a",
@@ -307,7 +307,7 @@ export default function Achievements({ fragments, meta, visible, onClose }: Achi
                           {CATEGORY_LABELS[ach.category]}
                         </span>
                       </div>
-                      <p className="font-body text-[9px] text-noir-muted truncate">
+                      <p className="font-body text-xs text-noir-muted truncate">
                         {unlocked ? ach.description : "???"}
                       </p>
                     </div>
@@ -316,7 +316,7 @@ export default function Achievements({ fragments, meta, visible, onClose }: Achi
                       <motion.span
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="text-green-500 text-xs shrink-0"
+                        className="text-noir-ok text-xs shrink-0"
                       >
                         &#10003;
                       </motion.span>

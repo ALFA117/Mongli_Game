@@ -123,12 +123,12 @@ function NightmareContent() {
       <header className="flex items-center justify-between p-3 border-b border-noir-border/20 relative z-50">
         <div className="flex items-center gap-2">
           <button onClick={() => router.push("/")} className="font-display text-base text-noir-text tracking-[0.15em] hover:text-noir-accent"><GlitchText text="MONGLI" intensity="high" /></button>
-          <span className="text-[9px] font-body text-red-400 border border-red-800/40 px-1.5 py-0.5 animate-pulse">▓ PESADILLA</span>
+          <span className="text-xs font-body text-noir-accent border border-noir-accent px-1.5 py-0.5 animate-pulse">▓ PESADILLA</span>
         </div>
         <span className="font-mono text-xs text-noir-muted">Acto {actIdx + 1}/{TOTAL_ACTS}</span>
       </header>
 
-      <div className="h-[3px] bg-noir-border/20"><div className="h-full bg-red-600" style={{ width: `${((actIdx + (fragIdx / 3)) / TOTAL_ACTS) * 100}%` }} /></div>
+      <div className="h-[3px] bg-noir-border/20"><div className="h-full bg-noir-accent/10" style={{ width: `${((actIdx + (fragIdx / 3)) / TOTAL_ACTS) * 100}%` }} /></div>
 
       <main className="flex-1 flex flex-col lg:flex-row">
         <div className="lg:w-[35%] flex items-center justify-center p-4">
@@ -142,23 +142,23 @@ function NightmareContent() {
             {phase === "transition" && (
               <motion.div key="trans" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12">
                 <h2 className="font-display text-2xl text-noir-accent mb-2">ACTO {actIdx + 1}</h2>
-                <p className="font-body text-[9px] text-noir-muted">{act.title}</p>
+                <p className="font-body text-xs text-noir-muted">{act.title}</p>
               </motion.div>
             )}
 
             {phase === "fragments" && frags[fragIdx] && (
               <motion.div key={`f-${actIdx}-${fragIdx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <div className="flex gap-1 mb-3">{[0,1,2].map(i => <div key={i} className={`h-[2px] flex-1 ${i <= fragIdx ? "bg-red-600" : "bg-noir-border/30"}`} />)}</div>
+                <div className="flex gap-1 mb-3">{[0,1,2].map(i => <div key={i} className={`h-[2px] flex-1 ${i <= fragIdx ? "bg-noir-accent/10" : "bg-noir-border/30"}`} />)}</div>
                 <FragmentComponent text={frags[fragIdx]?.text || ""} toneScore={frags[fragIdx]?.toneScore} fragmentId={frags[fragIdx]?.id} />
               </motion.div>
             )}
 
             {phase === "decision" && (
               <motion.div key="dec" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <div className="h-[4px] bg-noir-border/30 mb-4"><motion.div className="h-full bg-red-600" animate={{ width: `${(countdown / 5) * 100}%` }} /></div>
-                <p className="font-mono text-xl text-red-400 text-center mb-4">{countdown}s</p>
+                <div className="h-[4px] bg-noir-border/30 mb-4"><motion.div className="h-full bg-noir-accent/10" animate={{ width: `${(countdown / 5) * 100}%` }} /></div>
+                <p className="font-mono text-xl text-noir-accent text-center mb-4">{countdown}s</p>
                 <div className="flex flex-col gap-3">
-                  <button onClick={() => handleDecision(act.decision.dark.text)} className="p-4 border-2 border-red-800/60 bg-noir-card text-left uxpm-press">
+                  <button onClick={() => handleDecision(act.decision.dark.text)} className="p-4 border-2 border-noir-accent bg-noir-card text-left uxpm-press">
                     <p className="font-display text-sm text-noir-text">{act.decision.dark.text}</p>
                   </button>
                   <button onClick={() => handleDecision(act.decision.light.text)} className="p-4 border-2 border-noir-border/40 bg-noir-card text-left uxpm-press">
@@ -170,18 +170,18 @@ function NightmareContent() {
 
             {phase === "gameover" && (
               <motion.div key="go" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
-                <h2 className="font-display text-3xl text-red-500 mb-4"><GlitchText text="MEMORIA PERDIDA" intensity="high" /></h2>
+                <h2 className="font-display text-3xl text-noir-accent mb-4"><GlitchText text="MEMORIA PERDIDA" intensity="high" /></h2>
                 <p className="font-body text-xs text-noir-muted mb-8">El recuerdo se disolvió en la oscuridad. Para siempre.</p>
                 <button onClick={() => { setActIdx(0); setAllFrags([]); setPhase("transition"); setTimeout(() => startAct(), 2000); }}
-                  className="px-6 py-2.5 border-2 border-red-700 text-red-400 font-display text-xs uxpm-press">Intentar de nuevo</button>
+                  className="px-6 py-2.5 border-2 border-noir-accent text-noir-accent font-display text-xs uxpm-press">Intentar de nuevo</button>
               </motion.div>
             )}
 
             {phase === "revelation" && (
               <motion.div key="rev" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
-                <p className="font-body text-[9px] text-noir-muted tracking-[0.4em] uppercase mb-4">Tu identidad</p>
+                <p className="font-body text-xs text-noir-muted tracking-[0.4em] uppercase mb-4">Tu identidad</p>
                 <h2 className="font-display text-4xl text-white mb-6"><GlitchText text="EL VACÍO" intensity="high" /></h2>
-                <p className="font-display text-xs text-noir-text/50 max-w-sm mx-auto leading-relaxed mb-8">
+                <p className="font-display text-xs text-noir-muted max-w-sm mx-auto leading-relaxed mb-8">
                   No hay arquitecto. No hay testigo. No hay espejo. Solo el vacío que dejaste al despertar. Algunos recuerdos merecen perderse.
                 </p>
                 <button onClick={() => router.push("/")} className="px-8 py-3 border border-white/20 text-white/40 font-display text-xs tracking-wider uxpm-press">

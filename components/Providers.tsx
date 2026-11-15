@@ -25,7 +25,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <RainbowKitProvider
           initialChain={galileoTestnet}
           theme={darkTheme({
-            accentColor: "#c4923a",
+            accentColor: "#E5483D",
             accentColorForeground: "#0a0a0a",
             borderRadius: "small",
             fontStack: "system",

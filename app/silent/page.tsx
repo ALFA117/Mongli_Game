@@ -54,9 +54,11 @@ function SilentContent() {
   // Generate silent fragments (just use IDs for visuals, no API call needed)
   const currentFrag: Fragment = {
     id: actIdx * 3 + fragIdx + 1,
-    text: "", toneScore: 3 + Math.floor(Math.random() * 7),
-    tags: Array.from({ length: Math.floor(Math.random() * 5) + 1 }, (_, i) => `t${i}`),
-    traces: [], choiceMade: "", timestamp: Date.now(), unlocked: true,
+    // Deterministic from the id: Math.random()/Date.now() here made the
+    // server and client renders differ (React hydration errors #425/#422).
+    text: "", toneScore: 3 + ((actIdx * 3 + fragIdx + 1) * 5) % 7,
+    tags: Array.from({ length: ((actIdx * 3 + fragIdx + 1) * 3) % 5 + 1 }, (_, i) => `t${i}`),
+    traces: [], choiceMade: "", timestamp: 0, unlocked: true,
   };
 
   const visual = generateFragmentVisual(currentFrag);
@@ -94,8 +96,8 @@ function SilentContent() {
       <Cursor /><ScanlineOverlay />
 
       <header className="flex items-center justify-between p-3 border-b border-noir-border/10 relative z-50">
-        <span className="font-mono text-[9px] text-noir-muted/30">◌ silencio</span>
-        <span className="font-mono text-[9px] text-noir-muted/20">{actIdx + 1}/{TOTAL_ACTS}</span>
+        <span className="font-mono text-xs text-noir-muted">◌ silencio</span>
+        <span className="font-mono text-xs text-noir-muted">{actIdx + 1}/{TOTAL_ACTS}</span>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-6">
@@ -126,7 +128,7 @@ function SilentContent() {
             <motion.div key="dec" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="flex items-center gap-16">
               <motion.button onClick={() => handleDecision("light")} whileHover={{ scale: 1.2 }}
-                className="text-6xl text-noir-accent/60 hover:text-noir-accent transition-colors uxpm-press">○</motion.button>
+                className="text-6xl text-noir-accent hover:text-noir-accent transition-colors uxpm-press">○</motion.button>
               <motion.button onClick={() => handleDecision("dark")} whileHover={{ scale: 1.2 }}
                 className="text-6xl text-noir-text/60 hover:text-noir-text transition-colors uxpm-press">●</motion.button>
             </motion.div>
@@ -135,15 +137,15 @@ function SilentContent() {
           {phase === "end" && (
             <motion.div key="end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
               <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}
-                className="text-[128px] block mb-8" style={{ color: identity === "▓" ? "#b42828" : identity === "░" ? "#c4923a" : "#7c3aed" }}>
+                className="text-[128px] block mb-8" style={{ color: identity === "▓" ? "#E5483D" : identity === "░" ? "#ECE8E1" : "#8E97AB" }}>
                 {identity}
               </motion.span>
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.2 }} transition={{ delay: 2 }}
-                className="font-mono text-[9px] text-noir-muted tracking-wider mb-8">
+                className="font-mono text-xs text-noir-muted tracking-wider mb-8">
                 {allFrags.length} decisiones · silencio
               </motion.p>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4 }}>
-                <button onClick={() => router.push("/")} className="font-mono text-[10px] text-noir-muted/30 hover:text-noir-accent transition-colors">
+                <button onClick={() => router.push("/")} className="font-mono text-[13px] text-noir-muted hover:text-noir-accent transition-colors">
                   salir
                 </button>
               </motion.div>

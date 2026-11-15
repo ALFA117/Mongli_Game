@@ -8,7 +8,7 @@ import ScanlineOverlay from "@/components/ScanlineOverlay";
 import GlitchText from "@/components/GlitchText";
 import type { GalleryEntry } from "@/lib/types";
 
-const IDENTITY_COLORS = { arquitecto: "#b42828", testigo: "#c4923a", espejo: "#7c3aed" };
+const IDENTITY_COLORS = { arquitecto: "#E5483D", testigo: "#ECE8E1", espejo: "#8E97AB" };
 const IDENTITY_NAMES = { arquitecto: "El Arquitecto", testigo: "El Testigo", espejo: "El Espejo" };
 
 function timeAgo(dateStr: string): string {
@@ -42,29 +42,29 @@ export default function GalleryPage() {
           className="font-display text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent transition-colors">
           <GlitchText text="MONGLI" intensity="low" />
         </button>
-        <span className="font-body text-[10px] text-noir-muted">/ archivo</span>
+        <span className="font-body text-[13px] text-noir-muted">/ archivo</span>
       </header>
 
       <main className="flex-1 p-4 sm:p-8 max-w-4xl mx-auto w-full">
         <div className="text-center mb-8">
-          <p className="text-[8px] font-body text-noir-muted/40 uppercase tracking-[0.4em] mb-1">Archivo público</p>
+          <p className="text-xs font-body text-noir-muted uppercase tracking-[0.4em] mb-1">Archivo público</p>
           <h1 className="font-display text-xl sm:text-2xl text-noir-accent tracking-wider mb-1">
             ARCHIVO DE IDENTIDADES
           </h1>
           <p className="font-body text-xs text-noir-muted">Los que despertaron antes que tú</p>
-          <p className="font-mono text-[9px] text-noir-accent/50 mt-2">{entries.length} identidades reveladas en 0G</p>
+          <p className="font-mono text-xs text-noir-accent mt-2">{entries.length} identidades reveladas en 0G</p>
         </div>
 
         {/* Filters */}
         <div className="flex items-center justify-center gap-2 mb-8 flex-wrap">
           {[
             { key: "all", label: "Todos" },
-            { key: "arquitecto", label: "Arquitecto", color: "#b42828" },
-            { key: "testigo", label: "Testigo", color: "#c4923a" },
-            { key: "espejo", label: "Espejo", color: "#7c3aed" },
+            { key: "arquitecto", label: "Arquitecto", color: "#E5483D" },
+            { key: "testigo", label: "Testigo", color: "#ECE8E1" },
+            { key: "espejo", label: "Espejo", color: "#8E97AB" },
           ].map((f) => (
             <button key={f.key} onClick={() => setFilter(f.key)}
-              className={`px-3 py-1 text-[10px] font-body border transition-colors uxpm-press ${
+              className={`px-3 py-1 text-[13px] font-body border transition-colors uxpm-press ${
                 filter === f.key
                   ? "border-noir-accent text-noir-accent bg-noir-accent/10"
                   : "border-noir-border/40 text-noir-muted hover:text-noir-accent"
@@ -91,7 +91,7 @@ export default function GalleryPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {entries.map((entry, i) => {
-              const color = IDENTITY_COLORS[entry.identity] || "#c4923a";
+              const color = IDENTITY_COLORS[entry.identity] || "#E5483D";
               const name = IDENTITY_NAMES[entry.identity] || "Desconocido";
               const darkPct = entry.totalDecisions > 0 ? Math.round((entry.darkDecisions / entry.totalDecisions) * 100) : 50;
 
@@ -101,28 +101,28 @@ export default function GalleryPage() {
                   transition={{ delay: i * 0.05 }}
                   className="manila-folder p-4 group hover:shadow-lg transition-shadow">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-[9px] text-noir-muted/40">
+                    <span className="font-mono text-xs text-noir-muted">
                       {entry.walletAddress.slice(0, 6)}...{entry.walletAddress.slice(-4)}
                     </span>
-                    <span className="text-[8px] text-noir-muted/30">{timeAgo(entry.completedAt)}</span>
+                    <span className="text-xs text-noir-muted">{timeAgo(entry.completedAt)}</span>
                   </div>
 
                   <h3 className="font-display text-sm mb-2" style={{ color }}>{name}</h3>
 
                   {/* Tone bar */}
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[8px] font-body text-noir-muted/40">tono</span>
+                    <span className="text-xs font-body text-noir-muted">tono</span>
                     <div className="flex-1 h-[3px] bg-noir-border/20">
                       <div className="h-full" style={{ width: `${(entry.toneAverage / 10) * 100}%`, backgroundColor: color }} />
                     </div>
-                    <span className="text-[8px] font-mono" style={{ color }}>{entry.toneAverage.toFixed(1)}</span>
+                    <span className="text-xs font-mono" style={{ color }}>{entry.toneAverage.toFixed(1)}</span>
                   </div>
 
-                  <p className="text-[9px] font-body text-noir-muted/50">{darkPct}% sombra</p>
+                  <p className="text-xs font-body text-noir-muted">{darkPct}% sombra</p>
 
                   {/* Hover reveal */}
                   <div className="max-h-0 group-hover:max-h-20 overflow-hidden transition-all duration-300">
-                    <p className="font-display text-[10px] text-noir-text/50 mt-2 italic leading-relaxed">
+                    <p className="font-display text-[13px] text-noir-muted mt-2 italic leading-relaxed">
                       {entry.shareText}
                     </p>
                   </div>

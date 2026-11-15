@@ -13,17 +13,17 @@ const Skull3D = dynamic(() => import("@/components/Skull3D"), { ssr: false });
 const IDENTITIES = {
   arquitecto: {
     name: "El Arquitecto",
-    color: "#b42828",
+    color: "#E5483D",
     description: "Diseñó cada trampa, cada mentira, cada sombra. La amnesia fue su último acto de cobardía.",
   },
   testigo: {
     name: "El Testigo",
-    color: "#c4923a",
+    color: "#ECE8E1",
     description: "Siempre estuvo ahí, observando. No causó el dolor, pero tampoco lo detuvo.",
   },
   espejo: {
     name: "El Espejo",
-    color: "#7c3aed",
+    color: "#8E97AB",
     description: "Ni villano ni héroe. Cada decisión contenía su opuesto. La dualidad es su identidad.",
   },
 };
@@ -46,7 +46,7 @@ function RevelationContent() {
           className="font-display text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent transition-colors">
           <GlitchText text="MONGLI" intensity="low" />
         </button>
-        <span className="font-body text-[9px] text-noir-muted tracking-wider">revelación compartida</span>
+        <span className="font-body text-xs text-noir-muted tracking-wider">revelación compartida</span>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-6 relative">
@@ -59,7 +59,7 @@ function RevelationContent() {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="relative z-10 text-center max-w-md">
-          <p className="font-body text-[9px] text-noir-muted tracking-[0.5em] uppercase mb-4">
+          <p className="font-body text-xs text-noir-muted tracking-[0.5em] uppercase mb-4">
             Un jugador ha descubierto su verdad
           </p>
 
@@ -75,11 +75,11 @@ function RevelationContent() {
           <div className="flex justify-center gap-6 mb-8">
             <div className="text-center">
               <p className="font-display text-xl text-noir-text">{acts}</p>
-              <p className="text-[8px] font-body text-noir-muted uppercase">actos</p>
+              <p className="text-xs font-body text-noir-muted uppercase">actos</p>
             </div>
             <div className="text-center">
               <p className="font-display text-xl text-noir-text">{score}</p>
-              <p className="text-[8px] font-body text-noir-muted uppercase">tono</p>
+              <p className="text-xs font-body text-noir-muted uppercase">tono</p>
             </div>
           </div>
 
@@ -91,7 +91,7 @@ function RevelationContent() {
             Descubre quién eres tú
           </motion.button>
 
-          <p className="font-body text-[8px] text-noir-muted/30 mt-6 tracking-wider">
+          <p className="font-body text-xs text-noir-muted mt-6 tracking-wider">
             mongli-game.vercel.app · Zero Cup 2026 · 0G Labs
           </p>
         </motion.div>

@@ -23,7 +23,7 @@ const BOOT_SEQUENCE: TerminalLine[] = [
   { type: "blank", text: "" },
   { type: "command", text: "cat README.md" },
   { type: "output", text: "Juego narrativo de amnesia psicológica con estética noir." },
-  { type: "output", text: "La IA escribe tu historia. La blockchain la guarda para siempre." },
+  { type: "output", text: "La IA escribe tu historia. 0G registra tu avance on-chain (testnet)." },
   { type: "output", text: "Cada decisión desbloquea un fragmento de memoria generado por" },
   { type: "output", text: "Claude, almacenado en 0G Storage y registrado en 0G Chain." },
   { type: "output", text: 'Pitch: "Tus recuerdos son tuyos. Nadie puede borrarlos."' },
@@ -33,35 +33,35 @@ const BOOT_SEQUENCE: TerminalLine[] = [
   { type: "output", text: "[2] Exploras una escena — el sistema detecta tu presencia" },
   { type: "output", text: "[3] La IA genera tu fragmento — único, irrepetible" },
   { type: "output", text: "[4] 0G Storage lo graba — permanente, inmutable" },
-  { type: "output", text: "[5] 0G Chain lo registra — verificable, tuyo para siempre" },
+  { type: "output", text: "[5] Con wallet, 0G Galileo testnet registra cada acto terminado" },
   { type: "output", text: "[6] Tú decides — y el sistema recuerda tu elección" },
   { type: "blank", text: "" },
   { type: "command", text: "cat stack.json" },
-  { type: "output", text: "{", color: "#c4923a" },
-  { type: "output", text: '  "frontend":  "Next.js 14 + TypeScript + Tailwind",', color: "#c4923a" },
-  { type: "output", text: '  "3d":        "Three.js + React Three Fiber",', color: "#c4923a" },
-  { type: "output", text: '  "animation": "Framer Motion",', color: "#c4923a" },
-  { type: "output", text: '  "ai":        "Claude claude-sonnet-4-6 (Anthropic API)",', color: "#c4923a" },
-  { type: "output", text: '  "storage":   "0G Storage (descentralizado)",', color: "#c4923a" },
-  { type: "output", text: '  "chain":     "0G Chain (Galileo Testnet, EVM)",', color: "#c4923a" },
-  { type: "output", text: '  "wallet":    "RainbowKit + wagmi + viem",', color: "#c4923a" },
-  { type: "output", text: '  "audio":     "Web Audio API (procedural)",', color: "#c4923a" },
-  { type: "output", text: '  "contract":  "MongliMemory.sol (Solidity)"', color: "#c4923a" },
-  { type: "output", text: "}", color: "#c4923a" },
+  { type: "output", text: "{", color: "#E5483D" },
+  { type: "output", text: '  "frontend":  "Next.js 14 + TypeScript + Tailwind",', color: "#E5483D" },
+  { type: "output", text: '  "3d":        "Three.js + React Three Fiber",', color: "#E5483D" },
+  { type: "output", text: '  "animation": "Framer Motion",', color: "#E5483D" },
+  { type: "output", text: '  "ai":        "Claude claude-sonnet-4-6 (Anthropic API)",', color: "#E5483D" },
+  { type: "output", text: '  "storage":   "0G Storage (descentralizado)",', color: "#E5483D" },
+  { type: "output", text: '  "chain":     "0G Chain (Galileo Testnet, EVM)",', color: "#E5483D" },
+  { type: "output", text: '  "wallet":    "RainbowKit + wagmi + viem",', color: "#E5483D" },
+  { type: "output", text: '  "audio":     "Web Audio API (procedural)",', color: "#E5483D" },
+  { type: "output", text: '  "contract":  "MongliMemory.sol (Solidity)"', color: "#E5483D" },
+  { type: "output", text: "}", color: "#E5483D" },
   { type: "blank", text: "" },
   { type: "command", text: "./why-0g.sh" },
-  { type: "output", text: "┌─────────────────────────────────────────┐", color: "#dc2626" },
-  { type: "output", text: "│  SIN 0G:                                │", color: "#dc2626" },
-  { type: "output", text: "│  - Tus recuerdos pueden ser borrados    │", color: "#dc2626" },
-  { type: "output", text: "│  - La IA puede negar que exististe      │", color: "#dc2626" },
-  { type: "output", text: "│  - La historia se pierde al cerrar      │", color: "#dc2626" },
-  { type: "output", text: "└─────────────────────────────────────────┘", color: "#dc2626" },
-  { type: "output", text: "┌─────────────────────────────────────────┐", color: "#22c55e" },
-  { type: "output", text: "│  CON 0G:                                │", color: "#22c55e" },
-  { type: "output", text: "│  - Recuerdos permanentes e inviolables  │", color: "#22c55e" },
-  { type: "output", text: "│  - Cada fragmento verificable on-chain  │", color: "#22c55e" },
-  { type: "output", text: "│  - Tu historia es tuya para siempre     │", color: "#22c55e" },
-  { type: "output", text: "└─────────────────────────────────────────┘", color: "#22c55e" },
+  { type: "output", text: "┌─────────────────────────────────────────┐", color: "#E5483D" },
+  { type: "output", text: "│  SIN 0G:                                │", color: "#E5483D" },
+  { type: "output", text: "│  - Tus recuerdos pueden ser borrados    │", color: "#E5483D" },
+  { type: "output", text: "│  - La IA puede negar que exististe      │", color: "#E5483D" },
+  { type: "output", text: "│  - La historia se pierde al cerrar      │", color: "#E5483D" },
+  { type: "output", text: "└─────────────────────────────────────────┘", color: "#E5483D" },
+  { type: "output", text: "┌─────────────────────────────────────────┐", color: "#A29C92" },
+  { type: "output", text: "│  CON 0G:                                │", color: "#A29C92" },
+  { type: "output", text: "│  - Recuerdos permanentes e inviolables  │", color: "#A29C92" },
+  { type: "output", text: "│  - Cada fragmento verificable on-chain  │", color: "#A29C92" },
+  { type: "output", text: "│  - Tu avance queda registrado on-chain  │", color: "#A29C92" },
+  { type: "output", text: "└─────────────────────────────────────────┘", color: "#A29C92" },
   { type: "output", text: "" },
   { type: "output", text: "0G no es bolt-on: sin 0G la premisa narrativa se rompe." },
   { type: "output", text: "Los recuerdos del jugador DEBEN ser permanentes e inviolables." },
@@ -77,7 +77,7 @@ const BOOT_SEQUENCE: TerminalLine[] = [
 ];
 
 const HELP_OUTPUT: TerminalLine[] = [
-  { type: "output", text: "Comandos disponibles:", color: "#c4923a" },
+  { type: "output", text: "Comandos disponibles:", color: "#E5483D" },
   { type: "output", text: "  help       — muestra este mensaje" },
   { type: "output", text: "  play       — ir al juego" },
   { type: "output", text: "  clear      — limpiar terminal" },
@@ -175,7 +175,7 @@ export default function AboutPage() {
               type: "output",
               text: count === 0
                 ? 'Aún no has jugado. Escribe "play" para comenzar.'
-                : "Cada fragmento está grabado permanentemente en 0G Storage.",
+                : "El guardado del texto en 0G Storage aún es simulado; los actos terminados sí se registran en 0G testnet.",
             },
           ]);
           break;
@@ -190,7 +190,7 @@ export default function AboutPage() {
         default:
           setLines((prev) => [
             ...prev,
-            { type: "output", text: `comando no reconocido: "${trimmed}"`, color: "#dc2626" },
+            { type: "output", text: `comando no reconocido: "${trimmed}"`, color: "#E5483D" },
             { type: "output", text: 'Escribe "help" para ver comandos disponibles.' },
           ]);
       }
@@ -221,18 +221,18 @@ export default function AboutPage() {
       {/* Terminal area */}
       <div className="flex-1 flex flex-col min-h-screen max-w-4xl mx-auto w-full">
         {/* Terminal header bar */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-green-900/30">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-noir-ok">
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-600/60" />
+            <div className="w-2.5 h-2.5 rounded-full bg-noir-accent/10" />
             <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/40" />
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-            <span className="ml-3 font-mono text-[10px] text-green-600/60">
+            <div className="w-2.5 h-2.5 rounded-full bg-noir-ok/10" />
+            <span className="ml-3 font-mono text-[13px] text-noir-ok">
               mongli@0g-chain:~
             </span>
           </div>
           <button
             onClick={() => router.push("/")}
-            className="font-mono text-[10px] text-green-700/50 hover:text-green-500 transition-colors uxpm-press px-2 py-1"
+            className="font-mono text-[13px] text-noir-ok hover:text-noir-ok transition-colors uxpm-press px-2 py-1"
           >
             [ESC] salir
           </button>
@@ -241,8 +241,8 @@ export default function AboutPage() {
         {/* Terminal body */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4 sm:p-6 font-mono text-[11px] sm:text-[12px] leading-[1.7] uxpm-smooth-scroll"
-          style={{ color: "#00ff41" }}
+          className="flex-1 overflow-y-auto p-4 sm:p-6 font-mono text-[13px] sm:text-[12px] leading-[1.7] uxpm-smooth-scroll"
+          style={{ color: "#ECE8E1" }}
         >
           {/* Rendered lines */}
           {lines.map((line, i) => {
@@ -252,13 +252,13 @@ export default function AboutPage() {
             if (line.type === "command") {
               return (
                 <div key={i}>
-                  <span className="text-green-500/50">$ </span>
-                  <span className="text-green-400">{line.text}</span>
+                  <span className="text-noir-ok">$ </span>
+                  <span className="text-noir-ok">{line.text}</span>
                 </div>
               );
             }
             return (
-              <div key={i} style={{ color: line.color || "#00ff41cc" }}>
+              <div key={i} style={{ color: line.color || "#ECE8E1cc" }}>
                 {line.text || " "}
               </div>
             );
@@ -267,29 +267,29 @@ export default function AboutPage() {
           {/* Currently typing (boot sequence) */}
           {currentTyping && (
             <div>
-              <span style={{ color: "#00ff41" }}>{currentTyping}</span>
-              <span className="inline-block w-2 h-3 bg-green-500 ml-0.5 animate-pulse" />
+              <span style={{ color: "#ECE8E1" }}>{currentTyping}</span>
+              <span className="inline-block w-2 h-3 bg-noir-ok/10 ml-0.5 animate-pulse" />
             </div>
           )}
 
           {/* Interactive prompt */}
           {bootComplete && (
             <div className="flex items-center mt-1">
-              <span className="text-green-500/50 shrink-0">$ </span>
+              <span className="text-noir-ok shrink-0">$ </span>
               <input
                 ref={inputRef}
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 bg-transparent outline-none text-green-400 font-mono text-[11px] sm:text-[12px] ml-0.5 caret-green-500"
-                style={{ caretColor: "#00ff41" }}
+                className="flex-1 bg-transparent outline-none text-noir-ok font-mono text-[13px] sm:text-[12px] ml-0.5 caret-green-500"
+                style={{ caretColor: "#ECE8E1" }}
                 autoFocus
                 spellCheck={false}
                 autoComplete="off"
               />
               {input === "" && (
-                <span className="inline-block w-2 h-3 bg-green-500 animate-pulse" />
+                <span className="inline-block w-2 h-3 bg-noir-ok/10 animate-pulse" />
               )}
             </div>
           )}

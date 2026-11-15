@@ -35,7 +35,7 @@ function VoteContent() {
       <Cursor /><ScanlineOverlay />
       <header className="flex items-center justify-between p-4 border-b border-noir-border/20 relative z-50">
         <button onClick={() => router.push("/")} className="font-display text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent"><GlitchText text="MONGLI" intensity="low" /></button>
-        <span className="font-body text-[9px] text-noir-muted">/ votación</span>
+        <span className="font-body text-xs text-noir-muted">/ votación</span>
       </header>
 
       <main className="flex-1 p-4 sm:p-8 max-w-2xl mx-auto w-full">
@@ -63,12 +63,12 @@ function VoteContent() {
                       <p className="font-display text-xs text-noir-text leading-relaxed mb-2">
                         &ldquo;{c.fragmentText.slice(0, 120)}{c.fragmentText.length > 120 ? "..." : ""}&rdquo;
                       </p>
-                      <p className="font-mono text-[8px] text-noir-muted/40">
+                      <p className="font-mono text-xs text-noir-muted">
                         {c.walletAddress.slice(0, 6)}...{c.walletAddress.slice(-4)} · Acto {c.actNumber}
                       </p>
                     </div>
                     <button onClick={() => handleVote(c.id)} disabled={!address || !!voted}
-                      className={`shrink-0 px-3 py-2 border font-display text-xs uxpm-press ${voted ? "border-green-800/40 text-green-500/60 cursor-default" : "border-noir-accent/50 text-noir-accent hover:bg-noir-accent/10"}`}>
+                      className={`shrink-0 px-3 py-2 border font-display text-xs uxpm-press ${voted ? "border-noir-ok text-noir-ok cursor-default" : "border-noir-accent/50 text-noir-accent hover:bg-noir-accent/10"}`}>
                       {voted ? "✓" : "▲"} {c.votes}
                     </button>
                   </div>

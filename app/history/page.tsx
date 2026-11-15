@@ -54,7 +54,7 @@ function HistoryContent() {
             className="font-display text-base sm:text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent transition-colors">
             <GlitchText text="MONGLI" intensity="low" />
           </motion.button>
-          <span className="font-body text-[10px] text-noir-muted tracking-wider">/ expediente</span>
+          <span className="font-body text-[13px] text-noir-muted tracking-wider">/ expediente</span>
         </div>
         <WalletButton />
       </header>
@@ -62,14 +62,14 @@ function HistoryContent() {
       <main className="flex-1 p-4 sm:p-8 max-w-2xl mx-auto w-full">
         {/* Title */}
         <div className="mb-8">
-          <p className="text-[8px] font-body text-noir-muted/40 uppercase tracking-[0.4em] mb-1">
+          <p className="text-xs font-body text-noir-muted uppercase tracking-[0.4em] mb-1">
             Archivo clasificado
           </p>
           <h1 className="font-display text-xl sm:text-2xl text-noir-accent tracking-wider">
             Mi Expediente
           </h1>
           {address && (
-            <p className="font-mono text-[9px] text-noir-muted/40 mt-1">
+            <p className="font-mono text-xs text-noir-muted mt-1">
               {address.slice(0, 6)}...{address.slice(-4)}
             </p>
           )}
@@ -93,15 +93,15 @@ function HistoryContent() {
             <div className="grid grid-cols-3 gap-3 mb-8">
               <div className="manila-folder p-3 text-center">
                 <p className="font-display text-xl text-noir-text">{actsPlayed}</p>
-                <p className="text-[8px] font-body text-noir-muted uppercase">actos</p>
+                <p className="text-xs font-body text-noir-muted uppercase">actos</p>
               </div>
               <div className="manila-folder p-3 text-center">
                 <p className="font-display text-xl text-noir-text">{data?.totalFragments || 0}</p>
-                <p className="text-[8px] font-body text-noir-muted uppercase">fragmentos</p>
+                <p className="text-xs font-body text-noir-muted uppercase">fragmentos</p>
               </div>
               <div className="manila-folder p-3 text-center">
                 <p className="font-display text-xl text-noir-text">{5 - actsPlayed}</p>
-                <p className="text-[8px] font-body text-noir-muted uppercase">pendientes</p>
+                <p className="text-xs font-body text-noir-muted uppercase">pendientes</p>
               </div>
             </div>
 
@@ -125,16 +125,16 @@ function HistoryContent() {
                         <span className="font-display text-sm text-noir-accent">
                           Acto {actDef.id}
                         </span>
-                        <span className="font-body text-[10px] text-noir-muted">
+                        <span className="font-body text-[13px] text-noir-muted">
                           {actDef.title}
                         </span>
                       </div>
                       {played ? (
-                        <span className="text-[8px] font-body text-green-500 border border-green-800/40 px-1.5 py-0.5">
+                        <span className="text-xs font-body text-noir-ok border border-noir-ok px-1.5 py-0.5">
                           completado
                         </span>
                       ) : (
-                        <span className="text-[8px] font-body text-noir-muted border border-noir-border/30 px-1.5 py-0.5">
+                        <span className="text-xs font-body text-noir-muted border border-noir-border/30 px-1.5 py-0.5">
                           pendiente
                         </span>
                       )}
@@ -150,22 +150,22 @@ function HistoryContent() {
                         {/* Decision */}
                         {actData.choiceMade && (
                           <div className="flex items-center gap-2 mt-2">
-                            <span className="text-[9px] font-body text-noir-muted">Decisión:</span>
-                            <span className="text-[9px] font-display text-noir-accent/80 truncate">
+                            <span className="text-xs font-body text-noir-muted">Decisión:</span>
+                            <span className="text-xs font-display text-noir-accent/80 truncate">
                               {actData.choiceMade}
                             </span>
                           </div>
                         )}
 
                         {/* Metadata */}
-                        <div className="flex items-center gap-3 text-[8px] font-body text-noir-muted/40 pt-2 border-t border-noir-border/20">
+                        <div className="flex items-center gap-3 text-xs font-body text-noir-muted pt-2 border-t border-noir-border/20">
                           <span>{new Date(actData.timestamp).toLocaleDateString("es-MX")}</span>
                           {actData.txHash && (
                             <a
                               href={`https://chainscan-galileo.0g.ai/tx/${actData.txHash}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-green-500/60 hover:text-green-400 underline"
+                              className="text-noir-ok hover:text-noir-ok underline"
                               onClick={(e) => e.stopPropagation()}
                             >
                               TX: {actData.txHash.slice(0, 10)}...
@@ -174,7 +174,7 @@ function HistoryContent() {
                         </div>
                       </div>
                     ) : (
-                      <p className="font-body text-[10px] text-noir-muted/30 italic">
+                      <p className="font-body text-[13px] text-noir-muted italic">
                         {actDef.subtitle}
                       </p>
                     )}
@@ -207,7 +207,7 @@ function HistoryContent() {
                   onClick={() => router.push(`/diary`)}
                   whileHover={{ scale: 1.05 }}
                   className="px-6 py-2.5 border border-noir-accent/40 text-noir-accent/70 font-display text-xs tracking-wider hover:text-noir-accent uxpm-press">
-                  📖 Ver como diario
+                  Ver como diario
                 </motion.button>
               )}
               <motion.button
@@ -223,8 +223,8 @@ function HistoryContent() {
 
         {/* Footer stamp */}
         <div className="text-center mt-12">
-          <p className="text-[7px] font-body text-noir-muted/20 tracking-[0.2em]">
-            ARCHIVO PERMANENTE — 0G STORAGE — MONGLI GAME
+          <p className="text-xs font-body text-noir-muted tracking-[0.2em]">
+            Expediente · Mongli Game · 0G Galileo testnet
           </p>
         </div>
       </main>

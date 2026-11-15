@@ -154,7 +154,7 @@ export default function GlitchText({
       {glitching && activeMode === "digital" && (
         <>
           <motion.span
-            className="absolute inset-0 text-red-500/40 select-none"
+            className="absolute inset-0 text-noir-accent select-none"
             style={{ clipPath: `inset(${15 + Math.random() * 30}% 0 ${30 + Math.random() * 20}% 0)` }}
             animate={{ x: [-3, 4, -2, 0] }}
             transition={{ duration: 0.08, repeat: 4 }}
@@ -193,7 +193,7 @@ export default function GlitchText({
       {glitching && activeMode === "corruption" && (
         <>
           <motion.span
-            className="absolute inset-0 text-red-500/35 select-none"
+            className="absolute inset-0 text-noir-accent select-none"
             style={{ clipPath: "inset(20% 0 50% 0)" }}
             animate={{ x: [-2, 3, -1, 0], skewX: [-2, 1, 0] }}
             transition={{ duration: 0.1, repeat: 3 }}

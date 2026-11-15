@@ -9,12 +9,12 @@ export default function Fragment({
   toneScore?: number;
   fragmentId?: number;
 }) {
-  const borderColor = toneScore > 7 ? "#B30000" : toneScore < 4 ? "#3b6fd4" : "#5a4a1a";
+  const borderColor = toneScore > 7 ? "#B3261E" : toneScore < 4 ? "#3b6fd4" : "#5a4a1a";
 
   return (
     <div
       style={{
-        background: "#0d0d0d",
+        background: "#131315",
         border: "1px solid #2a2a2a",
         borderLeft: `4px solid ${borderColor}`,
         borderRadius: 8,
@@ -33,7 +33,7 @@ export default function Fragment({
       >
         FRAGMENTO #{String(fragmentId).padStart(2, "0")}
       </div>
-      <p style={{ color: "#E5DEC9", fontSize: 15, lineHeight: 1.8, margin: 0 }}>{text}</p>
+      <p style={{ color: "#ECE8E1", fontSize: 15, lineHeight: 1.8, margin: 0 }}>{text}</p>
     </div>
   );
 }

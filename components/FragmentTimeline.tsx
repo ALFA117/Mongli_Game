@@ -13,13 +13,13 @@ interface FragmentTimelineProps {
 function getToneColor(toneScore: number): string {
   if (toneScore >= 8) return "#991b1b";
   if (toneScore >= 6) return "#b45309";
-  if (toneScore >= 4) return "#c4923a";
+  if (toneScore >= 4) return "#E5483D";
   if (toneScore >= 2) return "#1d4ed8";
   return "#2563eb";
 }
 
 function getActColor(act: number): string {
-  if (act === 1) return "#c4923a";
+  if (act === 1) return "#E5483D";
   if (act === 2) return "#dc2626";
   return "#9333ea";
 }
@@ -57,7 +57,7 @@ export default function FragmentTimeline({
           return (
             <div
               key={act}
-              className="absolute text-[7px] font-body tracking-[0.2em] uppercase whitespace-nowrap"
+              className="absolute text-xs font-body tracking-[0.2em] uppercase whitespace-nowrap"
               style={{
                 top: `${(startIdx / 14) * 100}%`,
                 left: -20,
@@ -81,7 +81,7 @@ export default function FragmentTimeline({
         >
           <defs>
             <linearGradient id="timeline-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#c4923a" stopOpacity="0.3" />
+              <stop offset="0%" stopColor="#E5483D" stopOpacity="0.3" />
               <stop offset="50%" stopColor="#991b1b" stopOpacity="0.2" />
               <stop offset="100%" stopColor="#9333ea" stopOpacity="0.3" />
             </linearGradient>
@@ -167,17 +167,17 @@ export default function FragmentTimeline({
                     }}
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[9px] font-body text-noir-muted">
+                      <span className="text-xs font-body text-noir-muted">
                         #{String(id).padStart(2, "0")} — Acto {act}
                       </span>
                       <span
-                        className="text-[9px] font-mono"
+                        className="text-xs font-mono"
                         style={{ color: getToneColor(fragment.toneScore) }}
                       >
                         {fragment.toneScore}/10
                       </span>
                     </div>
-                    <p className="font-display text-[11px] text-noir-text/80 leading-relaxed">
+                    <p className="font-display text-[13px] text-noir-text/80 leading-relaxed">
                       {truncateText(fragment.text, 120)}
                     </p>
                     {fragment.tags.length > 0 && (
@@ -185,7 +185,7 @@ export default function FragmentTimeline({
                         {fragment.tags.slice(0, 3).map((tag) => (
                           <span
                             key={tag}
-                            className="text-[8px] font-body text-noir-accent/60 px-1 border border-noir-border/30"
+                            className="text-xs font-body text-noir-accent px-1 border border-noir-border/30"
                           >
                             {tag}
                           </span>

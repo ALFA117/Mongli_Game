@@ -18,7 +18,7 @@ export default function ChoicePanel({ choices, onChoose, disabled }: ChoicePanel
       position: "relative" as const, zIndex: 20,
     }}>
       <p style={{
-        color: "#B30000", fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase" as const,
+        color: "#B3261E", fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase" as const,
         marginBottom: 16, textAlign: "center" as const, fontFamily: "'Special Elite', serif",
         textShadow: "0 0 10px rgba(255,26,26,0.5)",
       }}>
@@ -39,8 +39,8 @@ export default function ChoicePanel({ choices, onChoose, disabled }: ChoicePanel
             style={{
               display: "block", width: "100%", padding: "18px 20px", marginBottom: 10,
               background: isHov ? (isDark ? "#2d0000" : "#00002d") : (isDark ? "#2d0505" : "#050520"),
-              border: `3px solid ${isHov ? (isDark ? "#FF1A1A" : "#3b82f6") : (isDark ? "#B30000" : "#3b6fd4")}`,
-              borderRadius: 8, color: "#E5DEC9", fontSize: 15, lineHeight: 1.6,
+              border: `3px solid ${isHov ? (isDark ? "#E5483D" : "#3b82f6") : (isDark ? "#B3261E" : "#3b6fd4")}`,
+              borderRadius: 8, color: "#ECE8E1", fontSize: 15, lineHeight: 1.6,
               textAlign: "left" as const, cursor: disabled ? "not-allowed" : "pointer",
               fontFamily: "'Special Elite', serif", minHeight: 72, opacity: disabled ? 0.4 : 1,
               transition: "all 0.2s",
@@ -49,7 +49,7 @@ export default function ChoicePanel({ choices, onChoose, disabled }: ChoicePanel
                 : "none",
             }}
           >
-            <span style={{ color: isDark ? "#FF1A1A" : "#3b82f6", fontSize: 20, marginRight: 10 }}>
+            <span style={{ color: isDark ? "#E5483D" : "#3b82f6", fontSize: 20, marginRight: 10 }}>
               {isDark ? "●" : "○"}
             </span>
             {choice.text}
@@ -63,7 +63,7 @@ export default function ChoicePanel({ choices, onChoose, disabled }: ChoicePanel
             )}
 
             {choice.narrativeConsequence && (
-              <span style={{ display: "block", fontSize: 13, color: "#8C8275", marginTop: 6, fontStyle: "italic" }}>
+              <span style={{ display: "block", fontSize: 13, color: "#A29C92", marginTop: 6, fontStyle: "italic" }}>
                 {choice.narrativeConsequence}
               </span>
             )}

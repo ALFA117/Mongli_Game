@@ -61,7 +61,7 @@ function FallingBinaryParticle({ id, delay, left }: { id: number; delay: number;
   const char = id % 2 === 0 ? "1" : "0";
   return (
     <motion.span
-      className="absolute font-mono text-[10px] text-noir-accent/20 select-none"
+      className="absolute font-mono text-[13px] text-noir-accent select-none"
       style={{ left: `${left}%` }}
       initial={{ top: "-5%", opacity: 0 }}
       animate={{ top: "105%", opacity: [0, 0.4, 0.3, 0] }}
@@ -203,15 +203,15 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                     key={i}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: i === bootLine ? 1 : 0.4 }}
-                    className={`font-mono text-[11px] leading-relaxed ${
-                      i === bootLine ? "text-green-500" : "text-green-800"
+                    className={`font-mono text-[13px] leading-relaxed ${
+                      i === bootLine ? "text-noir-ok" : "text-noir-ok"
                     }`}
                   >
                     {line}
                   </motion.p>
                 ))}
                 <motion.span
-                  className="inline-block w-2 h-3 bg-green-500 ml-1"
+                  className="inline-block w-2 h-3 bg-noir-ok/10 ml-1"
                   animate={{ opacity: [1, 0] }}
                   transition={{ duration: 0.6, repeat: Infinity }}
                 />
@@ -254,7 +254,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                       animate={{
                         opacity: i < filledSegments ? 1 : 0.15,
                         backgroundColor:
-                          i < filledSegments ? "#c4923a" : "#2a2a2a",
+                          i < filledSegments ? "#E5483D" : "#2a2a2a",
                       }}
                       transition={{ duration: 0.2 }}
                     />
@@ -262,7 +262,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                 </div>
 
                 {/* Percentage */}
-                <p className="font-mono text-[10px] text-noir-muted/60 -mt-5">
+                <p className="font-mono text-[13px] text-noir-muted -mt-5">
                   {Math.floor(progress)}%
                 </p>
 
@@ -275,7 +275,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                       animate={{ opacity: 0.6, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.3 }}
-                      className="font-body text-[10px] text-noir-muted tracking-[0.3em] uppercase"
+                      className="font-body text-[13px] text-noir-muted tracking-[0.3em] uppercase"
                     >
                       {typewriterPhrase}
                       {!phraseDone && (
