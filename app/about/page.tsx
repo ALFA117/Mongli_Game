@@ -1,307 +1,132 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import dynamic from "next/dynamic";
-import Cursor from "@/components/Cursor";
-import ScanlineOverlay from "@/components/ScanlineOverlay";
-import { useKeyboardNav } from "@/lib/useKeyboardNav";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { MotionConfig, motion } from "framer-motion";
+import { useKeyboardNav } from "@/lib/useKeyboardNav";
+import { IconArrowRight } from "@/components/Icons";
+import { DocHeader, DocFooter, DocSection, HonestStatus, CONTRACT, EXPLORER } from "@/components/SiteChrome";
 
-const Skull3D = dynamic(() => import("@/components/Skull3D"), { ssr: false });
-
-interface TerminalLine {
-  type: "command" | "output" | "blank";
-  text: string;
-  color?: string;
-}
-
-const BOOT_SEQUENCE: TerminalLine[] = [
-  { type: "command", text: "whoami" },
-  { type: "output", text: "MONGLI GAME — Sistema de Recuperación de Memoria v1.0" },
-  { type: "output", text: "Hackathon: Zero Cup 2026 · 0G Labs" },
-  { type: "blank", text: "" },
-  { type: "command", text: "cat README.md" },
-  { type: "output", text: "Juego narrativo de amnesia psicológica con estética noir." },
-  { type: "output", text: "La IA escribe tu historia. 0G registra tu avance on-chain (testnet)." },
-  { type: "output", text: "Cada decisión desbloquea un fragmento de memoria generado por" },
-  { type: "output", text: "Claude, almacenado en 0G Storage y registrado en 0G Chain." },
-  { type: "output", text: 'Pitch: "Tus recuerdos son tuyos. Nadie puede borrarlos."' },
-  { type: "blank", text: "" },
-  { type: "command", text: "./how-it-works.sh" },
-  { type: "output", text: "[1] Conectas tu wallet — tu identidad en la cadena" },
-  { type: "output", text: "[2] Exploras una escena — el sistema detecta tu presencia" },
-  { type: "output", text: "[3] La IA genera tu fragmento — único, irrepetible" },
-  { type: "output", text: "[4] 0G Storage lo graba — permanente, inmutable" },
-  { type: "output", text: "[5] Con wallet, 0G Galileo testnet registra cada acto terminado" },
-  { type: "output", text: "[6] Tú decides — y el sistema recuerda tu elección" },
-  { type: "blank", text: "" },
-  { type: "command", text: "cat stack.json" },
-  { type: "output", text: "{", color: "#E5483D" },
-  { type: "output", text: '  "frontend":  "Next.js 14 + TypeScript + Tailwind",', color: "#E5483D" },
-  { type: "output", text: '  "3d":        "Three.js + React Three Fiber",', color: "#E5483D" },
-  { type: "output", text: '  "animation": "Framer Motion",', color: "#E5483D" },
-  { type: "output", text: '  "ai":        "Claude claude-sonnet-4-6 (Anthropic API)",', color: "#E5483D" },
-  { type: "output", text: '  "storage":   "0G Storage (descentralizado)",', color: "#E5483D" },
-  { type: "output", text: '  "chain":     "0G Chain (Galileo Testnet, EVM)",', color: "#E5483D" },
-  { type: "output", text: '  "wallet":    "RainbowKit + wagmi + viem",', color: "#E5483D" },
-  { type: "output", text: '  "audio":     "Web Audio API (procedural)",', color: "#E5483D" },
-  { type: "output", text: '  "contract":  "MongliMemory.sol (Solidity)"', color: "#E5483D" },
-  { type: "output", text: "}", color: "#E5483D" },
-  { type: "blank", text: "" },
-  { type: "command", text: "./why-0g.sh" },
-  { type: "output", text: "┌─────────────────────────────────────────┐", color: "#E5483D" },
-  { type: "output", text: "│  SIN 0G:                                │", color: "#E5483D" },
-  { type: "output", text: "│  - Tus recuerdos pueden ser borrados    │", color: "#E5483D" },
-  { type: "output", text: "│  - La IA puede negar que exististe      │", color: "#E5483D" },
-  { type: "output", text: "│  - La historia se pierde al cerrar      │", color: "#E5483D" },
-  { type: "output", text: "└─────────────────────────────────────────┘", color: "#E5483D" },
-  { type: "output", text: "┌─────────────────────────────────────────┐", color: "#A29C92" },
-  { type: "output", text: "│  CON 0G:                                │", color: "#A29C92" },
-  { type: "output", text: "│  - Recuerdos permanentes e inviolables  │", color: "#A29C92" },
-  { type: "output", text: "│  - Cada fragmento verificable on-chain  │", color: "#A29C92" },
-  { type: "output", text: "│  - Tu avance queda registrado on-chain  │", color: "#A29C92" },
-  { type: "output", text: "└─────────────────────────────────────────┘", color: "#A29C92" },
-  { type: "output", text: "" },
-  { type: "output", text: "0G no es bolt-on: sin 0G la premisa narrativa se rompe." },
-  { type: "output", text: "Los recuerdos del jugador DEBEN ser permanentes e inviolables." },
-  { type: "output", text: "Eso solo es posible con almacenamiento descentralizado real." },
-  { type: "blank", text: "" },
-  { type: "command", text: "cat credits.txt" },
-  { type: "output", text: "Desarrollado por: Edgar Lopez Baeza (@ALFA_EDG)" },
-  { type: "output", text: "Hackathon: Zero Cup 2026 — 0G Labs" },
-  { type: "output", text: "Ubicación: México" },
-  { type: "output", text: "Fecha: Junio 2026" },
-  { type: "output", text: "" },
-  { type: "output", text: 'Escribe "help" para ver comandos disponibles.' },
+const FLOW = [
+  { n: "01", title: "Entras", body: "Con wallet juegas los 5 actos; sin cuenta, los dos primeros. La wallet es tu identidad dentro del juego." },
+  { n: "02", title: "Exploras y decides", body: "Cada escena esconde fragmentos de memoria. Al final de cada acto tomas una decisión que cambia el rumbo." },
+  { n: "03", title: "La IA escribe", body: "Un narrador con IA genera el siguiente fragmento a partir de tus elecciones. Si no responde, entra texto de respaldo." },
+  { n: "04", title: "0G registra el acto", body: "Con wallet, terminar un acto firma una transacción en el contrato de 0G Galileo testnet." },
 ];
 
-const HELP_OUTPUT: TerminalLine[] = [
-  { type: "output", text: "Comandos disponibles:", color: "#E5483D" },
-  { type: "output", text: "  help       — muestra este mensaje" },
-  { type: "output", text: "  play       — ir al juego" },
-  { type: "output", text: "  clear      — limpiar terminal" },
-  { type: "output", text: "  fragments  — fragmentos generados esta sesión" },
-  { type: "output", text: "  whoami     — información del sistema" },
-  { type: "output", text: "  ESC        — volver al juego" },
+const STACK: [string, string][] = [
+  ["Interfaz", "Next.js 14, TypeScript, Tailwind CSS"],
+  ["Animación y 3D", "Framer Motion, Three.js con React Three Fiber"],
+  ["Narrativa", "Claude (Anthropic) con respaldo en Gemini"],
+  ["Cadena", "0G Chain, Galileo testnet (EVM)"],
+  ["Contrato", "MongliMemory.sol (Solidity)"],
+  ["Wallet", "RainbowKit, wagmi, viem"],
+  ["Audio", "Web Audio API, sonido procedural"],
 ];
 
 export default function AboutPage() {
   const router = useRouter();
-  const [lines, setLines] = useState<TerminalLine[]>([]);
-  const [bootComplete, setBootComplete] = useState(false);
-  const [currentTyping, setCurrentTyping] = useState("");
-  const [input, setInput] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const bootIdx = useRef(0);
-
-  // Auto-scroll
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [lines, currentTyping]);
-
-  // Boot sequence — typewriter commands, instant output
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-
-    const addNextLine = () => {
-      if (bootIdx.current >= BOOT_SEQUENCE.length) {
-        setBootComplete(true);
-        setCurrentTyping("");
-        setTimeout(() => inputRef.current?.focus(), 100);
-        return;
-      }
-
-      const line = BOOT_SEQUENCE[bootIdx.current];
-      bootIdx.current++;
-
-      if (line.type === "command") {
-        // Typewrite the command
-        const cmd = line.text;
-        let charIdx = 0;
-        setCurrentTyping("$ ");
-
-        const typeChar = () => {
-          if (charIdx < cmd.length) {
-            setCurrentTyping("$ " + cmd.slice(0, charIdx + 1));
-            charIdx++;
-            timeout = setTimeout(typeChar, 30 + Math.random() * 30);
-          } else {
-            setCurrentTyping("");
-            setLines((prev) => [...prev, line]);
-            timeout = setTimeout(addNextLine, 200);
-          }
-        };
-        timeout = setTimeout(typeChar, 300);
-      } else {
-        // Output lines appear instantly
-        setLines((prev) => [...prev, line]);
-        timeout = setTimeout(addNextLine, 40);
-      }
-    };
-
-    timeout = setTimeout(addNextLine, 800);
-    return () => clearTimeout(timeout);
-  }, []);
-
-  const executeCommand = useCallback(
-    (cmd: string) => {
-      const trimmed = cmd.trim().toLowerCase();
-      setLines((prev) => [...prev, { type: "command", text: trimmed }]);
-
-      switch (trimmed) {
-        case "help":
-          setLines((prev) => [...prev, ...HELP_OUTPUT]);
-          break;
-        case "play":
-          router.push("/");
-          break;
-        case "clear":
-          setLines([]);
-          break;
-        case "fragments": {
-          let count = 0;
-          try {
-            const stored = localStorage.getItem("mongli-fragment-count");
-            if (stored) count = parseInt(stored, 10);
-          } catch { /* noop */ }
-          setLines((prev) => [
-            ...prev,
-            { type: "output", text: `Fragmentos generados esta sesión: ${count}` },
-            {
-              type: "output",
-              text: count === 0
-                ? 'Aún no has jugado. Escribe "play" para comenzar.'
-                : "El guardado del texto en 0G Storage aún es simulado; los actos terminados sí se registran en 0G testnet.",
-            },
-          ]);
-          break;
-        }
-        case "whoami":
-          setLines((prev) => [
-            ...prev,
-            { type: "output", text: "MONGLI GAME — Sistema de Recuperación de Memoria v1.0" },
-            { type: "output", text: "Stack: Next.js 14 + Claude + 0G Storage + 0G Chain" },
-          ]);
-          break;
-        default:
-          setLines((prev) => [
-            ...prev,
-            { type: "output", text: `comando no reconocido: "${trimmed}"`, color: "#E5483D" },
-            { type: "output", text: 'Escribe "help" para ver comandos disponibles.' },
-          ]);
-      }
-      setInput("");
-    },
-    [router]
-  );
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && input.trim()) {
-        executeCommand(input);
-      }
-    },
-    [input, executeCommand]
-  );
-
-  useKeyboardNav({
-    onEscape: () => router.push("/"),
-    enabled: true,
-  });
+  useKeyboardNav({ onEscape: () => router.push("/"), enabled: true });
 
   return (
-    <div className="min-h-screen bg-black relative flex" onClick={() => inputRef.current?.focus()}>
-      <Cursor />
-      <ScanlineOverlay />
+    <MotionConfig reducedMotion="user">
+      <div className="flex min-h-[100dvh] flex-col">
+        <DocHeader section="Acerca de" />
 
-      {/* Terminal area */}
-      <div className="flex-1 flex flex-col min-h-screen max-w-4xl mx-auto w-full">
-        {/* Terminal header bar */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-noir-ok">
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-noir-accent/10" />
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/40" />
-            <div className="w-2.5 h-2.5 rounded-full bg-noir-ok/10" />
-            <span className="ml-3 font-mono text-[13px] text-noir-ok">
-              mongli@0g-chain:~
-            </span>
-          </div>
-          <button
-            onClick={() => router.push("/")}
-            className="font-mono text-[13px] text-noir-ok hover:text-noir-ok transition-colors uxpm-press px-2 py-1"
-          >
-            [ESC] salir
-          </button>
-        </div>
+        <main className="flex-1">
+          {/* Intro */}
+          <section className="shell pb-16 pt-14 md:pb-20 md:pt-20">
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <span className="stamp">Ficha del proyecto</span>
+              <h1 className="h-display mt-8 max-w-[14ch] text-[clamp(40px,7vw,80px)] text-noir-text">
+                Un thriller de amnesia con memoria <span className="whitespace-nowrap">on-chain</span>.
+              </h1>
+              <p className="lead mt-6">
+                Mongli Game es un juego narrativo noir en 5 actos. Despiertas sin recordar quién eres; tus decisiones
+                y un narrador con IA reconstruyen tu identidad, y con wallet tu avance queda registrado en 0G Galileo testnet.
+              </p>
+              <dl className="mt-10 grid max-w-xl grid-cols-3 border-t border-noir-border text-[14px]">
+                {[
+                  ["Hackathon", "Zero Cup 2026"],
+                  ["Organiza", "0G Labs"],
+                  ["Hecho en", "México, 2026"],
+                ].map(([k, v], i) => (
+                  <div key={k} className={`pt-4 ${i < 2 ? "border-r border-noir-border pr-4" : ""} ${i > 0 ? "pl-4" : ""}`}>
+                    <dt className="eyebrow">{k}</dt>
+                    <dd className="mt-1 text-noir-text">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </motion.div>
+          </section>
 
-        {/* Terminal body */}
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4 sm:p-6 font-mono text-[13px] sm:text-[12px] leading-[1.7] uxpm-smooth-scroll"
-          style={{ color: "#ECE8E1" }}
-        >
-          {/* Rendered lines */}
-          {lines.map((line, i) => {
-            if (line.type === "blank") {
-              return <div key={i} className="h-3" />;
-            }
-            if (line.type === "command") {
-              return (
-                <div key={i}>
-                  <span className="text-noir-ok">$ </span>
-                  <span className="text-noir-ok">{line.text}</span>
-                </div>
-              );
-            }
-            return (
-              <div key={i} style={{ color: line.color || "#ECE8E1cc" }}>
-                {line.text || " "}
-              </div>
-            );
-          })}
+          <DocSection eyebrow="Recorrido" title="Cómo se juega.">
+            <ol className="divide-y divide-noir-border border-y border-noir-border">
+              {FLOW.map((s) => (
+                <li key={s.n} className="grid grid-cols-[48px_1fr] gap-4 py-6">
+                  <span className="pt-1 font-mono text-[14px] text-noir-accent">{s.n}</span>
+                  <div>
+                    <h3 className="font-display text-[20px] font-semibold tracking-[-0.01em] text-noir-text">{s.title}</h3>
+                    <p className="mt-2 max-w-[58ch] text-noir-muted">{s.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </DocSection>
 
-          {/* Currently typing (boot sequence) */}
-          {currentTyping && (
-            <div>
-              <span style={{ color: "#ECE8E1" }}>{currentTyping}</span>
-              <span className="inline-block w-2 h-3 bg-noir-ok/10 ml-0.5 animate-pulse" />
-            </div>
-          )}
-
-          {/* Interactive prompt */}
-          {bootComplete && (
-            <div className="flex items-center mt-1">
-              <span className="text-noir-ok shrink-0">$ </span>
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="flex-1 bg-transparent outline-none text-noir-ok font-mono text-[13px] sm:text-[12px] ml-0.5 caret-green-500"
-                style={{ caretColor: "#ECE8E1" }}
-                autoFocus
-                spellCheck={false}
-                autoComplete="off"
+          <DocSection eyebrow="Por qué 0G" title="La premisa necesita una memoria que no dependa de nadie.">
+            <p className="max-w-[60ch] text-noir-muted">
+              El juego trata de recuerdos que alguien intenta borrar. Por eso el avance del jugador se ancla en una
+              cadena pública y no en un servidor propio. Esto es lo que funciona hoy y lo que todavía falta:
+            </p>
+            <div className="mt-8">
+              <HonestStatus
+                real={<>Terminar un acto y guardar un récord de speedrun firman una transacción en el contrato de 0G Galileo testnet.</>}
+                simulated={<>El texto de cada fragmento aún no se sube a 0G Storage; ese guardado es simulado y el juego lo indica.</>}
               />
-              {input === "" && (
-                <span className="inline-block w-2 h-3 bg-noir-ok/10 animate-pulse" />
-              )}
             </div>
-          )}
-        </div>
-      </div>
+            <p className="mt-6 max-w-[60ch] text-[15px] text-noir-muted">
+              Objetivo: guardar el texto completo de cada fragmento en 0G Storage y anclar su hash en el contrato,
+              para que cualquiera pueda verificarlo.
+            </p>
+          </DocSection>
 
-      {/* Skull3D decoration — right side, desktop only */}
-      <div className="hidden lg:block w-[25%] relative opacity-30">
-        <div className="sticky top-0 h-screen">
-          <Skull3D className="w-full h-full" scene="archive" />
-        </div>
+          <DocSection eyebrow="Tecnología" title="Stack.">
+            <dl className="divide-y divide-noir-border border-y border-noir-border">
+              {STACK.map(([k, v]) => (
+                <div key={k} className="grid gap-1 py-4 sm:grid-cols-[180px_1fr] sm:gap-6">
+                  <dt className="eyebrow pt-0.5">{k}</dt>
+                  <dd className="text-noir-text">{v}</dd>
+                </div>
+              ))}
+              <div className="grid gap-1 py-4 sm:grid-cols-[180px_1fr] sm:gap-6">
+                <dt className="eyebrow pt-0.5">Dirección</dt>
+                <dd>
+                  <a href={EXPLORER} target="_blank" rel="noopener noreferrer"
+                    className="break-all font-mono text-[14px] text-noir-text underline decoration-noir-border underline-offset-4 hover:decoration-noir-text">
+                    {CONTRACT}
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </DocSection>
+
+          <section className="border-t border-noir-border">
+            <div className="shell flex flex-col gap-6 py-16 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="h-section text-noir-text">¿Listo para despertar?</h2>
+                <p className="mt-2 text-noir-muted">Los dos primeros actos no necesitan cuenta.</p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link href="/" className="btn btn-primary">Ir al inicio <IconArrowRight /></Link>
+                <Link href="/judges" className="btn btn-secondary">Ficha técnica</Link>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <DocFooter />
       </div>
-    </div>
+    </MotionConfig>
   );
 }

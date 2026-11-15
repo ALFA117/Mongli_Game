@@ -1,248 +1,131 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
-import Cursor from "@/components/Cursor";
-import ScanlineOverlay from "@/components/ScanlineOverlay";
-import GlitchText from "@/components/GlitchText";
+import Link from "next/link";
+import { MotionConfig, motion } from "framer-motion";
+import { IconArrowRight, IconArrowUpRight, IconFilm, IconGithub } from "@/components/Icons";
+import { DocHeader, DocFooter, DocSection, HonestStatus, CONTRACT, EXPLORER, REPO } from "@/components/SiteChrome";
 
-const Skull3D = dynamic(() => import("@/components/Skull3D"), { ssr: false });
+type Status = "real" | "sim" | "next";
 
-const STACK = [
-  { name: "Next.js 14", role: "Framework + API Routes" },
-  { name: "TypeScript", role: "Type safety" },
-  { name: "Tailwind CSS", role: "Noir UI system" },
-  { name: "Framer Motion", role: "Animations" },
-  { name: "Claude / Gemini", role: "AI narrative (dual cascade)" },
-  { name: "0G Storage", role: "Permanent fragment storage" },
-  { name: "0G Chain", role: "On-chain verification" },
-  { name: "RainbowKit", role: "Wallet connect (MetaMask)" },
-  { name: "Web Audio API", role: "Generative soundtrack" },
-  { name: "CSS 3D + SVG", role: "Skull visualization" },
+const PIPELINE: { step: string; detail: string; status: Status }[] = [
+  { step: "Jugador y wallet", detail: "MetaMask vía RainbowKit / wagmi sobre 0G Galileo testnet.", status: "real" },
+  { step: "Narrativa con IA", detail: "Ruta /api/generate: Claude con respaldo en Gemini y texto de reserva.", status: "real" },
+  { step: "Registro del acto", detail: "Al terminar un acto o un speedrun se firma una transacción en MongliMemory.sol.", status: "real" },
+  { step: "Texto en 0G Storage", detail: "lib/og-storage.ts y lib/og-chain.ts son stubs en memoria; el hash mostrado es del contenido, no una transacción.", status: "sim" },
+  { step: "Inferencia en 0G Compute", detail: "Mover la narrativa de APIs centralizadas a 0G Compute.", status: "next" },
 ];
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }} className="mb-16">
-      <h2 className="font-display text-sm text-noir-accent tracking-[0.2em] uppercase mb-6">{title}</h2>
-      {children}
-    </motion.section>
-  );
-}
+const BADGE: Record<Status, { label: string; cls: string }> = {
+  real: { label: "Real", cls: "border-noir-ok/60 text-noir-ok" },
+  sim: { label: "Simulado", cls: "border-noir-border text-noir-muted" },
+  next: { label: "Siguiente", cls: "border-noir-border text-noir-faint" },
+};
+
+const STACK: [string, string][] = [
+  ["Next.js 14 + TypeScript", "Framework y rutas de API"],
+  ["Tailwind CSS", "Sistema visual"],
+  ["Framer Motion · Three.js", "Animación y escena 3D"],
+  ["Claude · Gemini", "Narrativa con respaldo"],
+  ["0G Chain (Galileo)", "Registro de actos y récords"],
+  ["0G Storage", "Guardado de fragmentos (simulado hoy)"],
+  ["RainbowKit · wagmi · viem", "Conexión de wallet"],
+  ["Web Audio API", "Banda sonora procedural"],
+];
 
 export default function JudgesPage() {
-  const router = useRouter();
-
   return (
-    <div className="min-h-screen relative">
-      <Cursor />
-      <ScanlineOverlay />
+    <MotionConfig reducedMotion="user">
+      <div className="flex min-h-[100dvh] flex-col">
+        <DocHeader section="Para jueces" />
 
-      {/* Header */}
-      <header className="flex items-center justify-between p-4 sm:p-6 border-b border-noir-border/20 relative z-50">
-        <button onClick={() => router.push("/")}
-          className="font-display text-lg text-noir-text tracking-[0.15em] hover:text-noir-accent transition-colors">
-          <GlitchText text="MONGLI" intensity="low" />
-        </button>
-        <span className="font-body text-xs text-noir-muted tracking-[0.3em] uppercase">
-          Technical Overview
-        </span>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-8 py-12">
-        {/* Hero */}
-        <div className="text-center mb-16">
-          <div className="w-[150px] h-[150px] mx-auto mb-6">
-            <Skull3D scene="void" className="w-full h-full" />
-          </div>
-          <h1 className="font-display text-2xl sm:text-3xl text-noir-text tracking-wider mb-2">
-            MONGLI GAME
-          </h1>
-          <p className="font-body text-xs text-noir-accent tracking-[0.3em] uppercase mb-4">
-            Zero Cup 2026 · 0G Labs Hackathon
-          </p>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="px-2 py-1 border border-noir-accent/40 text-xs font-body text-noir-accent">Built on 0G</span>
-            <span className="px-2 py-1 border border-noir-border text-xs font-body text-noir-muted">AI-Native</span>
-            <span className="px-2 py-1 border border-noir-border text-xs font-body text-noir-muted">Vibe Coded</span>
-          </div>
-        </div>
-
-        {/* Section 1: The Pitch */}
-        <Section title="The Pitch">
-          <div className="manila-folder p-6 text-center">
-            <p className="font-display text-lg text-noir-text mb-4">
-              AI writes your story. 0G records your progress.
-            </p>
-            <p className="font-body text-xs text-noir-muted mb-6 max-w-md mx-auto">
-              A noir amnesia game where every memory fragment is generated by AI (Claude/Gemini),
-              with finished acts and speedrun records logged on 0G Galileo testnet (fragment storage on 0G Storage is still simulated).
-              Your identity is determined by your choices.
-            </p>
-            <motion.button onClick={() => router.push("/")}
-              whileHover={{ scale: 1.05 }}
-              className="px-8 py-3 border-2 border-noir-accent text-noir-accent font-display text-sm tracking-wider uxpm-press">
-              Play the game →
-            </motion.button>
-            <motion.button onClick={() => router.push("/trailer")}
-              whileHover={{ scale: 1.05 }}
-              className="px-6 py-2.5 border border-noir-border text-noir-muted font-display text-xs tracking-wider uxpm-press hover:text-noir-accent">
-              Ver trailer → (90s, no wallet)
-            </motion.button>
-          </div>
-        </Section>
-
-        {/* Honest implementation status -- the narrative flow's 0G calls
-            (lib/og-storage.ts, lib/og-chain.ts) are in-memory stubs today,
-            not real network/chain calls. The level-complete and speedrun
-            flows DO sign a real transaction against the deployed contract
-            via wagmi -- that part is real. Judges should see this distinction
-            up front, not discover it by clicking a dead explorer link. */}
-        <Section title="Implementation status (read before the pitch above)">
-          <div className="manila-folder p-5 text-xs font-body leading-relaxed space-y-2">
-            <p className="text-noir-ok">
-              ✓ Real: level-complete and speedrun records sign an actual transaction against
-              <code className="mx-1 text-noir-accent">MongliMemory.sol</code>
-              (0x81B6...E9f8, 0G Galileo Testnet) via wagmi/RainbowKit — check any wallet after playing.
-            </p>
-            <p className="text-yellow-500">
-              ○ Simulated today: the 5-act narrative&apos;s &quot;0G Storage&quot; and &quot;0G Chain&quot; calls
-              (<code className="text-noir-accent">lib/og-storage.ts</code>, <code className="text-noir-accent">lib/og-chain.ts</code>)
-              are in-memory stubs — no fragment is actually uploaded or submitted on-chain yet, and the
-              &quot;TX&quot; shown in the fragment viewer is a content hash, not a transaction. The architecture
-              below is the real target design, not yet the current behavior of that flow.
-            </p>
-          </div>
-        </Section>
-
-        {/* Section 2: Why 0G is not bolt-on */}
-        <Section title="Why 0G is NOT a bolt-on (target architecture)">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              {
-                icon: "S", title: "0G Storage",
-                desc: "Every memory fragment is stored permanently. Without it, player histories are lost.",
-                code: "await uploadFragment(fragment)\n// → SHA-256 hash → 0G blob",
-                why: "Without 0G: memories deleted on browser close. With 0G: persistent and verifiable (target design).",
-              },
-              {
-                icon: "C", title: "0G Chain",
-                desc: "Every act completion triggers an on-chain event via MongliMemory.sol.",
-                code: "saveFragment(hash, actId)\n// → FragmentSaved event",
-                why: "Contract: 0x81B6...E9f8 on Galileo Testnet",
-              },
-              {
-                icon: "AI", title: "0G Compute",
-                desc: "Next: narrative AI inference directly on 0G Compute for full decentralization.",
-                code: "// Future: 0G Compute API\n// → Decentralized AI inference",
-                why: "Roadmap: move AI from centralized APIs to 0G Compute.",
-              },
-            ].map((card) => (
-              <div key={card.title} className="manila-folder p-4">
-                <span className="mb-3 inline-grid h-9 min-w-9 place-items-center rounded border border-noir-border px-2 font-mono text-[13px] text-noir-accent">{card.icon}</span>
-                <h3 className="font-display text-xs text-noir-text mb-2">{card.title}</h3>
-                <p className="font-body text-[13px] text-noir-muted mb-3">{card.desc}</p>
-                <pre className="font-mono text-xs text-noir-ok bg-noir-bg/50 p-2 mb-2 overflow-x-auto">
-                  {card.code}
-                </pre>
-                <p className="font-body text-xs text-noir-accent italic">{card.why}</p>
+        <main className="flex-1">
+          {/* Summary */}
+          <section className="shell grid gap-12 pb-16 pt-14 md:pb-20 md:pt-20 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="stamp">Ficha técnica</span>
+                <span className="chip">Zero Cup 2026 · 0G Labs</span>
               </div>
-            ))}
-          </div>
-        </Section>
-
-        {/* Section 3: Architecture */}
-        <Section title="Architecture">
-          <pre className="font-mono text-[13px] sm:text-[13px] text-noir-text/70 bg-noir-card p-4 sm:p-6 border border-noir-border/30 overflow-x-auto leading-relaxed">
-{`Player → MetaMask → Next.js API → Claude/Gemini AI
-                        │               │
-                        │         Fragment JSON
-                        │               │
-                        ▼               ▼
-                   0G Storage    ← SHA-256 hash
-                        │
-                        ▼
-                   0G Chain (MongliMemory.sol)
-                        │
-                        ▼
-                   FragmentSaved event
-
-   ┌──────────────────────────┐
-   │  5 Acts × 3 Fragments   │
-   │  1 Decision per Act      │
-   │  1 TX per Act on 0G      │
-   │  Save/Load from 0G       │
-   └──────────────────────────┘`}
-          </pre>
-        </Section>
-
-        {/* Section 4: Stack & Stats */}
-        <Section title="Stack & Stats">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
-            {STACK.map((s) => (
-              <div key={s.name} className="border border-noir-border/30 p-2 text-center">
-                <p className="font-body text-[13px] text-noir-text">{s.name}</p>
-                <p className="font-body text-xs text-noir-muted">{s.role}</p>
+              <h1 className="h-display mt-8 max-w-[18ch] text-[clamp(36px,5vw,60px)] text-noir-text">
+                La IA escribe la historia. 0G registra el avance.
+              </h1>
+              <p className="lead mt-6">
+                Juego noir de amnesia en 5 actos. Cada fragmento de memoria lo genera una IA a partir de las decisiones
+                del jugador; los actos terminados y los récords de speedrun se firman en 0G Galileo testnet.
+              </p>
+              <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+                <Link href="/" className="btn btn-primary">Jugar <IconArrowRight /></Link>
+                <Link href="/trailer" className="btn btn-secondary"><IconFilm size={16} /> Trailer, sin wallet</Link>
               </div>
-            ))}
-          </div>
-          <div className="flex flex-wrap justify-center gap-4 text-center">
-            {[
-              { num: "70+", label: "files" },
-              { num: "22", label: "routes" },
-              { num: "1", label: "smart contract" },
-              { num: "5", label: "game modes" },
-              { num: "20", label: "features" },
-            ].map((s) => (
-              <div key={s.label}>
-                <p className="font-display text-xl text-noir-accent">{s.num}</p>
-                <p className="text-xs font-body text-noir-muted uppercase">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </Section>
+            </motion.div>
 
-        {/* Section 5: Live Contract */}
-        <Section title="Live Contract">
-          <div className="manila-folder p-5 text-center">
-            <p className="font-mono text-xs text-noir-accent mb-2">MongliMemory.sol</p>
-            <p className="font-mono text-[13px] text-noir-muted mb-4 break-all">
-              0x81B600E7ACE4CEe5D698C39368B615A732d0E9f8
+            <aside className="panel-hard p-5 sm:p-6" aria-label="Contrato">
+              <p className="eyebrow">Contrato desplegado</p>
+              <p className="mt-3 font-display text-[20px] font-semibold text-noir-text">MongliMemory.sol</p>
+              <p className="mt-2 break-all font-mono text-[14px] leading-relaxed text-noir-muted">{CONTRACT}</p>
+              <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-noir-border pt-4 font-mono text-[13px]">
+                <div><dt className="text-noir-faint">Red</dt><dd className="text-noir-text">0G Galileo</dd></div>
+                <div><dt className="text-noir-faint">Tipo</dt><dd className="text-noir-text">Testnet EVM</dd></div>
+              </dl>
+              <a href={EXPLORER} target="_blank" rel="noopener noreferrer"
+                className="btn btn-secondary mt-5 w-full !min-h-[44px] !text-[14px]">
+                Ver en el explorador <IconArrowUpRight size={16} />
+              </a>
+            </aside>
+          </section>
+
+          <DocSection eyebrow="Estado de implementación" title="Qué es real hoy y qué no.">
+            <HonestStatus
+              real={<>Terminar un acto y guardar un récord de speedrun firman una transacción en <code className="font-mono text-[14px] text-noir-text">MongliMemory.sol</code> mediante wagmi. Se puede comprobar en la wallet después de jugar.</>}
+              simulated={<>Las llamadas de &quot;0G Storage&quot; del flujo narrativo son stubs en memoria: ningún fragmento se sube todavía, y el hash que muestra el visor es del contenido, no de una transacción.</>}
+            />
+          </DocSection>
+
+          <DocSection eyebrow="Arquitectura" title="Del jugador a la cadena.">
+            <ol className="divide-y divide-noir-border border-y border-noir-border">
+              {PIPELINE.map((p, i) => (
+                <li key={p.step} className="grid grid-cols-[40px_1fr] gap-4 py-5 sm:grid-cols-[40px_1fr_auto] sm:items-start">
+                  <span className="pt-0.5 font-mono text-[14px] text-noir-accent">{String(i + 1).padStart(2, "0")}</span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-noir-text">{p.step}</p>
+                    <p className="mt-1 text-[15px] text-noir-muted">{p.detail}</p>
+                  </div>
+                  <span className={`col-start-2 w-fit rounded-full border px-2.5 py-1 font-mono text-[12px] sm:col-start-auto ${BADGE[p.status].cls}`}>
+                    {BADGE[p.status].label}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-6 max-w-[60ch] text-[15px] text-noir-muted">
+              Diseño objetivo: cada fragmento se guardaría en 0G Storage y su hash se anclaría en el contrato con el
+              evento <code className="font-mono text-[14px] text-noir-text">FragmentSaved</code>. Por ahora solo los actos y los récords llegan a la cadena.
             </p>
-            <a href="https://chainscan-galileo.0g.ai/address/0x81B600E7ACE4CEe5D698C39368B615A732d0E9f8"
-              target="_blank" rel="noopener noreferrer"
-              className="px-4 py-2 border border-noir-accent text-noir-accent font-body text-xs uxpm-press inline-block hover:bg-noir-accent/10">
-              View on 0G Explorer →
+          </DocSection>
+
+          <DocSection eyebrow="Tecnología" title="Stack.">
+            <dl className="grid gap-px overflow-hidden rounded-md border border-noir-border bg-noir-border sm:grid-cols-2">
+              {STACK.map(([k, v]) => (
+                <div key={k} className="bg-noir-bg p-4">
+                  <dt className="font-semibold text-noir-text">{k}</dt>
+                  <dd className="mt-1 text-[14px] text-noir-muted">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </DocSection>
+
+          <DocSection eyebrow="Proceso" title="Cómo se construyó.">
+            <p className="max-w-[60ch] text-noir-muted">
+              Desarrollo dirigido por una persona y asistido con Claude Code, en 11 bloques: efectos visuales, motor
+              narrativo, integración con la cadena, audio y experiencia de uso. El código completo es público.
+            </p>
+            <a href={REPO} target="_blank" rel="noopener noreferrer" className="btn btn-secondary mt-6 !min-h-[44px] !text-[14px]">
+              <IconGithub size={16} /> Código en GitHub
             </a>
-          </div>
-        </Section>
+          </DocSection>
+        </main>
 
-        {/* Section 6: Vibe Coding */}
-        <Section title="The Vibe Coding Process">
-          <p className="font-body text-xs text-noir-muted leading-relaxed mb-4">
-            Built with Claude Code (AI-assisted development). 11 development blocks spanning
-            visual effects, narrative engine, blockchain integration, audio, and UX.
-            Human-directed, AI-accelerated.
-          </p>
-          <a href="https://github.com/ALFA117/Mongli_Game" target="_blank" rel="noopener noreferrer"
-            className="font-body text-xs text-noir-accent hover:underline">
-            View complete source on GitHub →
-          </a>
-        </Section>
-
-        {/* Footer */}
-        <div className="text-center border-t border-noir-border/20 pt-8">
-          <p className="font-body text-xs text-noir-muted">Edgar Lopez Baeza · @ALFA_EDG</p>
-          <p className="font-body text-xs text-noir-muted mt-1">Zero Cup 2026 · 0G Labs</p>
-          <div className="flex items-center justify-center gap-4 mt-4 text-xs font-body text-noir-muted">
-            <a href="https://mongli-game.vercel.app" className="hover:text-noir-accent">Live Game</a>
-            <a href="https://github.com/ALFA117/Mongli_Game" target="_blank" rel="noopener noreferrer" className="hover:text-noir-accent">GitHub</a>
-            <button onClick={() => router.push("/gallery")} className="hover:text-noir-accent">Gallery</button>
-          </div>
-        </div>
-      </main>
-    </div>
+        <DocFooter />
+      </div>
+    </MotionConfig>
   );
 }
