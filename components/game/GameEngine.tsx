@@ -507,7 +507,7 @@ export function GameEngine() {
       )}
 
       {/* HUD */}
-      <div style={{ position: "absolute", top: 16, left: 20, zIndex: 10 }}>
+      <div className="gx-hud-panel" style={{ position: "absolute", top: "max(12px, env(safe-area-inset-top))", left: 12, zIndex: 10 }}>
         <div className="font-display font-extrabold text-[16px] tracking-[0.04em] text-noir-text">MONGLI</div>
         <div className="gx-hud mt-1">Acto {levelIdx + 1} · {levelData.name}</div>
         <div style={{ width: 128, height: 6, background: "var(--raised)", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
@@ -517,7 +517,7 @@ export function GameEngine() {
       </div>
 
       {/* Memory counter */}
-      <div style={{ position: "absolute", top: 16, right: 20, zIndex: 10, display: "flex", gap: 6, alignItems: "center" }}>
+      <div className="gx-hud-panel" style={{ position: "absolute", top: "max(12px, env(safe-area-inset-top))", right: 12, zIndex: 10, display: "flex", gap: 6, alignItems: "center" }}>
         <span className="gx-hud mr-2">Memoria</span>
         {[0, 1, 2].map(i => (
           <div key={i} style={{

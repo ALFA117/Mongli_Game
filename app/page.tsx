@@ -80,8 +80,6 @@ function LandingContent() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-[100dvh] flex flex-col relative" onClick={startAudio}>
-        <AudioToggle />
-
         {/* ═══ Header ═══ */}
         <header className="sticky top-0 z-50 border-b border-noir-border bg-noir-bg/95">
           <div className="shell flex h-16 items-center justify-between gap-4">
@@ -98,7 +96,10 @@ function LandingContent() {
               <a href="#empezar" className="btn-ghost inline-flex items-center rounded">Empezar</a>
               <Link href="/judges" className="btn-ghost inline-flex items-center rounded">Jueces</Link>
             </nav>
-            <WalletButton />
+            <div className="flex items-center gap-2">
+              <AudioToggle inline />
+              <WalletButton />
+            </div>
           </div>
         </header>
 
@@ -144,7 +145,7 @@ function LandingContent() {
                 </div>
                 <div className="pt-4 pl-4">
                   <dt className="eyebrow">Con wallet</dt>
-                  <dd className="mt-1 text-noir-text">5 actos + registro on-chain</dd>
+                  <dd className="mt-1 text-noir-text">5 actos + registro <span className="whitespace-nowrap">on-chain</span></dd>
                 </div>
               </motion.dl>
               {isConnected && (
@@ -226,7 +227,7 @@ function LandingContent() {
                 {MODES.map(({ href, title, desc, Icon }) => (
                   <li key={href} className="bg-noir-bg">
                     <Link href={href}
-                      className="group flex h-full min-h-[132px] flex-col justify-between gap-5 p-4 sm:p-5 transition-colors hover:bg-noir-card">
+                      className="group flex h-full min-h-[132px] flex-col justify-start gap-6 p-4 sm:p-5 transition-colors hover:bg-noir-card">
                       <div className="flex items-start justify-between">
                         <span className="text-noir-muted group-hover:text-noir-accent transition-colors"><Icon size={20} /></span>
                         <span className="text-noir-faint group-hover:text-noir-text transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5">

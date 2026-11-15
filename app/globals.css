@@ -309,6 +309,13 @@ a,
     color: var(--muted);
     max-width: 44ch;
   }
+  /* Solid plate behind HUD text so scenery (moon, lights) never sits under it */
+  .gx-hud-panel {
+    background: rgba(11, 11, 12, 0.92);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
   .gx-hud {
     font-family: "IBM Plex Mono", ui-monospace, monospace;
     font-size: 12px;
