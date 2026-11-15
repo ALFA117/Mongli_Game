@@ -122,7 +122,7 @@ export default function TrailerPage() {
           {/* Scene 4: Map */}
           {scene === 4 && (
             <motion.div key="s4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
-              <p className="font-body text-xs text-noir-muted mb-6">Cada fragmento, permanente en la blockchain</p>
+              <p className="font-body text-xs text-noir-muted mb-6">Cada acto terminado, registrado en 0G testnet</p>
               <div className="flex justify-center gap-4">
                 {[1,2,3,4,5].map((n,i) => (
                   <motion.div key={n} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.3 }}

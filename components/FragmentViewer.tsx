@@ -368,7 +368,7 @@ export default function FragmentViewer({
               {/* 0G Hashes */}
               {fragment.storageHash && (
                 <div className="flex items-center justify-between text-[13px] font-body">
-                  <span className="text-noir-muted">0G Storage</span>
+                  <span className="text-noir-muted">Hash de contenido (0G Storage simulado)</span>
                   <span className="text-noir-accent font-mono text-xs">
                     {fragment.storageHash.slice(0, 10)}...{fragment.storageHash.slice(-6)}
                   </span>
@@ -499,7 +499,7 @@ export default function FragmentViewer({
 
             {/* Footer watermark */}
             <p className="text-xs font-body text-noir-muted text-center mt-4 tracking-wider">
-              MONGLI GAME — 0G STORAGE — PERMANENTE
+              Mongli Game · 0G Galileo testnet
             </p>
           </motion.div>
         </motion.div>
