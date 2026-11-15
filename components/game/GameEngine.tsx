@@ -112,7 +112,7 @@ export function GameEngine() {
       setDialogDisplay("La memoria parpadea..."); setDialogDone(true);
       setCollectedTexts(prev => [...prev, "La memoria parpadea..."]);
     } finally { setLoading(false); }
-    collectSound(); notify("Fragmento grabado en 0G ✓");
+    collectSound(); notify("Fragmento recuperado");
   }, [startDialog, notify, levelIdx]);
 
   const interactNPC = useCallback((npc: NPC) => {
@@ -369,14 +369,16 @@ export function GameEngine() {
     return () => { cancelAnimationFrame(rafRef.current); window.removeEventListener("resize", resize); };
   }, [dialogActive, levelData, levelIdx, gameComplete]);
 
+  const [guestBlocked, setGuestBlocked] = useState(false);
+
   // Completion screen
   if (gameComplete) {
     return (
-      <div className="game-page" style={{ width: "100vw", height: "100vh", background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", cursor: "crosshair" }}>
-        <div style={{ color: "#FF1A1A", fontSize: 12, letterSpacing: "0.3em", marginBottom: 24 }}>MEMORIA COMPLETA</div>
-        <div style={{ color: "#E5DEC9", fontSize: 28, marginBottom: 16 }}>Has recordado todo</div>
-        <div style={{ color: "#8C8275", fontSize: 14, marginBottom: 8 }}>15 fragmentos · {deaths} muertes</div>
-        <button onClick={() => window.location.href = "/"} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "crosshair", fontFamily: "'Special Elite', serif", marginTop: 24 }}>VOLVER</button>
+      <div className="game-page gx-overlay" style={{ position: "fixed", background: "var(--bg)" }}>
+        <div className="gx-eyebrow">Memoria completa</div>
+        <div className="gx-title">Has recordado todo</div>
+        <div className="gx-sub font-mono">15 fragmentos · {deaths} muertes</div>
+        <button onClick={() => window.location.href = "/"} className="btn btn-primary mt-8">Volver al inicio</button>
       </div>
     );
   }
@@ -401,7 +403,6 @@ export function GameEngine() {
   const stompBonus = stompCount * 50;
   const levelScore = 1000 + timeBonus - deathPenalty + stompBonus + 600;
 
-  const [guestBlocked, setGuestBlocked] = useState(false);
   const isGuest = typeof window !== "undefined" && sessionStorage.getItem("mongli-guest-mode") === "true";
 
   const handleNextLevel = () => {
@@ -417,13 +418,13 @@ export function GameEngine() {
   // Guest mode blocked overlay
   if (guestBlocked) {
     return (
-      <div className="game-page uxpm-glass" style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "crosshair", zIndex: 100 }}>
-        <div style={{ color: "#B30000", fontSize: 14, letterSpacing: "0.2em", marginBottom: 16 }}>CONTENIDO BLOQUEADO</div>
-        <div style={{ color: "#E5DEC9", fontSize: 20, marginBottom: 8, fontFamily: "'Special Elite', serif" }}>Los actos 3, 4 y 5 requieren wallet</div>
-        <div style={{ color: "#555", fontSize: 13, marginBottom: 32, textAlign: "center", maxWidth: 320 }}>Conecta MetaMask para continuar tu historia y guardarla en 0G Chain</div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button onClick={() => window.location.href = "/"} style={{ padding: "14px 28px", background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", cursor: "crosshair", fontFamily: "'Special Elite', serif", fontSize: 14, letterSpacing: "0.15em", borderRadius: 4 }}>CONECTAR WALLET</button>
-          <button onClick={() => window.location.href = "/"} style={{ padding: "14px 28px", background: "transparent", border: "1px solid #333", color: "#555", cursor: "crosshair", fontFamily: "'Special Elite', serif", fontSize: 14, borderRadius: 4 }}>volver al inicio</button>
+      <div className="game-page gx-overlay">
+        <span className="stamp mb-6">Acceso restringido</span>
+        <div className="gx-title">Los actos 3, 4 y 5 requieren wallet</div>
+        <p className="gx-sub">Conecta tu wallet en la página de inicio para seguir la historia y registrar cada acto en 0G Galileo testnet.</p>
+        <div className="mt-8 flex flex-col sm:flex-row gap-3">
+          <button onClick={() => window.location.href = "/"} className="btn btn-primary">Conectar wallet</button>
+          <button onClick={() => window.location.href = "/"} className="btn btn-secondary">Volver al inicio</button>
         </div>
       </div>
     );
@@ -431,36 +432,48 @@ export function GameEngine() {
 
   if (showCompletion) {
     const fmt = `${Math.floor(levelTime / 60)}:${String(levelTime % 60).padStart(2, "0")}`;
+    const rows: [string, string, string][] = [
+      ["Base", "1000", "var(--text)"],
+      ["Tiempo", `+${timeBonus}`, "var(--ok)"],
+      ["Muertes", `-${deathPenalty}`, "var(--accent)"],
+      ["Aturdidos", `+${stompBonus}`, "var(--text)"],
+      ["Fragmentos", "+600", "var(--text)"],
+    ];
     return (
-      <div className="game-page completion-overlay" onMouseMove={() => {}} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", zIndex: 100, cursor: "crosshair", overflowY: "auto", padding: "20px" }}>
-        <div style={{ color: "#B30000", fontSize: 11, letterSpacing: "0.3em", marginBottom: 8 }}>NIVEL {levelIdx + 1} COMPLETADO</div>
-        <div style={{ color: "#E5DEC9", fontSize: 28, marginBottom: 4 }}>{levelData.name}</div>
-        <div style={{ color: "#555", fontSize: 13, marginBottom: 28 }}>{fmt} · {deaths} muertes · {stompCount} aturdidos</div>
-        <div style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 8, padding: 20, marginBottom: 24, maxWidth: 400, width: "90%" }}>
-          <div style={{ color: "#444", fontSize: 10, letterSpacing: "0.2em", marginBottom: 12 }}>FRAGMENTOS RECUPERADOS</div>
+      <div className="game-page completion-overlay gx-overlay" onMouseMove={() => {}}>
+        <div className="gx-eyebrow">Acto {levelIdx + 1} completado</div>
+        <div className="gx-title">{levelData.name}</div>
+        <div className="gx-sub font-mono">{fmt} · {deaths} muertes · {stompCount} aturdidos</div>
+        <div className="panel mt-8 w-full max-w-[420px] p-5 text-left">
+          <div className="eyebrow mb-3">Fragmentos recuperados</div>
           {collectedTexts.map((t, i) => (
-            <div key={i} style={{ color: "#8C8275", fontSize: 12, lineHeight: 1.5, marginBottom: 8, paddingLeft: 12, borderLeft: "2px solid #B30000" }}>{t.slice(0, 80)}...</div>
+            <p key={i} className="mb-2 border-l-2 border-noir-accent pl-3 text-[14px] leading-relaxed text-noir-muted">{t.slice(0, 80)}…</p>
           ))}
         </div>
-        {/* Score */}
-        <div className="uxpm-surface" style={{ borderRadius: 8, padding: 16, marginBottom: 20, maxWidth: 300, width: "90%" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, fontSize: 11, fontFamily: "monospace" }}>
-            <span style={{ color: "#555" }}>BASE</span><span style={{ color: "#E5DEC9", textAlign: "right" }}>1000</span>
-            <span style={{ color: "#555" }}>TIEMPO</span><span style={{ color: "#4CAF50", textAlign: "right" }}>+{timeBonus}</span>
-            <span style={{ color: "#555" }}>MUERTES</span><span style={{ color: "#FF4444", textAlign: "right" }}>-{deathPenalty}</span>
-            <span style={{ color: "#555" }}>STOMPS</span><span style={{ color: "#FF6600", textAlign: "right" }}>+{stompBonus}</span>
-            <span style={{ color: "#555" }}>FRAGMENTOS</span><span style={{ color: "#c4923a", textAlign: "right" }}>+600</span>
+        <div className="panel mt-3 w-full max-w-[420px] p-5 font-mono text-[13px]">
+          <dl className="grid grid-cols-2 gap-y-1.5">
+            {rows.map(([k, v, c]) => (
+              <div key={k} className="contents">
+                <dt className="text-left text-noir-muted">{k}</dt>
+                <dd className="text-right" style={{ color: c }}>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="mt-3 flex items-baseline justify-between border-t border-noir-border pt-3">
+            <span className="text-noir-muted">Total</span>
+            <span className="font-display text-[24px] font-bold text-noir-text">{levelScore}</span>
           </div>
-          <div style={{ borderTop: "1px solid #2a2a2a", marginTop: 10, paddingTop: 10, textAlign: "center", color: "#E5DEC9", fontSize: 20, letterSpacing: "0.1em" }}>TOTAL: {levelScore}</div>
         </div>
-        {!isSigning && !isSigned && chainWrite.isConnected && chainWrite.hasContract && (
-          <button onClick={handleSign} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "14px 36px", fontSize: 14, cursor: "crosshair", fontFamily: "'Special Elite', serif", letterSpacing: "0.2em", boxShadow: "0 0 20px rgba(179,0,0,0.3)", marginBottom: 12 }}>⛓ GRABAR EN 0G CHAIN</button>
-        )}
-        {isSigning && <div style={{ color: "#B30000", fontSize: 13, letterSpacing: "0.15em", animation: "pulse 1s infinite" }}>FIRMANDO EN METAMASK...</div>}
-        {isSigned && signTxHash && <div style={{ color: "#4CAF50", fontSize: 13, marginBottom: 16 }}>✓ GRABADO EN 0G · {signTxHash.slice(0, 10)}...</div>}
-        <button onClick={handleNextLevel} style={{ background: isSigned || !chainWrite.isConnected ? "#B30000" : "none", border: isSigned || !chainWrite.isConnected ? "none" : "none", color: isSigned || !chainWrite.isConnected ? "#E5DEC9" : "#333", padding: "14px 36px", fontSize: 14, cursor: "crosshair", fontFamily: "'Special Elite', serif", letterSpacing: "0.2em", marginTop: isSigned ? 0 : 16 }}>
-          {isSigned || !chainWrite.isConnected ? "SIGUIENTE ACTO →" : "continuar sin firmar →"}
-        </button>
+        <div className="mt-6 flex w-full max-w-[420px] flex-col items-stretch gap-3">
+          {!isSigning && !isSigned && chainWrite.isConnected && chainWrite.hasContract && (
+            <button onClick={handleSign} className="btn btn-secondary">Registrar acto en 0G testnet</button>
+          )}
+          {isSigning && <p className="text-[14px] text-noir-muted" style={{ animation: "pulse 1.2s infinite" }}>Esperando firma en tu wallet…</p>}
+          {isSigned && signTxHash && <p className="font-mono text-[13px] text-noir-ok">Registrado en 0G · {signTxHash.slice(0, 10)}…</p>}
+          <button onClick={handleNextLevel} className={isSigned || !chainWrite.isConnected ? "btn btn-primary" : "btn btn-ghost"}>
+            {isSigned || !chainWrite.isConnected ? "Siguiente acto →" : "Continuar sin registrar →"}
+          </button>
+        </div>
       </div>
     );
   }
@@ -468,10 +481,11 @@ export function GameEngine() {
   // Death screen
   if (player.isDead) {
     return (
-      <div className="game-page" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Special Elite', serif", zIndex: 100, cursor: "crosshair" }}>
-        <div style={{ color: "#FF1A1A", fontSize: 48, textShadow: "0 0 20px #FF1A1A", marginBottom: 16 }}>MEMORIA PERDIDA</div>
-        <div style={{ color: "#8C8275", fontSize: 14, marginBottom: 32 }}>Muertes: {deaths + 1}</div>
-        <button onClick={restartLevel} style={{ background: "transparent", border: "2px solid #B30000", color: "#E5DEC9", padding: "12px 32px", fontSize: 14, cursor: "crosshair", fontFamily: "'Special Elite', serif", letterSpacing: "0.15em" }}>RECORDAR DE NUEVO</button>
+      <div className="game-page gx-overlay">
+        <div className="gx-eyebrow">Muertes: {deaths + 1}</div>
+        <div className="gx-title">Memoria perdida</div>
+        <p className="gx-sub">El recuerdo se escapó. Vuelve a intentarlo desde el inicio del acto.</p>
+        <button onClick={restartLevel} className="btn btn-primary mt-8">Recordar de nuevo</button>
       </div>
     );
   }
@@ -484,38 +498,32 @@ export function GameEngine() {
 
       {/* Intro overlay */}
       {showIntro && (
-        <div onClick={() => setShowIntro(false)} style={{
-          position: "absolute", inset: 0, background: "rgba(0,0,0,0.88)",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          zIndex: 50, cursor: "crosshair", fontFamily: "'Special Elite', serif",
-        }}>
-          <div style={{ color: "#555", fontSize: 11, letterSpacing: "0.4em", marginBottom: 12 }}>ACTO {levelIdx + 1}</div>
-          <div style={{ color: "#E5DEC9", fontSize: 32, letterSpacing: "0.1em", marginBottom: 8, textShadow: "0 0 20px rgba(179,0,0,0.5)" }}>{levelData.name}</div>
-          <div style={{ color: "#444", fontSize: 13, marginBottom: 32 }}>Encuentra los fragmentos de tu memoria</div>
-          <div style={{ color: "#333", fontSize: 11, letterSpacing: "0.2em", animation: "pulse 1.5s infinite" }}>CLICK PARA COMENZAR</div>
+        <div onClick={() => setShowIntro(false)} className="gx-overlay" style={{ zIndex: 50, cursor: "pointer", background: "rgba(11,11,12,0.9)" }}>
+          <div className="gx-eyebrow">Acto {levelIdx + 1}</div>
+          <div className="gx-title">{levelData.name}</div>
+          <p className="gx-sub">Encuentra los fragmentos de tu memoria.</p>
+          <span className="btn btn-secondary mt-8">Toca o haz clic para comenzar</span>
         </div>
       )}
 
       {/* HUD */}
       <div style={{ position: "absolute", top: 16, left: 20, zIndex: 10 }}>
-        <div style={{ color: "#B30000", fontSize: 18, letterSpacing: "0.2em", textShadow: "0 0 10px #FF1A1A", fontFamily: "'Special Elite', serif" }}>MONGLI</div>
-        <div style={{ color: "#555", fontSize: 11, letterSpacing: "0.1em", marginTop: 4, fontFamily: "monospace" }}>ACTO {levelIdx + 1} · {levelData.name}</div>
-        {/* Health bar */}
-        <div style={{ width: 120, height: 6, background: "#1a1a1a", borderRadius: 3, marginTop: 6, overflow: "hidden" }}>
-          <div style={{ width: `${player.health}%`, height: "100%", background: player.health > 50 ? "#B30000" : player.health > 25 ? "#ff6600" : "#ff0000", boxShadow: `0 0 6px ${player.health > 50 ? "#B30000" : "#ff0000"}`, transition: "width 0.3s" }} />
+        <div className="font-display font-extrabold text-[16px] tracking-[0.04em] text-noir-text">MONGLI</div>
+        <div className="gx-hud mt-1">Acto {levelIdx + 1} · {levelData.name}</div>
+        <div style={{ width: 128, height: 6, background: "var(--raised)", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
+          <div style={{ width: `${player.health}%`, height: "100%", background: player.health > 25 ? "var(--accent-fill)" : "var(--accent)", transition: "width 0.3s" }} />
         </div>
-        <div style={{ color: "#333", fontSize: 10, letterSpacing: "0.1em", marginTop: 4, fontFamily: "monospace" }}>{player.health}/100 · MUERTES: {deaths}</div>
+        <div className="gx-hud mt-1">{player.health}/100 · muertes {deaths}</div>
       </div>
 
       {/* Memory counter */}
       <div style={{ position: "absolute", top: 16, right: 20, zIndex: 10, display: "flex", gap: 6, alignItems: "center" }}>
-        <span style={{ color: "#555", fontSize: 11, marginRight: 8, fontFamily: "monospace" }}>MEMORIA</span>
+        <span className="gx-hud mr-2">Memoria</span>
         {[0, 1, 2].map(i => (
           <div key={i} style={{
-            width: 10, height: 10, borderRadius: "50%",
-            border: `1px solid ${i < levelCollected ? "#FF1A1A" : "#333"}`,
-            background: i < levelCollected ? "#FF1A1A" : "transparent",
-            boxShadow: i < levelCollected ? "0 0 6px #FF1A1A" : "none",
+            width: 10, height: 10, borderRadius: 2,
+            border: `1px solid ${i < levelCollected ? "var(--accent)" : "var(--line-strong)"}`,
+            background: i < levelCollected ? "var(--accent)" : "transparent",
           }} />
         ))}
       </div>
@@ -523,23 +531,23 @@ export function GameEngine() {
       {/* Boss HP bar */}
       {levelData.boss?.active && levelData.boss.state !== "dead" && (
         <div className="uxpm-glass" style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", width: 300, padding: "12px 16px", textAlign: "center", cursor: "crosshair", zIndex: 20 }}>
-          <div style={{ color: "#FF1A1A", fontSize: 11, letterSpacing: "0.2em", marginBottom: 6 }}>LA FIGURA</div>
+          <div className="gx-eyebrow" style={{ marginBottom: 6 }}>La figura</div>
           <div style={{ background: "#111", height: 6, borderRadius: 3 }}>
-            <div style={{ width: `${(levelData.boss.currentHealth / levelData.boss.maxHealth) * 100}%`, height: "100%", background: "linear-gradient(90deg, #7a0000, #FF1A1A)", boxShadow: "0 0 8px #FF1A1A", borderRadius: 3, transition: "width 0.3s" }} />
+            <div style={{ width: `${(levelData.boss.currentHealth / levelData.boss.maxHealth) * 100}%`, height: "100%", background: "var(--accent)", borderRadius: 2, transition: "width 0.3s" }} />
           </div>
         </div>
       )}
 
       {/* Power-up indicator */}
       {activePowerUp && (
-        <div style={{ position: "absolute", top: 100, left: 20, zIndex: 10, background: "rgba(0,0,0,0.7)", border: "1px solid #2a2a2a", borderRadius: 4, padding: "4px 10px", fontSize: 10, color: "#E5DEC9", fontFamily: "monospace" }}>
+        <div style={{ position: "absolute", top: 100, left: 20, zIndex: 10, background: "rgba(0,0,0,0.7)", border: "1px solid #2a2a2a", borderRadius: 4, padding: "4px 10px", fontSize: 10, color: "#ECE8E1", fontFamily: "monospace" }}>
           {activePowerUp.type.toUpperCase()} {Math.ceil(activePowerUp.timer)}s
         </div>
       )}
 
       {/* Hidden indicator */}
       {isHiding && (
-        <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, color: "#4444ff", fontSize: 11, fontFamily: "monospace", letterSpacing: "0.15em" }}>
+        <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, color: "var(--muted)", fontSize: 12, fontFamily: "monospace", letterSpacing: "0.15em" }}>
           OCULTO
         </div>
       )}
@@ -548,10 +556,10 @@ export function GameEngine() {
       <div style={{ position: "absolute", top: 56, right: 20, zIndex: 10 }}>
         <div style={{ width: 150, height: 30, background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 4, position: "relative", overflow: "hidden" }}>
           {/* Player dot */}
-          <div style={{ position: "absolute", left: `${(player.x / levelData.levelWidth) * 100}%`, top: "50%", transform: "translateY(-50%)", width: 4, height: 4, borderRadius: "50%", background: "#FF1A1A", boxShadow: "0 0 4px #FF1A1A" }} />
+          <div style={{ position: "absolute", left: `${(player.x / levelData.levelWidth) * 100}%`, top: "50%", transform: "translateY(-50%)", width: 4, height: 4, borderRadius: "50%", background: "var(--accent)" }} />
           {/* Object dots */}
           {levelData.objects.filter((o: InteractiveObject) => !o.collected && !collectedRef.current.has(o.id)).map((o: InteractiveObject) => (
-            <div key={o.id} style={{ position: "absolute", left: `${(o.x / levelData.levelWidth) * 100}%`, top: "50%", transform: "translateY(-50%)", width: 3, height: 3, borderRadius: "50%", background: "#E5DEC9" }} />
+            <div key={o.id} style={{ position: "absolute", left: `${(o.x / levelData.levelWidth) * 100}%`, top: "50%", transform: "translateY(-50%)", width: 3, height: 3, borderRadius: "50%", background: "#ECE8E1" }} />
           ))}
           {/* Enemy dots */}
           {levelData.enemies.filter((en: Enemy) => en.state !== "dead").map((en: Enemy) => (
@@ -561,33 +569,33 @@ export function GameEngine() {
       </div>
 
       {notification && (
-        <div style={{ position: "absolute", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 20, background: "rgba(0,0,0,0.9)", border: "1px solid #333", borderRadius: 4, padding: "8px 20px", color: "#E5DEC9", fontSize: 12, fontFamily: "monospace" }}>{notification}</div>
+        <div style={{ position: "absolute", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 20, background: "rgba(0,0,0,0.9)", border: "1px solid #333", borderRadius: 4, padding: "8px 20px", color: "#ECE8E1", fontSize: 12, fontFamily: "monospace" }}>{notification}</div>
       )}
 
       {/* Dialog */}
       {dialogActive && (
-        <div style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", width: "80%", maxWidth: 600, zIndex: 30, background: "rgba(0,0,0,0.95)", border: "1px solid #B30000", borderRadius: 4, padding: "20px 24px", fontFamily: "'Special Elite', serif", boxShadow: "0 0 30px rgba(179,0,0,0.3)" }}>
-          <div style={{ color: "#B30000", fontSize: 11, letterSpacing: "0.2em", marginBottom: 12 }}>{dialogSpeaker} {loading && "..."}</div>
-          <p style={{ color: "#E5DEC9", fontSize: 15, lineHeight: 1.8, margin: 0 }}>
+        <div style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", width: "80%", maxWidth: 600, zIndex: 30, background: "rgba(0,0,0,0.95)", border: "1px solid var(--line-strong)", borderLeft: "2px solid var(--accent)", borderRadius: 4, padding: "20px 24px", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <div className="gx-eyebrow" style={{ marginBottom: 10 }}>{dialogSpeaker} {loading && "..."}</div>
+          <p style={{ color: "var(--text)", fontSize: 16, lineHeight: 1.7, margin: 0 }}>
             {dialogDisplay}
             {!dialogDone && <span style={{ animation: "blink 1s infinite" }}>|</span>}
           </p>
-          {dialogDone && <div style={{ color: "#444", fontSize: 11, marginTop: 12, textAlign: "right", animation: "pulse 1.5s infinite" }}>[E] CONTINUAR</div>}
+          {dialogDone && <div className="gx-hud" style={{ marginTop: 12, textAlign: "right" }}>[E] Continuar</div>}
         </div>
       )}
 
       {/* Mobile controls */}
       <div style={{ position: "absolute", bottom: 16, left: 16, zIndex: 20, display: "flex", gap: 8 }} className="sm:hidden">
         <button onTouchStart={() => inputRef.current.left = true} onTouchEnd={() => inputRef.current.left = false}
-          style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#E5DEC9", fontSize: 20 }}>←</button>
+          style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#ECE8E1", fontSize: 20 }}>←</button>
         <button onTouchStart={() => inputRef.current.right = true} onTouchEnd={() => inputRef.current.right = false}
-          style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#E5DEC9", fontSize: 20 }}>→</button>
+          style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#ECE8E1", fontSize: 20 }}>→</button>
       </div>
       <div style={{ position: "absolute", bottom: 16, right: 16, zIndex: 20, display: "flex", gap: 8 }} className="sm:hidden">
         <button onTouchStart={() => inputRef.current.jump = true} onTouchEnd={() => inputRef.current.jump = false}
-          style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#E5DEC9", fontSize: 20 }}>↑</button>
+          style={{ width: 56, height: 56, background: "rgba(255,255,255,0.08)", border: "1px solid #333", borderRadius: 8, color: "#ECE8E1", fontSize: 20 }}>↑</button>
         <button onClick={handleInteract}
-          style={{ width: 56, height: 56, background: "rgba(179,0,0,0.2)", border: "1px solid #B30000", borderRadius: 8, color: "#FF1A1A", fontSize: 16 }}>⚡</button>
+          style={{ width: 56, height: 56, background: "rgba(179,38,30,0.25)", border: "1px solid var(--accent)", borderRadius: 6, color: "var(--accent)", fontSize: 14, fontWeight: 600 }} aria-label="Interactuar">E</button>
       </div>
 
       <style>{`

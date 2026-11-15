@@ -12,17 +12,18 @@ const GameEngine = dynamic(
       <div
         style={{
           minHeight: "100vh",
-          background: "#000",
+          background: "var(--bg)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#B30000",
-          fontFamily: "'Special Elite', serif",
-          letterSpacing: "0.2em",
-          fontSize: 14,
+          color: "var(--muted)",
+          fontFamily: "'IBM Plex Mono', monospace",
+          letterSpacing: "0.14em",
+          fontSize: 13,
+          textTransform: "uppercase",
         }}
       >
-        INICIANDO SISTEMA...
+        Cargando acto…
       </div>
     ),
   }
@@ -35,7 +36,7 @@ function GameGuard() {
   }, []);
 
   return (
-    <div className="game-page" style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#000" }}>
+    <div className="game-page" style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "var(--bg)" }}>
       <GameEngine />
     </div>
   );
@@ -46,7 +47,7 @@ export default function GamePage() {
     <Providers>
       <Suspense
         fallback={
-          <div style={{ minHeight: "100vh", background: "#000" }} />
+          <div style={{ minHeight: "100vh", background: "var(--bg)" }} />
         }
       >
         <GameGuard />
