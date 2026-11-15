@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AudioInit } from "@/components/AudioInit";
-import Cursor from "@/components/Cursor";
 
 const SITE_URL = "https://mongli-game.vercel.app";
 
@@ -42,26 +41,27 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0a0a0a",
+  themeColor: "#0B0B0C",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="preload"
-          href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Special+Elite&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Special+Elite&family=Caveat:wght@400;600&display=swap"
           as="style"
         />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Special+Elite&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Special+Elite&family=Caveat:wght@400;600&display=swap"
         />
       </head>
       <body className="grain vignette antialiased min-h-screen">
         <AudioInit />
-        <Cursor />
         {children}
       </body>
     </html>

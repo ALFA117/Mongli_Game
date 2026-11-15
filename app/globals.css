@@ -2,232 +2,417 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ══════════════════════════════════════════════════════════════
+   MONGLI — "Expediente" design system
+   Cool off-black, paper white, one signal red. Archivo for display,
+   IBM Plex Sans for reading, IBM Plex Mono for hashes and data,
+   Special Elite only for case-file stamps.
+   ══════════════════════════════════════════════════════════════ */
 
 :root {
-  --noir-bg: #000000;
-  --noir-text: #E5DEC9;
-  --noir-accent: #B30000;
-  --noir-border: #1a1a1a;
-  --noir-card: #0d0d0d;
-  --noir-muted: #8C8275;
-  --color-bg: #000000;
-  --color-text-red: #B30000;
-  --color-glow-red: #FF1A1A;
-  --color-bone: #E5DEC9;
-  --color-shadow: #8C8275;
-  --color-surface: #0d0d0d;
-  --color-border: #1a1a1a;
-  --color-border-accent: #2a2a2a;
-}
+  --bg: #0b0b0c;
+  --surface: #131315;
+  --raised: #1a1a1d;
+  --line: #2a292d;
+  --line-strong: #3a383d;
+  --text: #ece8e1;
+  --muted: #a29c92;
+  --faint: #77726a;
+  --accent: #e5483d;
+  --accent-fill: #b3261e;
+  --accent-fill-hover: #c62f26;
+  --accent-ink: #5a1712;
+  --ok: #7fb685;
 
-/* Cursor: hidden everywhere, Cursor.tsx renders custom cursor */
-html, body, *, *::before, *::after {
-  cursor: none;
-}
-/* Game pages: crosshair visible (no custom cursor) */
-.game-page, .game-page *, .game-page canvas,
-.game-page button, .game-page div, .game-page input,
-.completion-overlay, .completion-overlay * {
-  cursor: crosshair !important;
-}
-/* RainbowKit/modal overrides */
-[data-rk] *, [role="dialog"] *, [role="alertdialog"] * {
-  cursor: none !important;
+  --radius-sm: 4px;
+  --radius: 6px;
+  --shadow-hard: 4px 4px 0 0 rgba(0, 0, 0, 0.6);
+
+  /* legacy aliases used by older components */
+  --noir-bg: var(--bg);
+  --noir-text: var(--text);
+  --noir-accent: var(--accent);
+  --noir-border: var(--line);
+  --noir-card: var(--surface);
+  --noir-muted: var(--muted);
+  --color-bg: var(--bg);
+  --color-text-red: var(--accent);
+  --color-glow-red: var(--accent);
+  --color-bone: var(--text);
+  --color-shadow: var(--muted);
+  --color-surface: var(--surface);
+  --color-border: var(--line);
+  --color-border-accent: var(--line-strong);
+
+  color-scheme: dark;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background-color: var(--noir-bg);
-  color: var(--noir-text);
-  font-family: "IBM Plex Mono", monospace;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
   overflow-x: hidden;
+  isolation: isolate;
+  text-rendering: optimizeLegibility;
 }
 
-::selection {
-  background: rgba(196, 146, 58, 0.3);
-  color: #e8d5b0;
+/* Game canvas keeps the crosshair; everything else uses native cursors. */
+.game-page,
+.game-page canvas {
+  cursor: crosshair;
+}
+.game-page button,
+.game-page a {
+  cursor: pointer;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
+button:not(:disabled),
+a,
+[role="button"] {
+  cursor: pointer;
 }
 
-::-webkit-scrollbar-track {
-  background: #0a0a0a;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
   border-radius: 2px;
 }
 
+::selection {
+  background: rgba(229, 72, 61, 0.35);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 4px;
+}
 ::-webkit-scrollbar-thumb:hover {
-  background: #c4923a;
+  background: var(--faint);
+}
+
+@layer components {
+  /* ── Layout ── */
+  .shell {
+    width: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: 20px;
+  }
+  @media (min-width: 768px) {
+    .shell {
+      padding-inline: 40px;
+    }
+  }
+
+  /* ── Type ── */
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .stamp {
+    font-family: "Special Elite", "IBM Plex Mono", monospace;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    border: 1.5px solid currentColor;
+    padding: 2px 8px;
+    border-radius: 2px;
+    display: inline-block;
+    transform: rotate(-2deg);
+  }
+  .h-display {
+    font-family: "Archivo", "IBM Plex Sans", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 0.98;
+    font-stretch: 112%;
+  }
+  .h-section {
+    font-family: "Archivo", "IBM Plex Sans", sans-serif;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    font-size: clamp(28px, 4vw, 40px);
+  }
+  .lead {
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 60ch;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: var(--radius-sm);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.01em;
+    border: 1.5px solid transparent;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease,
+      transform 0.18s ease, box-shadow 0.18s ease;
+    white-space: nowrap;
+  }
+  .btn:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--accent-fill);
+    color: #fff;
+    border-color: var(--accent-fill);
+    box-shadow: 4px 4px 0 0 var(--accent-ink);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-fill-hover);
+    border-color: var(--accent-fill-hover);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--line-strong);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--text);
+    background: var(--raised);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    padding: 0 12px;
+    min-height: 44px;
+  }
+  .btn-ghost:hover {
+    color: var(--text);
+  }
+
+  /* ── Surfaces ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .panel-hard {
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-hard);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    display: inline-block;
+  }
+
+  /* Corner-marked frame ("evidence plate") */
+  .frame-marks {
+    position: relative;
+  }
+  .frame-marks::before,
+  .frame-marks::after {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-color: var(--muted);
+    border-style: solid;
+    pointer-events: none;
+  }
+  .frame-marks::before {
+    top: -1px;
+    left: -1px;
+    border-width: 1.5px 0 0 1.5px;
+  }
+  .frame-marks::after {
+    bottom: -1px;
+    right: -1px;
+    border-width: 0 1.5px 1.5px 0;
+  }
+
+  /* ── Game overlays (GameEngine) ── */
+  .gx-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    text-align: center;
+    background: rgba(11, 11, 12, 0.94);
+    overflow-y: auto;
+  }
+  .gx-eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .gx-title {
+    font-family: "Archivo", "IBM Plex Sans", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: clamp(28px, 5vw, 44px);
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .gx-sub {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 44ch;
+  }
+  .gx-hud {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
 }
 
 @layer utilities {
-  /* ══════════ Text Effects ══════════ */
   .text-shadow-noir {
-    text-shadow:
-      0 0 10px rgba(196, 146, 58, 0.3),
-      0 0 40px rgba(196, 146, 58, 0.1),
-      0 0 80px rgba(196, 146, 58, 0.05);
+    text-shadow: none;
   }
-
   .text-shadow-red {
-    text-shadow:
-      0 0 10px rgba(220, 50, 50, 0.3),
-      0 0 30px rgba(220, 50, 50, 0.1);
+    text-shadow: none;
   }
 
-  /* ══════════ Film Grain ══════════ */
-  .grain {
-    position: relative;
-  }
-
+  /* Film grain: static, very low, no animation (cheap and calm). */
   .grain::before {
     content: "";
     position: fixed;
-    top: -50%;
-    left: -50%;
-    right: -50%;
-    bottom: -50%;
-    width: 200%;
-    height: 200%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='5' stitchTiles='stitch' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
     pointer-events: none;
     z-index: 1;
-    animation: grainShift 0.4s steps(1) infinite;
+    opacity: 0.6;
     mix-blend-mode: overlay;
   }
 
-  @keyframes grainShift {
-    0% { transform: translate(0, 0); }
-    20% { transform: translate(-1.5%, 1.5%); }
-    40% { transform: translate(1.5%, -1%); }
-    60% { transform: translate(-0.5%, -1.5%); }
-    80% { transform: translate(1%, 0.5%); }
-    100% { transform: translate(0, 0); }
-  }
-
-  /* ══════════ Vignette ══════════ */
   .vignette::after {
     content: "";
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.6) 80%, rgba(0, 0, 0, 0.9) 100%);
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.35) 100%);
     pointer-events: none;
     z-index: 1;
   }
 
-  /* ══════════ Typewriter Cursor ══════════ */
   .typewriter-cursor::after {
     content: "▌";
     animation: blink 1s step-end infinite;
-    color: #c4923a;
+    color: var(--accent);
     font-weight: 300;
   }
-
   @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
   }
 
-  /* ══════════ Polaroid Paper Texture ══════════ */
   .paper-texture {
     position: relative;
   }
 
-  .paper-texture::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.04' numOctaves='5' stitchTiles='stitch' seed='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 1;
-    mix-blend-mode: overlay;
-    border-radius: inherit;
-  }
-
-  /* ══════════ Entrance Animations ══════════ */
+  /* Entrance animations */
   .animate-slide-up {
-    animation: slideUp 0.6s ease-out forwards;
-    opacity: 0;
+    animation: slideUp 0.45s ease-out both;
   }
-
   .animate-slide-down {
-    animation: slideDown 0.6s ease-out forwards;
-    opacity: 0;
+    animation: slideDown 0.45s ease-out both;
   }
-
   .animate-slide-left {
-    animation: slideLeft 0.5s ease-out forwards;
-    opacity: 0;
+    animation: slideLeft 0.4s ease-out both;
   }
-
   .animate-slide-right {
-    animation: slideRight 0.5s ease-out forwards;
-    opacity: 0;
+    animation: slideRight 0.4s ease-out both;
   }
-
   .animate-scale-in {
-    animation: scaleIn 0.5s ease-out forwards;
-    opacity: 0;
+    animation: scaleIn 0.4s ease-out both;
   }
-
   .animate-blur-in {
-    animation: blurIn 0.8s ease-out forwards;
-    opacity: 0;
+    animation: fadeOnly 0.5s ease-out both;
   }
-
   .animate-reveal {
-    animation: reveal 1.2s ease-out forwards;
-    opacity: 0;
+    animation: slideUp 0.6s ease-out both;
   }
-
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
   @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-20px); }
+    from { opacity: 0; transform: translateY(-12px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
   @keyframes slideLeft {
-    from { opacity: 0; transform: translateX(20px); }
+    from { opacity: 0; transform: translateX(12px); }
     to { opacity: 1; transform: translateX(0); }
   }
-
   @keyframes slideRight {
-    from { opacity: 0; transform: translateX(-20px); }
+    from { opacity: 0; transform: translateX(-12px); }
     to { opacity: 1; transform: translateX(0); }
   }
-
   @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.9); }
+    from { opacity: 0; transform: scale(0.97); }
     to { opacity: 1; transform: scale(1); }
   }
-
-  @keyframes blurIn {
-    from { opacity: 0; filter: blur(8px); }
-    to { opacity: 1; filter: blur(0px); }
+  @keyframes fadeOnly {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
-  @keyframes reveal {
-    0% { opacity: 0; transform: translateY(10px); filter: blur(4px); }
-    60% { opacity: 0.8; filter: blur(1px); }
-    100% { opacity: 1; transform: translateY(0); filter: blur(0); }
-  }
-
-  /* ══════════ Stagger delay utilities ══════════ */
   .delay-100 { animation-delay: 100ms; }
   .delay-200 { animation-delay: 200ms; }
   .delay-300 { animation-delay: 300ms; }
@@ -237,53 +422,40 @@ body {
   .delay-700 { animation-delay: 700ms; }
   .delay-800 { animation-delay: 800ms; }
 
-  /* ══════════ Noir card variations ══════════ */
+  /* Cards */
   .card-noir {
-    background-color: var(--noir-card);
-    border: 1px solid var(--noir-border);
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     position: relative;
   }
-
-  .card-noir-amber {
-    background-color: var(--noir-card);
-    border: 1px solid rgba(196, 146, 58, 0.25);
-    box-shadow: 0 0 15px rgba(196, 146, 58, 0.05);
-  }
-
-  .card-noir-red {
-    background-color: var(--noir-card);
-    border: 1px solid rgba(180, 40, 40, 0.25);
-    box-shadow: 0 0 15px rgba(180, 40, 40, 0.05);
-  }
-
+  .card-noir-amber,
+  .card-noir-red,
   .card-noir-blue {
-    background-color: var(--noir-card);
-    border: 1px solid rgba(60, 120, 200, 0.2);
-    box-shadow: 0 0 15px rgba(60, 120, 200, 0.04);
+    background-color: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+  }
+  .card-noir-red {
+    border-left: 2px solid var(--accent);
   }
 
-  /* ══════════ Manila folder / case file styling ══════════ */
+  /* Case file */
   .manila-folder {
-    background: linear-gradient(135deg, #1a1710 0%, #151310 50%, #1a1710 100%);
-    border: 1px solid rgba(196, 146, 58, 0.15);
-    box-shadow:
-      2px 2px 0 rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(232, 213, 176, 0.03);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
   }
 
-  /* ══════════ Terminal styling ══════════ */
   .terminal-text {
     font-family: "IBM Plex Mono", monospace;
-    color: #4ade80;
-    text-shadow: 0 0 5px rgba(74, 222, 128, 0.3);
+    color: var(--ok);
   }
-
   .terminal-prompt::before {
     content: "$ ";
-    color: #c4923a;
+    color: var(--faint);
   }
 
-  /* ══════════ Game Grid ══════════ */
   @media (min-width: 1024px) {
     .game-grid {
       grid-template-columns: 1fr 1.5fr !important;
@@ -291,110 +463,76 @@ body {
     }
   }
 
-  /* ══════════ Game page cursor override ══════════ */
-  .game-page,
-  .game-page *,
-  .game-page canvas {
-    cursor: crosshair !important;
+  .focus-visible-amber:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
-  /* ══════════ Accessibility ══════════ */
-  .focus-visible-amber:focus-visible {
-    outline: 2px solid #d4a244;
-    outline-offset: 2px;
+  /* Legacy "uxpm" helpers, now formal: solid surfaces, no glow. */
+  .uxpm-glass {
+    background: rgba(19, 19, 21, 0.96);
+    border: 1px solid var(--line-strong);
+  }
+  .uxpm-press {
+    transition: transform 0.12s ease;
+  }
+  .uxpm-press:active {
+    transform: scale(0.98);
+  }
+  .uxpm-magnetic {
+    transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .uxpm-surface {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .uxpm-glow-amber,
+  .uxpm-glow-red,
+  .uxpm-glow-blue {
+    box-shadow: none;
+  }
+  .uxpm-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  .uxpm-smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  .uxpm-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .uxpm-tap-highlight {
+    -webkit-tap-highlight-color: rgba(229, 72, 61, 0.15);
+  }
+  .uxpm-touch-target {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
 
-/* ══════════ Reduced Motion ══════════ */
-/* ══════════ Audio visualizer bars ══════════ */
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; pointer-events: none; } }
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; pointer-events: none; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
 @keyframes audioBar0 { to { height: 14px; } }
 @keyframes audioBar1 { to { height: 10px; } }
 @keyframes audioBar2 { to { height: 14px; } }
 @keyframes audioBar3 { to { height: 8px; } }
 @keyframes audioBar4 { to { height: 12px; } }
 
-/* ══════════ RainbowKit + modal cursor fix ══════════ */
-[data-rk] * { cursor: none !important; }
-[role="dialog"] * { cursor: none !important; }
-[role="alertdialog"] * { cursor: none !important; }
-
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-
-  /* ══════════════════════════════════════════════════ */
-  /* === UI-UX-PRO-MAX ===                            */
-  /* ══════════════════════════════════════════════════ */
-
-  .uxpm-glass {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    background: rgba(10, 10, 10, 0.85);
-    border: 0.5px solid rgba(232, 213, 176, 0.15);
-  }
-
-  .uxpm-press {
-    transition: transform 0.1s ease;
-  }
-  .uxpm-press:active {
-    transform: scale(0.96);
-  }
-
-  .uxpm-magnetic {
-    transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  .uxpm-surface {
-    background: #0f0f0f;
-    border: 0.5px solid #2a2a2a;
-    border-radius: 8px;
-  }
-
-  .uxpm-glow-amber {
-    box-shadow:
-      0 0 20px rgba(196, 146, 58, 0.3),
-      inset 0 0 20px rgba(196, 146, 58, 0.05);
-  }
-
-  .uxpm-glow-red {
-    box-shadow:
-      0 0 20px rgba(180, 40, 40, 0.3),
-      inset 0 0 20px rgba(180, 40, 40, 0.05);
-  }
-
-  .uxpm-glow-blue {
-    box-shadow:
-      0 0 20px rgba(60, 100, 180, 0.3),
-      inset 0 0 20px rgba(60, 100, 180, 0.05);
-  }
-
-  .uxpm-ripple {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .uxpm-smooth-scroll {
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .uxpm-safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .uxpm-tap-highlight {
-    -webkit-tap-highlight-color: rgba(196, 146, 58, 0.2);
-  }
-
-  /* Mobile-first touch targets */
-  @media (max-width: 639px) {
-    .uxpm-touch-target {
-      min-height: 44px;
-      min-width: 44px;
-    }
+    scroll-behavior: auto !important;
   }
 }

@@ -9,25 +9,36 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // "Expediente" palette: cool off-black, paper white, one signal red.
         noir: {
-          bg: "#000000",
-          text: "#E5DEC9",
-          accent: "#B30000",
-          border: "#1a1a1a",
-          card: "#0d0d0d",
-          muted: "#8C8275",
+          bg: "#0B0B0C",
+          text: "#ECE8E1",
+          accent: "#E5483D", // text/borders on dark (4.8:1 on bg)
+          fill: "#B3261E", // filled buttons with light text (6.6:1)
+          border: "#2A292D",
+          card: "#131315",
+          raised: "#1A1A1D",
+          muted: "#A29C92", // secondary text (7:1 on bg)
+          faint: "#77726A",
+          ok: "#7FB685",
         },
         mongli: {
-          red: "#B30000",
-          glow: "#FF1A1A",
-          bone: "#E5DEC9",
-          shadow: "#8C8275",
-          surface: "#0d0d0d",
+          red: "#B3261E",
+          glow: "#E5483D",
+          bone: "#ECE8E1",
+          shadow: "#A29C92",
+          surface: "#131315",
         },
       },
       fontFamily: {
-        display: ['"Special Elite"', "cursive"],
-        body: ['"IBM Plex Mono"', "monospace"],
+        display: ['"Archivo"', '"IBM Plex Sans"', "system-ui", "sans-serif"],
+        body: ['"IBM Plex Sans"', "system-ui", "sans-serif"],
+        mono: ['"IBM Plex Mono"', "ui-monospace", "monospace"],
+        stamp: ['"Special Elite"', '"IBM Plex Mono"', "monospace"],
+      },
+      boxShadow: {
+        hard: "4px 4px 0 0 rgba(0,0,0,0.6)",
+        "hard-accent": "4px 4px 0 0 #5A1712",
       },
       animation: {
         "fade-in": "fadeIn 1.5s ease-out forwards",
