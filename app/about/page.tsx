@@ -68,7 +68,7 @@ const BOOT_SEQUENCE: TerminalLine[] = [
   { type: "output", text: "Eso solo es posible con almacenamiento descentralizado real." },
   { type: "blank", text: "" },
   { type: "command", text: "cat credits.txt" },
-  { type: "output", text: "Desarrollado por: Edgar Lopez Baeza (@ALFA_EDG)" },
+  { type: "output", text: "Desarrollado por: Edgar (@ALFA_EDG)" },
   { type: "output", text: "Hackathon: Zero Cup 2026 — 0G Labs" },
   { type: "output", text: "Ubicación: México" },
   { type: "output", text: "Fecha: Junio 2026" },

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description:
     "5 game modes · AI narrative · 0G blockchain · 22 routes · Zero Cup 2026. Juego noir donde la IA escribe tu historia y tu avance queda registrado on-chain en 0G Galileo testnet.",
   keywords: "0G, blockchain, AI game, noir, amnesia, Zero Cup 2026, Claude, Gemini, Web3, hackathon",
-  authors: [{ name: "Edgar Lopez Baeza", url: "https://github.com/ALFA117" }],
+  authors: [{ name: "Edgar", url: "https://github.com/ALFA117" }],
   manifest: "/manifest.json",
   icons: [
     { rel: "icon", url: "/favicon.svg", type: "image/svg+xml" },

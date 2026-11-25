@@ -6,7 +6,7 @@
 ## 0. Situación actual
 
 - Hackathon: **Zero Cup 2026** organizado por 0G Labs (blockchain descentralizada para IA)
-- Participante: **Edgar Lopez Baeza (@ALFA_EDG)**, México
+- Participante: **Edgar (@ALFA_EDG)**, México
 - Deadline extendido: **24 de junio, 12:00 PM EDT / 11:00 AM CDT México**
 - Tiempo disponible: ~9 horas desde ahora
 - Estado del proyecto: **cero código escrito**, arranque desde cero
@@ -331,4 +331,4 @@ npm run dev
 
 *Documento generado por Claude (claude.ai) el 23 de junio de 2026.*
 *Proyecto: Mongli Game — Zero Cup 2026 · 0G Labs Hackathon*
-*Desarrollador: Edgar Lopez Baeza (@ALFA_EDG)*
+*Desarrollador: Edgar (@ALFA_EDG)*

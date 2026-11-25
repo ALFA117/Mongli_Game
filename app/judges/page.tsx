@@ -234,7 +234,7 @@ export default function JudgesPage() {
 
         {/* Footer */}
         <div className="text-center border-t border-noir-border/20 pt-8">
-          <p className="font-body text-xs text-noir-muted">Edgar Lopez Baeza · @ALFA_EDG</p>
+          <p className="font-body text-xs text-noir-muted">Edgar · @ALFA_EDG</p>
           <p className="font-body text-[9px] text-noir-muted/40 mt-1">Zero Cup 2026 · 0G Labs</p>
           <div className="flex items-center justify-center gap-4 mt-4 text-[9px] font-body text-noir-muted/40">
             <a href="https://mongli-game.vercel.app" className="hover:text-noir-accent">Live Game</a>
